@@ -63,7 +63,7 @@ export const Navbar = () => {
         <ul className="flex items-center space-x-4 lg:space-x-6 max-md:hidden">
           {menus.map((menu, index) => (
             <li key={index}>
-              <Link to={menu.to} className="font-medium">
+              <Link to={menu.to} className="font-medium hover:text-white">
                 {menu.title}
               </Link>
             </li>
@@ -86,10 +86,13 @@ export const Navbar = () => {
           </div>
         ) : (
           <div className="space-x-4 max-md:hidden">
-            <Link to="/login" className="font-medium ">
+            <Link to="/auth" className="font-medium ">
               Se connecter
             </Link>
-            <button className="bg-primary text-black font-semibold px-6 py-3 rounded">
+            <button
+              className="bg-primary text-black font-semibold px-6 py-3 rounded cursor-pointer"
+              onClick={() => navigate("/reservation")}
+            >
               Réserver un billet
             </button>
           </div>
@@ -122,7 +125,11 @@ export const Navbar = () => {
               </div>
             ) : (
               <div>
-                <Link to="/login" className="flex items-center space-x-4">
+                <Link
+                  to="/auth"
+                  className="flex items-center space-x-4"
+                  onClick={() => setIsOpen(false)}
+                >
                   <LogIn color="#f2cb04" />
                   <span>Se connecter</span>
                 </Link>
