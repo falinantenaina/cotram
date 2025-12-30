@@ -23,14 +23,14 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) navigate("/");
-  }, []);
+  }, [user]);
   return (
     <div className="bg-white">
       <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4">
         <Container>
           <div className="space-y-4 max-w-xs md:max-w-md mx-auto py-4 md:py-8">
             <div>
-              <h2 className="text-xl font-semibold">Bienvenue</h2>
+              <h2 className="text-xl md:text-3xl font-semibold">Bienvenue</h2>
               <p className="text-gray-400">
                 Gérez vos voyages et réservation en toute simplicité.
               </p>
