@@ -1,4 +1,5 @@
 import { About } from "../components/About";
+import { Destination } from "../components/Destination";
 import { Hero } from "../components/Hero";
 
 const HomePage = () => {
@@ -6,6 +7,7 @@ const HomePage = () => {
     <>
       <Hero />
       <About />
+      <Destination />
     </>
   );
 };
