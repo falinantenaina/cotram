@@ -107,7 +107,7 @@ export const Navbar = () => {
         </button>
         {/* Mobile menu */}
         {isOpen && (
-          <div className="absolute left-0 top-[72.8px] bg-black w-full px-4 py-6 space-y-10 md:hidden">
+          <div className="absolute left-0 top-[72.8px] bg-black w-full px-4 py-6 space-y-10 md:hidden z-50">
             {user ? (
               <div>
                 {/* User Profil button */}
