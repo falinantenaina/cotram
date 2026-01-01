@@ -8,10 +8,10 @@ export const TravelFinder = () => {
 
   return (
     <Container className="max-sm-hidden absolute bottom-0 w-max max-w-full translate-y-1/2 left-1/2 -translate-x-1/2">
-      <div className="bg-white text-dark-gray px-4 py-4 md:py-2 lg:px-8 max-w-7xl mx-auto rounded shadow-2xl">
-        <div className="space-y-4 flex gap-x-2 lg:gap-x-6">
+      <div className="bg-white text-dark-gray px-4 py-4 Z lg:px-8 max-w-7xl mx-auto rounded shadow-2xl">
+        <div className="flex gap-x-2 lg:gap-x-6">
           {/* Departure */}
-          <div className="space-y-2">
+          <div>
             <label htmlFor="departure" className="uppercase">
               Départ
             </label>
@@ -32,7 +32,7 @@ export const TravelFinder = () => {
           </div>
 
           {/* Destination */}
-          <div className="space-y-2">
+          <div className="">
             <label htmlFor="destination" className="uppercase">
               Destination
             </label>
@@ -52,7 +52,7 @@ export const TravelFinder = () => {
             </div>
           </div>
           {/* Date */}
-          <div className="space-y-2">
+          <div className="">
             <label htmlFor="date" className="uppercase">
               Date
             </label>
