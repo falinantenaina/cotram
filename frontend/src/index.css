@@ -3,6 +3,9 @@
 
 @theme {
   --color-primary: #f2cb04;
+  --color-dark-gray: #141414;
+  --color-dark: #121417;
+  --color-gray-light: #222222;
   --font-sans: "Inter", sans-serif;
 }
 

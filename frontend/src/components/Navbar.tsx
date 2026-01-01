@@ -51,7 +51,7 @@ export const Navbar = () => {
 
   return (
     <nav className="relative bg-black text-white w-full px-4 py-4 md:px-8 lg:px-16 border-b border-gray-700">
-      <div className="max-w-7xl mx-auto flex items-center justify-between text-white/80">
+      <div className="flex items-center justify-between text-white/80">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2">
           <div className="flex items-center justify-center bg-primary p-1 size-10 rounded text-black lg:size-12">
