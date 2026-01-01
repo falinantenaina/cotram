@@ -8,7 +8,7 @@ export const Hero = () => {
   return (
     <div className="bg-dark-gray text-white/80 relative sm:pb-16 py-12 md:py-16 lg:py-20 xl:py-24">
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 space-x-4 lg:space-x-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:space-x-4 lg:space-x-12">
           <div className="space-y-4 md:space-y-8">
             <div className="text-primary bg-primary/10 rounded-full py-1 px-3 text-sm w-max">
               Le confort à chaque kilomètre
