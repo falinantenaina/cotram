@@ -1,12 +1,13 @@
 import { Calendar, Check } from "lucide-react";
 import hero from "../assets/hero.webp";
+import { TravelFinder } from "./TravelFinder";
 import { Button } from "./ui/Button";
 import { Container } from "./ui/Container";
 
 export const Hero = () => {
   return (
-    <div className="bg-dark-gray text-white/80">
-      <Container className="py-12 md:py-16 lg:py-20 xl:py-24">
+    <div className="bg-dark-gray text-white/80 relative sm:pb-16 py-12 md:py-16 lg:py-20 xl:py-24">
+      <Container>
         <div className="grid grid-cols-1 md:grid-cols-2 space-x-4 lg:space-x-12">
           <div className="space-y-4 md:space-y-8">
             <div className="text-primary bg-primary/10 rounded-full py-1 px-3 text-sm w-max">
@@ -34,7 +35,7 @@ export const Hero = () => {
               </Button>
               <Button variant="secondary">Voir les tarifs</Button>
             </div>
-            <ul className="flex md:space-x-4">
+            <ul className="flex space-x-4">
               <li className="flex items-center space-x-2">
                 <div className="border border-primary rounded-full flex items-center justify-center p-1 size-4 text-primary">
                   <Check className="size-4" />
@@ -67,6 +68,7 @@ export const Hero = () => {
           </div>
         </div>
       </Container>
+      <TravelFinder />
     </div>
   );
 };
