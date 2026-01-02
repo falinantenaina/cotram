@@ -1,6 +1,5 @@
 import {
   Building,
-  Bus,
   Clock,
   Contact,
   Home,
@@ -53,11 +52,14 @@ export const Navbar = () => {
     <nav className="relative bg-black text-white w-full px-4 py-4 md:px-8 lg:px-16 border-b border-gray-700">
       <div className="flex items-center justify-between text-white/80">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="flex items-center justify-center bg-primary p-1 size-10 rounded text-black lg:size-12">
-            <Bus className="size-6" />
-          </div>
-          <span className="font-medium lg:text-2xl text-white">Plus</span>
+        <Link
+          to="/"
+          className="flex items-center space-x-2 font-medium lg:text-2xl"
+        >
+          <span className="text-white">Cotram</span>
+          <span className="bg-primary text-black px-2 rounded font-bold">
+            Plus
+          </span>
         </Link>
         {/* Menu */}
         <ul className="flex items-center space-x-4 lg:space-x-6 max-md:hidden">
