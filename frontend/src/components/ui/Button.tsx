@@ -13,7 +13,8 @@ export const Button = ({
     default: "bg-primary text-black hover:bg-primary/90",
     secondary:
       "bg-gray-light border border-transparent text-white hover:border hover:border-white/10",
-    light: "bg-white text-black hover:bg-white/90",
+    light:
+      "bg-white text-black hover:bg-white/90 border border-black/10 hover:shadow",
   };
   return (
     <button
