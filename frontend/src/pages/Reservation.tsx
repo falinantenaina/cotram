@@ -1,7 +1,8 @@
-import { ArrowLeft, ArrowRight, Clock, Info, User, X } from "lucide-react";
+import { ArrowLeft, Info, User, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RouteStep } from "../components/reservations/RouteStep";
+import { TimeStep } from "../components/reservations/TimeStep";
 import { Container } from "../components/ui/Container";
 
 type SeatStatus = "available" | "selected" | "occupied";
@@ -33,17 +34,7 @@ const Reservation = () => {
   );
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
 
-  console.log(departure, destination, selectedDate, currentStep);
-
-  // Horaires disponibles
-  const timeSlots: TimeSlot[] = [
-    { id: "1", time: "06:00", availableSeats: 12, price: 20000 },
-    { id: "2", time: "08:00", availableSeats: 8, price: 20000 },
-    { id: "3", time: "10:00", availableSeats: 15, price: 20000 },
-    { id: "4", time: "12:00", availableSeats: 5, price: 20000 },
-    { id: "5", time: "14:00", availableSeats: 10, price: 20000 },
-    { id: "6", time: "16:00", availableSeats: 14, price: 20000 },
-  ];
+  console.log(currentStep, selectedTime);
 
   // Configuration initiale des sièges (16 places passagers)
   const initialSeats: Seat[] = [
@@ -111,81 +102,6 @@ const Reservation = () => {
   };
 
   const totalPrice = selectedSeats.length * (selectedTime?.price || 20000);
-
-  const canProceedFromTime = selectedTime !== null;
-
-  // Étape 2: Choix de l'heure
-  const TimeStep = () => (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold">
-              Choisissez votre horaire
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {departure} → {destination} •{" "}
-              {new Date(selectedDate).toLocaleDateString("fr-FR")}
-            </p>
-          </div>
-          <button
-            onClick={() => setCurrentStep("route")}
-            className="text-primary hover:underline font-medium"
-          >
-            Modifier
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {timeSlots.map((slot) => (
-            <button
-              key={slot.id}
-              onClick={() => setSelectedTime(slot)}
-              className={`p-4 border-2 rounded-lg transition ${
-                selectedTime?.id === slot.id
-                  ? "border-primary bg-primary/10"
-                  : "border-gray-300 hover:border-primary/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Clock className="size-5 text-gray-600" />
-                  <span className="text-xl font-bold">{slot.time}</span>
-                </div>
-                <span className="text-lg font-semibold text-primary">
-                  {slot.price.toLocaleString()} Ar
-                </span>
-              </div>
-              <div className="text-sm text-gray-600">
-                {slot.availableSeats} places disponibles
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            onClick={() => setCurrentStep("route")}
-            className="flex-1 py-3 rounded-lg font-semibold border-2 border-gray-300 hover:bg-gray-50"
-          >
-            Retour
-          </button>
-          <button
-            onClick={() => setCurrentStep("seats")}
-            disabled={!canProceedFromTime}
-            className={`flex-1 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-              canProceedFromTime
-                ? "bg-primary text-black hover:bg-primary/90 cursor-pointer"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            <span>Choisir mes sièges</span>
-            <ArrowRight className="size-5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   // Étape 3: Choix des sièges
   const SeatsStep = () => (
@@ -522,7 +438,16 @@ const Reservation = () => {
             setCurrentStep={setCurrentStep}
           />
         )}
-        {currentStep === "time" && <TimeStep />}
+        {currentStep === "time" && (
+          <TimeStep
+            departure={departure}
+            destination={destination}
+            selectedDate={selectedDate}
+            setCurrentStep={setCurrentStep}
+            selectedTime={selectedTime}
+            setSelectedTime={setSelectedTime}
+          />
+        )}
         {currentStep === "seats" && <SeatsStep />}
       </Container>
     </div>
