@@ -21,8 +21,8 @@ const menus = [
     icon: <Home strokeWidth={1} />,
   },
   {
-    title: "Horaires",
-    to: "/#horaires",
+    title: "Reservation",
+    to: "/reservation",
     icon: <Clock strokeWidth={1} />,
   },
   {
@@ -32,7 +32,7 @@ const menus = [
   },
   {
     title: "Contact",
-    to: "/#contact",
+    to: "/contact",
     icon: <Contact strokeWidth={1} />,
   },
 ];
@@ -56,7 +56,7 @@ export const Navbar = () => {
           to="/"
           className="flex items-center space-x-2 font-medium lg:text-2xl"
         >
-          <span className="text-white">Cotram</span>
+          <span className="text-white">Akoho</span>
           <span className="bg-primary text-black px-2 rounded font-bold">
             Plus
           </span>
