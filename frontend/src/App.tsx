@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 import Auth from "./pages/Auth";
+import Contact from "./pages/Contact";
 import HomePage from "./pages/HomePage";
 import Reservation from "./pages/Reservation";
 
@@ -21,6 +22,10 @@ const App = () => {
         {
           path: "reservation",
           element: <Reservation />,
+        },
+        {
+          path: "contact",
+          element: <Contact />,
         },
       ],
     },
