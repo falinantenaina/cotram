@@ -7,7 +7,7 @@ export interface IUser extends Document {
   phone: string;
   password: string;
   role: "user" | "admin";
-  createdAt: Date;
+  comparePassword(password: string): Promise<boolean>;
 }
 
 export interface IRoute extends Document {
