@@ -4,8 +4,6 @@ import { Container } from "./ui/Container";
 export const TravelFinder = () => {
   const today = new Date().toISOString().split("T")[0];
 
-  console.log(today);
-
   return (
     <Container className="max-sm:hidden absolute bottom-0 w-max max-w-full translate-y-1/2 left-1/2 -translate-x-1/2">
       <div className="bg-white text-dark-gray px-4 py-4 Z lg:px-8 max-w-7xl mx-auto rounded shadow-2xl">

@@ -25,7 +25,7 @@ const destinations = [
 
 export const Destination = () => {
   return (
-    <Container className="bg-dark-gray py-12">
+    <Container className="bg-black/90 py-12">
       <div>
         <span className="text-primary uppercase font-bold">
           Nos destinations
