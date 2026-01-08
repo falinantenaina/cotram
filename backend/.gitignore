@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+
+# Environment variables / Secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build and output directories
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Debug and IDE settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+Thumbs.db
