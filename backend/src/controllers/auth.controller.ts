@@ -4,10 +4,18 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import type { AuthRequest } from "../types/index.js";
 
-const generateToken = (id: string): string => {
-  return jwt.sign({ id }, process.env.JWT_SECRET as string, {
+const generateTokenandSetCookie = (id: string, res: Response): string => {
+  const token = jwt.sign({ id }, process.env.JWT_SECRET as string, {
     expiresIn: "7d",
   });
+
+  res.cookie("token", token, {
+    maxAge: 1000 * 60 * 60 * 24,
+    httpOnly: true,
+    secure: process.env.NODE_ENV == "production",
+  });
+
+  return token;
 };
 
 export const register = async (req: Request, res: Response) => {
@@ -29,7 +37,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const user = await User.create({ name, email, phone, password });
-    const token = generateToken(user._id.toString());
+    const token = generateTokenandSetCookie(user._id.toString(), res);
 
     res.status(201).json({
       success: true,
@@ -72,7 +80,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const token = generateToken(user._id.toString());
+    const token = generateTokenandSetCookie(user._id.toString(), res);
 
     res.json({
       success: true,
