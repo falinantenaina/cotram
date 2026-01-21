@@ -1,17 +1,64 @@
 import express from "express";
-import {
-  getMe,
-  login,
-  logout,
-  register,
-} from "../controllers/auth.controller.js";
-import { Protect } from "../middleware/auth.middleware.js";
+import { body } from "express-validator";
+import passport from "../config/passport.js";
+import * as authController from "../controllers/auth.controller.js";
+import { authLimiter } from "../middleware/security.middleware.js";
 
 const router = express.Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/logout", logout);
-router.get("/me", Protect, getMe);
+// Routes classiques
+router.post(
+  "/register",
+  authLimiter,
+  [
+    body("name").notEmpty().withMessage("Le nom est requis"),
+    body("email").isEmail().withMessage("Email invalide"),
+    body("password")
+      .isLength({ min: 6 })
+      .withMessage("Mot de passe min 6 caractères"),
+  ],
+  authController.register,
+);
+
+router.post(
+  "/login",
+  authLimiter,
+  [
+    body("identifier").notEmpty().withMessage("Email ou téléphone requis"),
+    body("password").notEmpty().withMessage("Mot de passe requis"),
+  ],
+  authController.login,
+);
+
+// Google OAuth
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] }),
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${process.env.FRONTEND_URL}/auth?error=google`,
+  }),
+  authController.googleAuthCallback,
+);
+
+// Email verification
+router.get("/verify-email/:token", authController.verifyEmail);
+
+// Password reset
+router.post(
+  "/forgot-password",
+  [body("email").isEmail().withMessage("Email invalide")],
+  authController.forgotPassword,
+);
+
+router.post("/reset-password/:token", [
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Mot de passe min 6 caractères"),
+]);
 
 export default router;
