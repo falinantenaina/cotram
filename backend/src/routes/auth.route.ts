@@ -61,4 +61,6 @@ router.post("/reset-password/:token", [
     .withMessage("Mot de passe min 6 caractères"),
 ]);
 
+router.post("/logout", authController.logout);
+
 export default router;
