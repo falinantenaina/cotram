@@ -86,10 +86,19 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     sendTokenResponse(user, 201, res);
-  } catch (error) {
+  } catch (error: any) {
+    console.log(error);
+    let messages;
+
+    if (error.name === "ValidationError") {
+      messages = Object.values(error.errors).map((err: any) => err.message);
+    } else {
+      messages = (error as Error).message;
+    }
+
     res.status(500).json({
       success: false,
-      message: (error as Error).message,
+      message: messages,
     });
   }
 };
