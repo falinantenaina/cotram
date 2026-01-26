@@ -7,12 +7,14 @@ const userSchema = new Schema<IUser>({
   name: {
     type: String,
     required: [true, "Le nom est requis"],
+    trim: true,
   },
   email: {
     type: String,
     required: [true, "L'email est requis"],
     unique: true,
     lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, "Email invalide"],
   },
   phone: {
     type: String,
@@ -51,13 +53,13 @@ const userSchema = new Schema<IUser>({
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password") || !this.password) return;
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 12);
 });
 
 userSchema.methods.comparePassword = async function (
   candidatePassword: string,
 ): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return await bcrypt.compare(candidatePassword, this.password!);
 };
 
 userSchema.methods.generateEmailVerificationToken = function (): string {

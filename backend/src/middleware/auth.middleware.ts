@@ -7,45 +7,45 @@ interface JwtPayload {
   id: string;
 }
 
-export const Protect = async (
+export const protect = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
-) => {
+  next: NextFunction,
+): Promise<void> => {
   try {
     let token: string | undefined;
 
     if (req.headers.authorization?.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
-    } else if (req.cookies?.token) {
+    } else if (req.cookies.token) {
       token = req.cookies.token;
     }
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
-        message: "Non autorisé, Token manquant",
+        message: "Non autorisé. Token manquant",
       });
+      return;
     }
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET as string,
     ) as JwtPayload;
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "Utilisateur non trouvé",
       });
+      return;
     }
 
     req.user = user;
-
     next();
   } catch (error) {
-    console.error("Protect middleware error :", error as Error);
     res.status(401).json({
       success: false,
       message: "Token invalide",
@@ -54,13 +54,29 @@ export const Protect = async (
 };
 
 export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
-        message: "Accès refué",
+        message: "Accès refusé",
       });
+      return;
     }
     next();
   };
+};
+
+export const requireEmailVerification = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (!req.user?.isEmailVerified) {
+    res.status(403).json({
+      success: false,
+      message: "Veuillez vérifier votre email avant de continuer",
+    });
+    return;
+  }
+  next();
 };
