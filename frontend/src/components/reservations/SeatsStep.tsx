@@ -57,7 +57,7 @@ export const SeatsStep = (props: Props) => {
                   key={seat.id}
                   onClick={() => props.handleSeatClick(seat.id)}
                   className={`col-span-2 h-16 rounded-lg border-2 border-gray-300 flex items-center justify-center font-semibold transition ${getSeatColor(
-                    seat.status
+                    seat.status,
                   )}`}
                   disabled={seat.status === "occupied"}
                 >
@@ -77,7 +77,7 @@ export const SeatsStep = (props: Props) => {
                   key={seat.id}
                   onClick={() => props.handleSeatClick(seat.id)}
                   className={`col-span-2 h-16 rounded-lg border-2 border-gray-300 flex items-center justify-center font-semibold transition ${getSeatColor(
-                    seat.status
+                    seat.status,
                   )}`}
                   disabled={seat.status === "occupied"}
                 >
@@ -99,7 +99,7 @@ export const SeatsStep = (props: Props) => {
                       key={seat.id}
                       onClick={() => props.handleSeatClick(seat.id)}
                       className={`col-span-2 h-16 rounded-lg border-2 border-gray-300 flex items-center justify-center font-semibold transition ${getSeatColor(
-                        seat.status
+                        seat.status,
                       )}`}
                       disabled={seat.status === "occupied"}
                     >
@@ -113,7 +113,7 @@ export const SeatsStep = (props: Props) => {
                       key={seat.id}
                       onClick={() => props.handleSeatClick(seat.id)}
                       className={`col-span-2 h-16 rounded-lg border-2 border-gray-300 flex items-center justify-center font-semibold transition ${getSeatColor(
-                        seat.status
+                        seat.status,
                       )}`}
                       disabled={seat.status === "occupied"}
                     >
@@ -130,7 +130,7 @@ export const SeatsStep = (props: Props) => {
                       key={seat.id}
                       onClick={() => props.handleSeatClick(seat.id)}
                       className={`col-span-2 h-16 rounded-lg border-2 border-gray-300 flex items-center justify-center font-semibold transition ${getSeatColor(
-                        seat.status
+                        seat.status,
                       )}`}
                       disabled={seat.status === "occupied"}
                     >
@@ -148,7 +148,7 @@ export const SeatsStep = (props: Props) => {
                   key={seat.id}
                   onClick={() => props.handleSeatClick(seat.id)}
                   className={`h-16 rounded-lg border-2 border-gray-300 flex items-center justify-center font-semibold transition ${getSeatColor(
-                    seat.status
+                    seat.status,
                   )}`}
                   disabled={seat.status === "occupied"}
                 >
