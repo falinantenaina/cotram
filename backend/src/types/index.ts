@@ -1,6 +1,8 @@
-import type { Document } from "mongoose";
+import type { Request } from "express";
+import { Document, Types } from "mongoose";
 
 export interface IUser extends Document {
+  _id: Types.ObjectId;
   name: string;
   email: string;
   phone?: string;
@@ -14,13 +16,24 @@ export interface IUser extends Document {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   createdAt: Date;
-  comparePassword(canditatePassword: string): Promise<boolean>;
+  comparePassword(candidatePassword: string): Promise<boolean>;
   generateEmailVerificationToken(): string;
   generatePasswordResetToken(): string;
 }
 
 export interface IRoute extends Document {
-  route: string;
+  _id: Types.ObjectId;
+  departure: string;
+  destination: string;
+  duration: string;
+  distance: number;
+  price: number;
+  isActive: boolean;
+}
+
+export interface ISchedule extends Document {
+  _id: Types.ObjectId;
+  route: Types.ObjectId | IRoute;
   date: Date;
   time: string;
   vehicle: string;
@@ -32,8 +45,9 @@ export interface IRoute extends Document {
 }
 
 export interface IReservation extends Document {
-  user: string;
-  schedule: string;
+  _id: Types.ObjectId;
+  user: Types.ObjectId | IUser;
+  schedule: Types.ObjectId | ISchedule;
   seats: number[];
   totalPrice: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";

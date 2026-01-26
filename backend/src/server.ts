@@ -6,17 +6,32 @@ import { connectDB } from "./config/database.js";
 
 import cookieParser from "cookie-parser";
 import passport from "passport";
+import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
+import reservationRoutes from "./routes/reservation.route.js";
+import routeRoutes from "./routes/route.route.js";
+import scheduleRoutes from "./routes/schedule.route.js";
+import userRoutes from "./routes/user.route.js";
 
 dotenv.config();
 
+import compression from "compression";
+import helmet from "helmet";
 import "./config/passport.js";
 const PORT = process.env.PORT || 5000;
 
 const app = express();
 
+app.use(helmet());
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  }),
+);
+
+app.use(compression());
 
 app.use(
   session({
@@ -32,6 +47,33 @@ app.use(passport.session());
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/routes", routeRoutes);
+app.use("/api/schedules", scheduleRoutes);
+app.use("/api/reservations", reservationRoutes);
+app.use("/api/admin", adminRoutes);
+
+app.get("/health", (req, res) => {
+  res.json({ status: "OK", timestamp: new Date() });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route non trouvée",
+  });
+});
+
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Erreur serveur",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
+});
 
 (async () => {
   await connectDB();

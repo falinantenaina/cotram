@@ -4,6 +4,8 @@
     "module": "nodenext",
     "target": "esnext",
     "types": [],
+    "rootDir": "src",
+    "outDir": "dist",
 
     "sourceMap": true,
     "declaration": true,
