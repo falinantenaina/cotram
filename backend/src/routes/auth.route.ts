@@ -55,11 +55,15 @@ router.post(
   authController.forgotPassword,
 );
 
-router.post("/reset-password/:token", [
-  body("password")
-    .isLength({ min: 6 })
-    .withMessage("Mot de passe min 6 caractères"),
-]);
+router.post(
+  "/reset-password/:token",
+  [
+    body("password")
+      .isLength({ min: 6 })
+      .withMessage("Mot de passe min 6 caractères"),
+  ],
+  authController.resetPassword,
+);
 
 router.post("/logout", authController.logout);
 
