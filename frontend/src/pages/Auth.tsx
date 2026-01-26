@@ -79,8 +79,7 @@ const Auth = () => {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex gap-2">
                 <AlertCircle className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-800">
-                  {(error as any)?.response?.data?.message ||
-                    "Une erreur est survenue"}
+                  {error?.response?.data?.message || "Une erreur est survenue"}
                 </p>
               </div>
             )}
