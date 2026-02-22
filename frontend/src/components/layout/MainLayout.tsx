@@ -1,12 +1,19 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Footer } from "../Footer";
 import { Navbar } from "../Navbar";
 
 const MainLayout = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
+  if (isAdminRoute) {
+    return <Outlet />;
+  }
+
   return (
-    <div className="max-w-480 mx-auto">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main>
+      <main className="flex-1">
         <Outlet />
       </main>
       <Footer />

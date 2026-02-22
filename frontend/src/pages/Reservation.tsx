@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/reservations/Header";
-import { ProgressBar } from "../components/reservations/ProgressBar";
 import { Resume } from "../components/reservations/Resume";
 import { RouteStep } from "../components/reservations/RouteStep";
 import { SeatsStep } from "../components/reservations/SeatsStep";
 import { TimeStep } from "../components/reservations/TimeStep";
-import { Container } from "../components/ui/Container";
 import { useAuth } from "../hooks/useAuth";
 
 import type { Schedule } from "../api/scheduleApi";
@@ -19,14 +17,12 @@ const Reservation = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Zustand store pour état temporaire
   const {
     scheduleId,
     selectedSeats,
     departure,
     destination,
     date,
-
     setScheduleId,
     setTripDetails,
     toggleSeat,
@@ -43,7 +39,6 @@ const Reservation = () => {
   );
   const [seats, setSeats] = useState<Seat[]>([]);
 
-  // Fetch schedules avec React Query
   const { schedules, isLoading: isLoadingSchedules } = useSchedules(
     currentStep === "time"
       ? {
@@ -54,24 +49,18 @@ const Reservation = () => {
       : undefined,
   );
 
-  // Créer réservation
   const { createReservation, isLoading: isCreating } = useCreateReservation();
 
-  // Rediriger si non connecté
   useEffect(() => {
     if (!user && currentStep === "seats") {
       navigate("/auth");
     }
   }, [user, currentStep, navigate]);
 
-  // Initialiser les sièges quand un horaire est sélectionné
   useEffect(() => {
     if (selectedSchedule) {
-      const initialSeats: Seat[] = [];
       const occupiedSeats = selectedSchedule.occupiedSeats || [];
-
-      // Rangée 1 (2 sièges)
-      initialSeats.push(
+      const initialSeats: Seat[] = [
         {
           id: 1,
           row: 1,
@@ -84,57 +73,91 @@ const Reservation = () => {
           position: "right",
           status: occupiedSeats.includes(2) ? "occupied" : "available",
         },
-      );
-
-      // Rangée 2 (4 sièges)
-      for (let i = 3; i <= 6; i++) {
-        initialSeats.push({
-          id: i,
+        {
+          id: 3,
           row: 2,
-          position: i === 3 || i === 4 ? "left" : "middle",
-          status: occupiedSeats.includes(i) ? "occupied" : "available",
-        });
-      }
-
-      // Rangées 3-4 (3 sièges chacune)
-      for (let row = 3; row <= 4; row++) {
-        const startId = row === 3 ? 7 : 10;
-        initialSeats.push(
-          {
-            id: startId,
-            row,
-            position: "left",
-            status: occupiedSeats.includes(startId) ? "occupied" : "available",
-          },
-          {
-            id: startId + 1,
-            row,
-            position: "middle",
-            status: occupiedSeats.includes(startId + 1)
-              ? "occupied"
-              : "available",
-          },
-          {
-            id: startId + 2,
-            row,
-            position: "right",
-            status: occupiedSeats.includes(startId + 2)
-              ? "occupied"
-              : "available",
-          },
-        );
-      }
-
-      // Rangée 5 (4 sièges)
-      for (let i = 13; i <= 16; i++) {
-        initialSeats.push({
-          id: i,
+          position: "left",
+          status: occupiedSeats.includes(3) ? "occupied" : "available",
+        },
+        {
+          id: 4,
+          row: 2,
+          position: "left",
+          status: occupiedSeats.includes(4) ? "occupied" : "available",
+        },
+        {
+          id: 5,
+          row: 2,
+          position: "middle",
+          status: occupiedSeats.includes(5) ? "occupied" : "available",
+        },
+        {
+          id: 6,
+          row: 2,
+          position: "right",
+          status: occupiedSeats.includes(6) ? "occupied" : "available",
+        },
+        {
+          id: 7,
+          row: 3,
+          position: "left",
+          status: occupiedSeats.includes(7) ? "occupied" : "available",
+        },
+        {
+          id: 8,
+          row: 3,
+          position: "middle",
+          status: occupiedSeats.includes(8) ? "occupied" : "available",
+        },
+        {
+          id: 9,
+          row: 3,
+          position: "right",
+          status: occupiedSeats.includes(9) ? "occupied" : "available",
+        },
+        {
+          id: 10,
+          row: 4,
+          position: "left",
+          status: occupiedSeats.includes(10) ? "occupied" : "available",
+        },
+        {
+          id: 11,
+          row: 4,
+          position: "middle",
+          status: occupiedSeats.includes(11) ? "occupied" : "available",
+        },
+        {
+          id: 12,
+          row: 4,
+          position: "right",
+          status: occupiedSeats.includes(12) ? "occupied" : "available",
+        },
+        {
+          id: 13,
           row: 5,
           position: "middle",
-          status: occupiedSeats.includes(i) ? "occupied" : "available",
-        });
-      }
-
+          status: occupiedSeats.includes(13) ? "occupied" : "available",
+        },
+        {
+          id: 14,
+          row: 5,
+          position: "middle",
+          status: occupiedSeats.includes(14) ? "occupied" : "available",
+        },
+        {
+          id: 15,
+          row: 5,
+          position: "middle",
+          status: occupiedSeats.includes(15) ? "occupied" : "available",
+        },
+        {
+          id: 16,
+          row: 5,
+          position: "middle",
+          status: occupiedSeats.includes(16) ? "occupied" : "available",
+        },
+      ];
       setSeats(initialSeats);
     }
   }, [selectedSchedule]);
@@ -146,13 +169,14 @@ const Reservation = () => {
     setSeats((prev) =>
       prev.map((s) => {
         if (s.id === seatId) {
-          const newStatus = s.status === "selected" ? "available" : "selected";
-          return { ...s, status: newStatus };
+          return {
+            ...s,
+            status: s.status === "selected" ? "available" : "selected",
+          };
         }
         return s;
       }),
     );
-
     toggleSeat(seatId);
   };
 
@@ -170,23 +194,17 @@ const Reservation = () => {
 
   const handleConfirmReservation = async () => {
     if (!scheduleId || selectedSeats.length === 0) return;
-
     try {
-      await createReservation({
-        scheduleId,
-        seats: selectedSeats,
-      });
-      // La redirection et le clear sont gérés dans le hook
+      await createReservation({ scheduleId, seats: selectedSeats });
     } catch (error) {
       console.error("Erreur réservation:", error);
     }
   };
 
   return (
-    <div className="bg-white min-h-screen">
-      <Container className="py-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         <Header currentStep={currentStep} setCurrentStep={setCurrentStep} />
-        <ProgressBar currentStep={currentStep} />
 
         {currentStep === "route" && (
           <RouteStep
@@ -214,7 +232,7 @@ const Reservation = () => {
         )}
 
         {currentStep === "seats" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <SeatsStep seats={seats} handleSeatClick={handleSeatClick} />
             <Resume
               departure={localDeparture}
@@ -229,7 +247,7 @@ const Reservation = () => {
             />
           </div>
         )}
-      </Container>
+      </div>
     </div>
   );
 };

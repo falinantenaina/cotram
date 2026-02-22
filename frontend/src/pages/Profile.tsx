@@ -1,4 +1,11 @@
-import { CheckCircle, Mail, Phone, Shield, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  LogOut,
+  Mail,
+  Phone,
+  Shield,
+  XCircle,
+} from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { Container } from "../components/ui/Container";
 import { useAuth } from "../hooks/useAuth";
@@ -6,89 +13,114 @@ import { useAuth } from "../hooks/useAuth";
 const Profile = () => {
   const { user, logout } = useAuth();
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <Container className="py-12">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Mon Profil</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-100">
+        <Container className="py-6">
+          <h1 className="text-2xl font-black text-gray-900">Mon Profil</h1>
+          <p className="text-gray-400 text-sm mt-0.5">
+            Gérez vos informations personnelles
+          </p>
+        </Container>
+      </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          {/* Avatar */}
-          <div className="flex items-center gap-4 mb-6 pb-6 border-b">
-            {user.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="size-20 rounded-full"
-              />
-            ) : (
-              <div className="size-20 rounded-full bg-primary flex items-center justify-center text-black text-2xl font-bold">
-                {user.name[0]}
-              </div>
-            )}
-            <div>
-              <h2 className="text-2xl font-bold">{user.name}</h2>
-              <p className="text-gray-600">
-                {user.role === "admin" ? "Administrateur" : "Utilisateur"}
-              </p>
-            </div>
-          </div>
-
-          {/* Informations */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Mail className="size-5 text-gray-400" />
-              <div className="flex-1">
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium">{user.email}</p>
-              </div>
-              {user.isEmailVerified ? (
-                <div className="flex items-center gap-1 text-green-600">
-                  <CheckCircle className="size-5" />
-                  <span className="text-sm">Vérifié</span>
-                </div>
+      <Container className="py-8">
+        <div className="max-w-lg mx-auto space-y-4">
+          {/* Avatar + info */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="flex items-center gap-5 mb-6 pb-6 border-b border-gray-50">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="size-16 rounded-2xl ring-2 ring-primary/20"
+                />
               ) : (
-                <div className="flex items-center gap-1 text-orange-600">
-                  <XCircle className="size-5" />
-                  <span className="text-sm">Non vérifié</span>
+                <div className="size-16 rounded-2xl bg-gradient-to-br from-primary to-amber-400 flex items-center justify-center text-black text-2xl font-black">
+                  {user.name[0]}
                 </div>
               )}
+              <div>
+                <h2 className="text-xl font-black text-gray-900">
+                  {user.name}
+                </h2>
+                <span
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full mt-1 inline-block ${
+                    user.role === "admin"
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {user.role === "admin" ? "Administrateur" : "Voyageur"}
+                </span>
+              </div>
             </div>
 
-            {user.phone && (
-              <div className="flex items-center gap-3">
-                <Phone className="size-5 text-gray-400" />
-                <div>
-                  <p className="text-sm text-gray-600">Téléphone</p>
-                  <p className="font-medium">{user.phone}</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="size-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Mail size={15} className="text-gray-400" />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-400 mb-0.5">Email</p>
+                  <p className="font-semibold text-gray-900 text-sm truncate">
+                    {user.email}
+                  </p>
+                </div>
+                {user.isEmailVerified ? (
+                  <div className="flex items-center gap-1 text-emerald-600 shrink-0">
+                    <CheckCircle size={16} />
+                    <span className="text-xs font-semibold">Vérifié</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-orange-500 shrink-0">
+                    <XCircle size={16} />
+                    <span className="text-xs font-semibold">Non vérifié</span>
+                  </div>
+                )}
               </div>
-            )}
 
-            <div className="flex items-center gap-3">
-              <Shield className="size-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-600">Rôle</p>
-                <p className="font-medium capitalize">{user.role}</p>
+              {user.phone && (
+                <div className="flex items-center gap-4">
+                  <div className="size-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                    <Phone size={15} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Téléphone</p>
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {user.phone}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-4">
+                <div className="size-9 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Shield size={15} className="text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Rôle</p>
+                  <p className="font-semibold text-gray-900 text-sm capitalize">
+                    {user.role}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="space-y-3">
+          {/* Logout */}
           <button
             onClick={() => logout()}
-            className="w-full bg-red-500 text-white py-3 px-4 rounded font-semibold hover:bg-red-600"
+            className="w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 font-semibold py-3.5 px-4 rounded-2xl hover:bg-red-50 transition-colors"
           >
+            <LogOut size={16} />
             Se déconnecter
           </button>
         </div>
-      </div>
-    </Container>
+      </Container>
+    </div>
   );
 };
 

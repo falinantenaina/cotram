@@ -1,74 +1,211 @@
-import { Calendar, Check } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  ChevronDown,
+  MapPin,
+  Shield,
+  Star,
+  Zap,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import hero from "../assets/hero.webp";
-import { TravelFinder } from "./TravelFinder";
-import { Button } from "./ui/Button";
-import { Container } from "./ui/Container";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+  const today = new Date().toISOString().split("T")[0];
+
   return (
-    <div className="bg-black/90 text-white/80 relative sm:pb-16 py-12 md:py-16 lg:py-20 xl:py-24">
-      <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 md:space-x-4 lg:space-x-12">
-          <div className="space-y-4 md:space-y-8">
-            <div className="text-primary bg-primary/10 rounded-full py-1 px-3 text-sm w-max">
-              Le confort à chaque kilomètre
-            </div>
-            <h1 className="text-white font-bold text-2xl lg:text-4xl">
-              Voyagez entre <span className="text-primary">Tana</span>,{" "}
-              <span className="text-primary">Ambatolampy</span> et{" "}
-              <span className="text-primary">Antsirabe</span>
-            </h1>
-            <div>
-              <p className="text-white/60">
-                CO Plus vous offre une expérience de voyage premium.
-              </p>
-              <p className="text-white/60">
-                Sécurité, pontualité et confort dans nos véhicules modernes noir
-                et gris
-              </p>
-            </div>
-            {/* Button */}
-            <div className="flex max-[1128px]:flex-col gap-4">
-              <Button>
-                <Calendar />
-                <span>Réserver maintenant</span>
-              </Button>
-              <Button variant="secondary">Voir les tarifs</Button>
-            </div>
-            <ul className="flex space-x-4">
-              <li className="flex items-center space-x-2">
-                <div className="border border-primary rounded-full flex items-center justify-center p-1 size-4 text-primary">
-                  <Check className="size-4" />
-                </div>
-                <span className="text-white/60">Wi-Fi gratuit</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <div className="border border-primary rounded-full flex items-center justify-center p-1 size-4 text-primary">
-                  <Check className="size-4" />
-                </div>
-                <span className="text-white/60">Départs quotidiens</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <div className="border border-primary rounded-full flex items-center justify-center p-1 size-4 text-primary">
-                  <Check className="size-4" />
-                </div>
-                <span className="text-white/60">Sièges spacieux</span>
-              </li>
-            </ul>
-          </div>
-          <div className="max-md:hidden flex items-center justify-center">
-            <div className="relative">
-              <img
-                src={hero}
-                alt="Hero image"
-                className="inset-0 z-50 w-150 h-100 rounded object-cover"
-              />
-              <div className="w-full absolute inset-0 bg-black/50"></div>
-            </div>
+    <section className="relative bg-[#0a0a0a] overflow-hidden min-h-[92vh] flex flex-col">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img
+          src={hero}
+          alt="Transport Cotram"
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/80 via-[#0a0a0a]/60 to-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent" />
+      </div>
+
+      {/* Decorative glow */}
+      <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative flex-1 flex flex-col max-w-7xl mx-auto px-4 md:px-8 pt-16 pb-8 w-full">
+        {/* Badge */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
+            <Star size={11} fill="currentColor" />
+            Transport Premium — Madagascar
           </div>
         </div>
-      </Container>
-      <TravelFinder />
-    </div>
+
+        {/* Headline */}
+        <div className="max-w-3xl">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
+            Voyagez
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-amber-300">
+              en confiance
+            </span>
+            vers le sud
+          </h1>
+          <p className="text-white/50 text-lg md:text-xl max-w-xl leading-relaxed mb-10">
+            Antananarivo • Ambatolampy • Antsirabe. Réservez votre siège en
+            ligne, voyagez avec ponctualité et confort.
+          </p>
+
+          {/* Feature pills */}
+          <div className="flex flex-wrap gap-3 mb-10">
+            {[
+              { icon: <Zap size={13} />, label: "Réservation instantanée" },
+              { icon: <Shield size={13} />, label: "Paiement sécurisé" },
+              { icon: <Star size={13} />, label: "Confort garanti" },
+            ].map((f) => (
+              <div
+                key={f.label}
+                className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white/60 px-3 py-1.5 rounded-full text-xs"
+              >
+                {f.icon}
+                {f.label}
+              </div>
+            ))}
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => navigate("/reservation")}
+              className="group flex items-center justify-center gap-2 bg-primary text-black font-bold px-8 py-4 rounded-2xl hover:bg-primary/90 transition-all hover:shadow-2xl hover:shadow-primary/30 active:scale-95 text-base"
+            >
+              <Calendar size={18} />
+              Réserver maintenant
+              <ArrowRight
+                size={16}
+                className="group-hover:translate-x-1 transition-transform"
+              />
+            </button>
+            <button
+              onClick={() =>
+                document
+                  .getElementById("search-form")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white/80 font-semibold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all text-base"
+            >
+              Voir les horaires
+            </button>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="mt-auto pt-16 grid grid-cols-3 gap-4 max-w-md">
+          {[
+            { value: "3", label: "Villes desservies" },
+            { value: "6+", label: "Départs/jour" },
+            { value: "16", label: "Places par bus" },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <div className="text-2xl md:text-3xl font-black text-primary">
+                {stat.value}
+              </div>
+              <div className="text-white/40 text-xs mt-0.5">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Search Form */}
+      <div
+        id="search-form"
+        className="relative max-w-7xl mx-auto px-4 md:px-8 w-full pb-12"
+      >
+        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+          <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-4">
+            Rechercher un trajet
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="relative">
+              <label className="block text-white/40 text-xs mb-1.5 font-medium">
+                Départ
+              </label>
+              <div className="relative">
+                <MapPin
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
+                />
+                <select className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-colors appearance-none">
+                  <option value="" className="bg-gray-900">
+                    Sélectionnez
+                  </option>
+                  <option value="Antananarivo" className="bg-gray-900">
+                    Antananarivo
+                  </option>
+                  <option value="Antsirabe" className="bg-gray-900">
+                    Antsirabe
+                  </option>
+                  <option value="Ambatolampy" className="bg-gray-900">
+                    Ambatolampy
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div className="relative">
+              <label className="block text-white/40 text-xs mb-1.5 font-medium">
+                Destination
+              </label>
+              <div className="relative">
+                <MapPin
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
+                />
+                <select className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-colors appearance-none">
+                  <option value="" className="bg-gray-900">
+                    Sélectionnez
+                  </option>
+                  <option value="Antananarivo" className="bg-gray-900">
+                    Antananarivo
+                  </option>
+                  <option value="Antsirabe" className="bg-gray-900">
+                    Antsirabe
+                  </option>
+                  <option value="Ambatolampy" className="bg-gray-900">
+                    Ambatolampy
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div className="relative">
+              <label className="block text-white/40 text-xs mb-1.5 font-medium">
+                Date
+              </label>
+              <div className="relative">
+                <Calendar
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
+                />
+                <input
+                  type="date"
+                  min={today}
+                  defaultValue={today}
+                  className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 transition-colors [color-scheme:dark]"
+                />
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/reservation")}
+            className="mt-4 w-full bg-primary text-black font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+          >
+            <ArrowRight size={18} />
+            Rechercher les trajets disponibles
+          </button>
+        </div>
+      </div>
+
+      {/* Scroll hint */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-1 text-white/20 animate-bounce">
+        <ChevronDown size={18} />
+      </div>
+    </section>
   );
 };
