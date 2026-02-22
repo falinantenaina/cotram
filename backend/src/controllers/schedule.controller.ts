@@ -9,19 +9,15 @@ export const getSchedules = async (
   try {
     const { departure, destination, date } = req.query;
 
-    // Construire le filtre de recherche
     let filter: any = { status: { $ne: "cancelled" } };
 
-    // Si on a les filtres de trajet
+    // Filtre par route
     if (departure || destination) {
       const routeFilter: any = {};
       if (departure) routeFilter.departure = departure;
       if (destination) routeFilter.destination = destination;
-
-      // Trouver les routes correspondantes
       const routes = await Route.find(routeFilter);
-      const routeIds = routes.map((r: any) => r._id);
-      filter.route = { $in: routeIds };
+      filter.route = { $in: routes.map((r: any) => r._id) };
     }
 
     // Filtre par date
@@ -29,16 +25,23 @@ export const getSchedules = async (
       const searchDate = new Date(date as string);
       const nextDay = new Date(searchDate);
       nextDay.setDate(nextDay.getDate() + 1);
-
-      filter.date = {
-        $gte: searchDate,
-        $lt: nextDay,
-      };
+      filter.date = { $gte: searchDate, $lt: nextDay };
     }
 
-    const schedules = await Schedule.find(filter)
+    let schedules = await Schedule.find(filter)
       .populate("route")
       .sort({ date: 1, time: 1 });
+
+    // Exclure les départs dont date+heure est déjà passée
+    const now = new Date();
+
+    schedules = schedules.filter((schedule) => {
+      // Construire un Date complet à partir de schedule.date + schedule.time
+      const [hours, minutes] = schedule.time.split(":").map(Number);
+      const departure = new Date(schedule.date);
+      departure.setHours(hours!, minutes!, 0, 0);
+      return departure > now;
+    });
 
     res.json({ success: true, schedules });
   } catch (error) {

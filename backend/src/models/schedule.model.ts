@@ -11,12 +11,6 @@ const scheduleSchema = new Schema<ISchedule>(
     date: {
       type: Date,
       required: [true, "La date est requise"],
-      validate: {
-        validator: function (v: Date) {
-          return v >= new Date();
-        },
-        message: "La date doit être dans le futur",
-      },
     },
     time: {
       type: String,
@@ -80,6 +74,19 @@ const scheduleSchema = new Schema<ISchedule>(
 // Index pour recherche par date et route
 scheduleSchema.index({ route: 1, date: 1, time: 1 });
 scheduleSchema.index({ date: 1, status: 1 });
+
+// Validation : vérifier que la date+heure combinées sont dans le futur
+scheduleSchema.pre("save", function () {
+  if (this.isNew && this.date && this.time) {
+    const [hours, minutes] = this.time.split(":").map(Number);
+    const departure = new Date(this.date);
+    departure.setHours(hours!, minutes!, 0, 0);
+
+    if (departure <= new Date()) {
+      new Error("Le départ doit être dans le futur (date + heure)");
+    }
+  }
+});
 
 // Validation: sièges disponibles cohérents
 scheduleSchema.pre("save", function (next) {
