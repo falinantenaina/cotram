@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar, MapPin, RotateCcw } from "lucide-react";
+import { ArrowRight, Calendar, Clock, MapPin, RotateCcw } from "lucide-react";
 import type { Step } from "../../type";
 
 type Props = {
@@ -21,6 +21,12 @@ const quickDates = [
 
 export const RouteStep = (props: Props) => {
   const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const isToday = props.selectedDate === todayStr;
+  const currentHour = today.getHours();
+  const currentMinute = today.getMinutes();
+  // Format HH:MM pour affichage
+  const nowStr = `${String(currentHour).padStart(2, "0")}:${String(currentMinute).padStart(2, "0")}`;
 
   const handleSwap = () => {
     const tmp = props.departure;
@@ -168,6 +174,17 @@ export const RouteStep = (props: Props) => {
 
         {/* Footer */}
         <div className="px-6 md:px-8 pb-8">
+          {/* Info banner when today is selected */}
+          {isToday && (
+            <div className="flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <Clock size={15} className="text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Il est actuellement <strong>{nowStr}</strong>. Seuls les départs
+                après cette heure seront affichés.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={() => props.setCurrentStep("time")}
             disabled={!canContinue}

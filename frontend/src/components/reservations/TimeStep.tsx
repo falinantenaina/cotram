@@ -64,12 +64,16 @@ export const TimeStep = (props: Props) => {
             </div>
           ) : props.schedules.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-2xl">
-              <div className="text-4xl mb-4">🚌</div>
+              <div className="text-4xl mb-4">🕐</div>
               <p className="text-gray-700 font-semibold mb-1">
-                Aucun horaire disponible
+                {props.selectedDate === new Date().toISOString().split("T")[0]
+                  ? "Plus de départs disponibles aujourd'hui"
+                  : "Aucun horaire disponible"}
               </p>
               <p className="text-gray-400 text-sm">
-                Essayez une autre date ou un autre trajet
+                {props.selectedDate === new Date().toISOString().split("T")[0]
+                  ? "Tous les départs d'aujourd'hui sont déjà partis. Essayez demain !"
+                  : "Essayez une autre date ou un autre trajet"}
               </p>
               <button
                 onClick={() => props.setCurrentStep("route")}
