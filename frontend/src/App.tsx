@@ -16,6 +16,9 @@ import Profile from "./pages/Profile";
 import Reservation from "./pages/Reservation";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import AdminDrivers from "./pages/admin/Drivers";
+import GenerateSchedules from "./pages/admin/Generateschedules";
+import TripHistory from "./pages/admin/Triphistory";
 import AdminUsers from "./pages/admin/Users";
 
 const App = () => {
@@ -83,6 +86,18 @@ const App = () => {
             {
               path: "schedules",
               element: <AdminSchedules />,
+            },
+            {
+              path: "schedules/generate",
+              element: <GenerateSchedules />,
+            },
+            {
+              path: "drivers",
+              element: <AdminDrivers />,
+            },
+            {
+              path: "trips/history",
+              element: <TripHistory />,
             },
             {
               path: "users",
