@@ -65,6 +65,27 @@ const scheduleSchema = new Schema<ISchedule>(
       },
       default: "scheduled",
     },
+    driver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Driver",
+      default: null,
+    },
+    vehicleNumber: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    history: [
+      {
+        action: { type: String, required: true },
+        performedBy: { type: String, default: "admin" },
+        timestamp: { type: Date, default: Date.now },
+        details: { type: String },
+      },
+    ],
+    actualDeparture: { type: Date, default: null },
+    actualArrival: { type: Date, default: null },
+    notes: { type: String, default: null },
   },
   {
     timestamps: true,

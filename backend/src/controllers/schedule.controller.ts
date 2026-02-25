@@ -150,3 +150,53 @@ export const deleteSchedule = async (
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
+
+export const getSheduleHistory = async (req: Request, res: Response) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      routeId,
+      driverId,
+      from,
+      to,
+      status,
+    } = req.query;
+
+    const filter: Record<string, unknown> = {};
+
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $in: ["completed", "cancelled", "in_progress"] };
+    }
+
+    if (routeId) filter.route = routeId;
+    if (driverId) filter.driver = driverId;
+    if (from || to) {
+      filter.date = {};
+      if (from) (filter.date as any).$gte = new Date(String(from));
+      if (to) (filter.date as any).$lte = new Date(String(to));
+    }
+
+    const [schedules, total] = await Promise.all([
+      Schedule.find(filter)
+        .populate("route", "departure destination duration")
+        .populate("driver", "firstName lastName phone vehicleNumber")
+        .sort({ date: -1 })
+        .skip((Number(page) - 1) * Number(limit))
+        .limit(Number(limit)),
+      Schedule.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      schedules,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: (err as Error).message });
+  }
+};

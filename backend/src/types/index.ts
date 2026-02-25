@@ -31,6 +31,15 @@ export interface IRoute extends Document {
   isActive: boolean;
 }
 
+export interface IHistory {
+  action: string;
+  performedBy?: string;
+  timestamp?: Date;
+  details?: string;
+  previousValue?: string;
+  newValue?: string;
+}
+
 export interface ISchedule extends Document {
   _id: Types.ObjectId;
   route: Types.ObjectId | IRoute;
@@ -42,6 +51,12 @@ export interface ISchedule extends Document {
   occupiedSeats: number[];
   price: number;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  driver?: Types.ObjectId | IDriver;
+  vehicleNumber?: string;
+  history?: IHistory[];
+  actualDeparture?: Date;
+  actualArrival?: Date;
+  notes?: string;
 }
 
 export interface IReservation extends Document {
@@ -55,6 +70,22 @@ export interface IReservation extends Document {
   bookingReference: string;
   createdAt: Date;
   expiresAt: Date;
+}
+
+export interface IDriver extends Document {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  licenseNumber: string;
+  vehicleNumber: string; // Numéro d'immatriculation
+  vehicleType: string; // Crafter, Sprinter, Transit
+  status: "available" | "on_trip" | "off_duty" | "suspended";
+  totalTrips: number;
+  joinedAt: Date;
+  notes?: string;
+  avatar?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface AuthRequest extends Request {
