@@ -18,6 +18,8 @@ dotenv.config();
 import compression from "compression";
 import helmet from "helmet";
 import "./config/passport.js";
+import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
+import driverRouter from "./routes/driver.route.js";
 const PORT = process.env.PORT || 5000;
 
 const app = express();
@@ -53,6 +55,8 @@ app.use("/api/schedules", scheduleRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/admin", adminRoutes);
 
+app.use("/api/drivers", driverRouter);
+
 app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date() });
 });
@@ -79,5 +83,6 @@ app.use((err: any, req: any, res: any, next: any) => {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`The server is running on http://localhost:${PORT}`);
+    startScheduleAutoStatusJob();
   });
 })();
