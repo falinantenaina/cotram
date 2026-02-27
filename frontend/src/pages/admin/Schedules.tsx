@@ -157,6 +157,14 @@ function driverInitials(d: Driver) {
   return `${d.firstName[0] ?? ""}${d.lastName[0] ?? ""}`.toUpperCase();
 }
 
+// Formate une Date en "YYYY-MM-DD" en heure LOCALE (pas UTC)
+function toLocalDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // ─── MiniStat ─────────────────────────────────────────────────────────────────
 function MiniStat({
   label,
@@ -690,7 +698,7 @@ function CalendarView({
   const totalCells = Math.ceil((startOffset + lastDay.getDate()) / 7) * 7;
 
   const byDate = schedules.reduce<Record<string, Schedule[]>>((acc, s) => {
-    const k = s.date.split("T")[0]!;
+    const k = toLocalDateKey(new Date(s.date));
     if (!acc[k]) acc[k] = [];
     acc[k].push(s);
     return acc;
@@ -743,7 +751,7 @@ function CalendarView({
           const dayNum = i - startOffset + 1;
           const isValid = dayNum >= 1 && dayNum <= lastDay.getDate();
           const cellDate = isValid ? new Date(year, month, dayNum) : null;
-          const dateKey = cellDate ? cellDate.toISOString().split("T")[0]! : "";
+          const dateKey = cellDate ? toLocalDateKey(cellDate) : "";
           const daySchedules = byDate[dateKey] ?? [];
           const isToday =
             cellDate?.toDateString() === new Date().toDateString();
@@ -1229,7 +1237,7 @@ export default function AdminSchedules() {
   nextWeek.setDate(today.getDate() + 7);
 
   const schedules = schedulesRaw.filter((s) => {
-    const d = new Date(s.date + "T00:00:00");
+    const d = new Date(toLocalDateKey(new Date(s.date)).replace(/-/g, "/"));
     d.setHours(0, 0, 0, 0);
     if (statusFilter !== "all" && s.status !== statusFilter) return false;
     if (routeFilter !== "all" && s.route._id !== routeFilter) return false;
@@ -1621,7 +1629,7 @@ export default function AdminSchedules() {
             {(() => {
               const grouped = schedules.reduce<Record<string, Schedule[]>>(
                 (acc, s) => {
-                  const k = s.date.split("T")[0]!;
+                  const k = toLocalDateKey(new Date(s.date));
                   if (!acc[k]) acc[k] = [];
                   acc[k].push(s);
                   return acc;
@@ -1632,7 +1640,8 @@ export default function AdminSchedules() {
               return Object.entries(grouped)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([dateKey, daySchedules]) => {
-                  const d = new Date(dateKey + "T00:00:00");
+                  const [y, mo, da] = dateKey.split("-").map(Number);
+                  const d = new Date(y!, mo! - 1, da!);
                   const isToday =
                     d.toDateString() === new Date().toDateString();
                   const isTomorrow =

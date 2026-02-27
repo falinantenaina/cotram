@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import Route from "../models/route.model.js";
 import Schedule from "../models/schedule.model.js";
+import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
 
 export const getSchedules = async (
   req: Request,
@@ -22,10 +23,9 @@ export const getSchedules = async (
 
     // Filtre par date
     if (date) {
-      const searchDate = new Date(date as string);
-      const nextDay = new Date(searchDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      filter.date = { $gte: searchDate, $lt: nextDay };
+      const searchDate = parseLocalDate(date as string);
+
+      filter.date = { $gte: searchDate, $lt: endOfLocalDay(searchDate) };
     }
 
     let schedules = await Schedule.find(filter)
@@ -175,8 +175,9 @@ export const getSheduleHistory = async (req: Request, res: Response) => {
     if (driverId) filter.driver = driverId;
     if (from || to) {
       filter.date = {};
-      if (from) (filter.date as any).$gte = new Date(String(from));
-      if (to) (filter.date as any).$lte = new Date(String(to));
+      if (from) (filter.date as any).$gte = parseLocalDate(String(from));
+      if (to)
+        (filter.date as any).$lte = endOfLocalDay(parseLocalDate(String(to)));
     }
 
     const [schedules, total] = await Promise.all([

@@ -5,6 +5,11 @@ import Reservation from "../models/reservation.model.js";
 import Route from "../models/route.model.js";
 import Schedule from "../models/schedule.model.js";
 import User from "../models/user.model.js";
+import {
+  endOfLocalDay,
+  parseLocalDate,
+  toLocalDateString,
+} from "../utils/date.utils.js";
 
 const router = express.Router();
 
@@ -374,12 +379,9 @@ router.get(
       if (driverId) filter.driver = driverId;
       if (from || to) {
         filter.date = {};
-        if (from) (filter.date as any).$gte = new Date(String(from));
-        if (to) {
-          const d = new Date(String(to));
-          d.setHours(23, 59, 59, 999);
-          (filter.date as any).$lte = d;
-        }
+        if (from) (filter.date as any).$gte = parseLocalDate(String(from));
+        if (to)
+          (filter.date as any).$lte = endOfLocalDay(parseLocalDate(String(to)));
       }
 
       const pageNum = Number(page);
@@ -466,8 +468,8 @@ router.post(
         return;
       }
 
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = parseLocalDate(startDate);
+      const end = endOfLocalDay(parseLocalDate(endDate));
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
 
@@ -530,137 +532,8 @@ router.post(
           }
 
           preview.push({
-            id: `${current.toISOString().split("T")[0]}-${time}`,
-            date: current.toISOString().split("T")[0]!,
-            dateFormatted: current.toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            }),
-            dayOfWeek: DAY_NAMES[current.getDay()]!,
-            time,
-            price: price || route.price,
-            vehicle: vehicle || "Crafter",
-            status,
-          });
-        }
-
-        current.setDate(current.getDate() + 1);
-      }
-
-      const summary = {
-        total: preview.length,
-        new: preview.filter((p) => p.status === "new").length,
-        exists: preview.filter((p) => p.status === "exists").length,
-        past: preview.filter((p) => p.status === "past").length,
-      };
-
-      res.json({
-        success: true,
-        route: {
-          _id: route._id,
-          departure: route.departure,
-          destination: route.destination,
-        },
-        preview,
-        summary,
-      });
-    } catch (error) {
-      console.error(error);
-      res
-        .status(500)
-        .json({ success: false, message: (error as Error).message });
-    }
-  },
-);
-
-// ─── Preview schedules (dry-run, no DB write) ─────────────────────────────────
-router.post(
-  "/schedules/preview",
-  protect,
-  authorize("admin"),
-  async (req, res) => {
-    try {
-      const { routeId, startDate, endDate, times, price, vehicle } = req.body;
-
-      if (!routeId || !startDate || !endDate || !times?.length) {
-        res.status(400).json({
-          success: false,
-          message: "routeId, startDate, endDate et times sont requis",
-        });
-        return;
-      }
-
-      const route = await Route.findById(routeId);
-      if (!route) {
-        res.status(404).json({ success: false, message: "Route non trouvée" });
-        return;
-      }
-
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-
-      if (start > end) {
-        res.status(400).json({
-          success: false,
-          message: "La date de début doit être avant la date de fin",
-        });
-        return;
-      }
-
-      const now = new Date();
-      const preview: {
-        id: string;
-        date: string;
-        dateFormatted: string;
-        dayOfWeek: string;
-        time: string;
-        price: number;
-        vehicle: string;
-        status: "new" | "exists" | "past";
-      }[] = [];
-
-      const DAY_NAMES = [
-        "Dimanche",
-        "Lundi",
-        "Mardi",
-        "Mercredi",
-        "Jeudi",
-        "Vendredi",
-        "Samedi",
-      ];
-
-      const current = new Date(start);
-
-      while (current <= end) {
-        for (const time of times) {
-          const [hours, minutes] = time.split(":").map(Number);
-          const departure = new Date(current);
-          departure.setHours(hours!, minutes!, 0, 0);
-
-          let status: "new" | "exists" | "past" = "new";
-
-          if (departure <= now) {
-            status = "past";
-          } else {
-            const dayStart = new Date(current);
-            dayStart.setHours(0, 0, 0, 0);
-            const dayEnd = new Date(current);
-            dayEnd.setHours(23, 59, 59, 999);
-
-            const existing = await Schedule.findOne({
-              route: routeId,
-              date: { $gte: dayStart, $lt: dayEnd },
-              time,
-            });
-            if (existing) status = "exists";
-          }
-
-          preview.push({
-            id: `${current.toISOString().split("T")[0]}-${time}`,
-            date: current.toISOString().split("T")[0]!,
+            id: `${toLocalDateString(current)}-${time}`,
+            date: toLocalDateString(current),
             dateFormatted: current.toLocaleDateString("fr-FR", {
               day: "numeric",
               month: "long",
@@ -735,7 +608,7 @@ router.post(
 
       for (const item of items) {
         const [hours, minutes] = item.time.split(":").map(Number);
-        const departure = new Date(item.date);
+        const departure = parseLocalDate(item.date);
         departure.setHours(hours!, minutes!, 0, 0);
 
         if (departure <= now) {
@@ -747,9 +620,9 @@ router.post(
           continue;
         }
 
-        const dayStart = new Date(item.date);
+        const dayStart = parseLocalDate(item.date);
         dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(item.date);
+        const dayEnd = endOfLocalDay(parseLocalDate(item.date));
         dayEnd.setHours(23, 59, 59, 999);
 
         const existing = await Schedule.findOne({
