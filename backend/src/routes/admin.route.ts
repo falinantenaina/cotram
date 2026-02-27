@@ -243,6 +243,7 @@ router.post(
         totalPrice,
         status: "confirmed",
         paymentStatus: "paid",
+        expiresAt: null,
       });
 
       schedule.occupiedSeats.push(...seats);
@@ -469,6 +470,8 @@ router.post(
       const end = new Date(endDate);
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
+
+      console.log("StartDate: ", startDate, "start: ", start);
 
       if (start > end) {
         res.status(400).json({

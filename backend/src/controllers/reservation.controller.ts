@@ -196,6 +196,7 @@ export const confirmReservation = async (
 
     reservation.status = "confirmed";
     reservation.paymentStatus = "paid";
+    reservation.expiresAt = null;
     await reservation.save();
 
     // Envoyer email de confirmation

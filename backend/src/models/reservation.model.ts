@@ -65,7 +65,10 @@ const reservationSchema = new Schema<IReservation>(
 reservationSchema.index({ user: 1, status: 1 });
 reservationSchema.index({ schedule: 1 });
 reservationSchema.index({ bookingReference: 1 });
-reservationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
+reservationSchema.index(
+  { expiresAt: 1 },
+  { expireAfterSeconds: 0, sparse: true },
+); // TTL index
 
 // Générer référence de réservation unique
 reservationSchema.pre("save", function (next) {
