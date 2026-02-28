@@ -20,7 +20,6 @@ import {
 import { useState } from "react";
 import api from "../../lib/axios";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Passenger = {
   reservationId: string;
   bookingReference: string;
@@ -71,7 +70,7 @@ type Stats = {
   pendingCount: number;
 };
 
-// ─── Passenger Modal ──────────────────────────────────────────────────────────
+// Passenger Modal
 function PassengerModal({
   schedule,
   onClose,
@@ -99,7 +98,7 @@ function PassengerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       {/* Backdrop */}
@@ -108,19 +107,24 @@ function PassengerModal({
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      {/* Modal - full bottom sheet on mobile */}
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Drag handle - mobile */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
+
         {/* Header */}
-        <div className="bg-gray-900 text-white p-6">
+        <div className="bg-gray-900 text-white p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2 text-gray-400 text-xs font-medium uppercase tracking-widest mb-1">
                 <Bus size={12} />
                 <span>Manifeste passagers</span>
               </div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
                 <span>{schedule.route.departure}</span>
-                <ArrowRight size={16} className="text-yellow-400" />
+                <ArrowRight size={16} className="text-yellow-400 shrink-0" />
                 <span>{schedule.route.destination}</span>
               </h2>
               <p className="text-gray-400 text-sm mt-1">
@@ -129,12 +133,12 @@ function PassengerModal({
                   day: "numeric",
                   month: "long",
                 })}{" "}
-                · {schedule.time} · {schedule.vehicle}
+                · {schedule.time}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors shrink-0 ml-2"
             >
               <X size={16} />
             </button>
@@ -145,7 +149,7 @@ function PassengerModal({
             <div className="flex justify-between text-xs text-gray-400">
               <span>{schedule.passengerCount} passagers</span>
               <span>
-                {schedule.availableSeats} places libres · {occupancyPct}% rempli
+                {schedule.availableSeats} libres · {occupancyPct}%
               </span>
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -165,7 +169,7 @@ function PassengerModal({
 
         {/* Summary chips */}
         {summary && (
-          <div className="flex gap-3 px-6 py-3 bg-gray-50 border-b border-gray-100">
+          <div className="flex flex-wrap gap-2 px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-100">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
               <CheckCircle size={11} />
               {summary.confirmed} confirmés
@@ -178,13 +182,13 @@ function PassengerModal({
             )}
             <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-gray-600">
               <CreditCard size={11} />
-              {summary.revenue.toLocaleString()} Ar encaissés
+              {summary.revenue.toLocaleString()} Ar
             </div>
           </div>
         )}
 
         {/* Passenger list */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {isLoading ? (
             <div className="flex flex-col items-center py-12">
               <div className="size-8 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-3" />
@@ -204,21 +208,21 @@ function PassengerModal({
             passengers.map((p, index) => (
               <div
                 key={p.reservationId}
-                className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
+                className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
               >
                 {/* Index */}
-                <div className="size-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                <div className="size-7 sm:size-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
                   {index + 1}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                     <p className="font-semibold text-gray-900 text-sm truncate">
                       {p.user.name}
                     </p>
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                         p.status === "confirmed"
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-amber-100 text-amber-700"
@@ -227,23 +231,22 @@ function PassengerModal({
                       {p.status === "confirmed" ? "Confirmé" : "En attente"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
                     {p.user.phone ? (
                       <span className="flex items-center gap-1">
                         <Phone size={10} />
                         {p.user.phone}
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 truncate max-w-[160px]">
+                      <span className="flex items-center gap-1 truncate max-w-[140px]">
                         <Mail size={10} />
-                        {p.user.email.includes("@cotram.local")
-                          ? "Walk-in (sans compte)"
-                          : p.user.email}
+                        <span className="truncate">
+                          {p.user.email.includes("@cotram.local")
+                            ? "Walk-in"
+                            : p.user.email}
+                        </span>
                       </span>
                     )}
-                    <span className="font-mono text-gray-300">
-                      {p.bookingReference}
-                    </span>
                   </div>
                 </div>
 
@@ -253,7 +256,7 @@ function PassengerModal({
                     {p.seats.map((s) => (
                       <span
                         key={s}
-                        className="size-6 rounded bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center"
+                        className="size-5 sm:size-6 rounded bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center"
                       >
                         {s}
                       </span>
@@ -269,7 +272,7 @@ function PassengerModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex justify-end">
           <button
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-colors"
@@ -282,7 +285,7 @@ function PassengerModal({
   );
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+// Stat Card
 function StatCard({
   label,
   value,
@@ -297,17 +300,19 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-start gap-4 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 flex items-start gap-3 sm:gap-4 hover:shadow-md transition-shadow">
       <div
-        className={`size-11 rounded-xl flex items-center justify-center shrink-0 ${accent}`}
+        className={`size-10 sm:size-11 rounded-xl flex items-center justify-center shrink-0 ${accent}`}
       >
-        <Icon size={20} />
+        <Icon size={18} />
       </div>
-      <div>
-        <p className="text-2xl font-black text-gray-900 leading-none mb-0.5">
+      <div className="min-w-0">
+        <p className="text-xl sm:text-2xl font-black text-gray-900 leading-none mb-0.5">
           {value}
         </p>
-        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-xs sm:text-sm text-gray-500 leading-tight">
+          {label}
+        </p>
         {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -357,16 +362,17 @@ export default function Dashboard() {
   const now = new Date();
   const nowStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-  // Split into upcoming vs departed
   const upcomingSchedules = todaySchedules.filter((s) => s.time >= nowStr);
   const departedSchedules = todaySchedules.filter((s) => s.time < nowStr);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-5 sm:space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Tableau de bord</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+            Tableau de bord
+          </h1>
           <p className="text-gray-500 text-sm mt-1">
             {new Date().toLocaleDateString("fr-FR", {
               weekday: "long",
@@ -377,8 +383,8 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats - 2 cols on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label="Réservations aujourd'hui"
             value={statsData?.todayReservations ?? "—"}
@@ -402,7 +408,7 @@ export default function Dashboard() {
             accent="bg-blue-100 text-blue-700"
           />
           <StatCard
-            label="En attente de confirmation"
+            label="En attente"
             value={statsData?.pendingCount ?? "—"}
             icon={AlertCircle}
             accent="bg-red-100 text-red-700"
@@ -412,29 +418,31 @@ export default function Dashboard() {
 
         {/* Today's schedule */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-gray-400" />
-              <h2 className="font-bold text-gray-900">Voyages d'aujourd'hui</h2>
+              <h2 className="font-bold text-gray-900 text-sm sm:text-base">
+                Voyages d'aujourd'hui
+              </h2>
               <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-semibold">
                 {todaySchedules.length}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
               <Activity size={11} className="text-emerald-500" />
               <span>Mise à jour en direct</span>
             </div>
           </div>
 
           {todaySchedules.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="text-center py-12 sm:py-16">
               <div className="size-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Bus size={20} className="text-gray-400" />
               </div>
               <p className="text-gray-500 font-medium">
                 Aucun voyage aujourd'hui
               </p>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-400 text-sm mt-1 px-4">
                 Les voyages planifiés pour aujourd'hui apparaîtront ici
               </p>
             </div>
@@ -449,38 +457,42 @@ export default function Dashboard() {
                   <button
                     key={schedule._id}
                     onClick={() => setSelectedSchedule(schedule)}
-                    className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group text-left"
+                    className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 sm:py-4 hover:bg-gray-50 transition-colors group text-left"
                   >
                     {/* Time */}
-                    <div className="text-center shrink-0 w-14">
-                      <p className="text-xl font-black text-gray-900">
+                    <div className="text-center shrink-0 w-12 sm:w-14">
+                      <p className="text-lg sm:text-xl font-black text-gray-900">
                         {schedule.time}
                       </p>
-                      <p className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded px-1">
+                      <p className="text-[9px] sm:text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded px-1">
                         À venir
                       </p>
                     </div>
 
                     {/* Route */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 font-semibold text-gray-900 text-sm">
-                        <MapPin size={12} className="text-gray-400 shrink-0" />
-                        {schedule.route.departure}
+                      <div className="flex items-center gap-1 font-semibold text-gray-900 text-sm">
+                        <MapPin size={11} className="text-gray-400 shrink-0" />
+                        <span className="truncate">
+                          {schedule.route.departure}
+                        </span>
                         <ArrowRight
-                          size={12}
+                          size={11}
                           className="text-gray-300 shrink-0"
                         />
-                        {schedule.route.destination}
+                        <span className="truncate">
+                          {schedule.route.destination}
+                        </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
                         {schedule.vehicle}
                       </p>
                     </div>
 
-                    {/* Occupancy */}
-                    <div className="shrink-0 w-32 hidden sm:block">
+                    {/* Occupancy - hidden on mobile */}
+                    <div className="shrink-0 w-28 hidden md:block">
                       <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>{schedule.passengerCount} passagers</span>
+                        <span>{schedule.passengerCount} pass.</span>
                         <span>{occupancy}%</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -500,7 +512,11 @@ export default function Dashboard() {
                     {/* Seats count */}
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-900 text-sm">
-                        {schedule.availableSeats} libres
+                        {schedule.availableSeats}
+                        <span className="text-gray-400 font-normal text-xs">
+                          {" "}
+                          libres
+                        </span>
                       </p>
                       <p className="text-xs text-gray-400">
                         sur {schedule.totalSeats}
@@ -508,8 +524,8 @@ export default function Dashboard() {
                     </div>
 
                     <ChevronRight
-                      size={16}
-                      className="text-gray-300 group-hover:text-gray-500 transition-colors shrink-0"
+                      size={14}
+                      className="text-gray-300 group-hover:text-gray-500 transition-colors shrink-0 hidden sm:block"
                     />
                   </button>
                 );
@@ -524,33 +540,37 @@ export default function Dashboard() {
                   <button
                     key={schedule._id}
                     onClick={() => setSelectedSchedule(schedule)}
-                    className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group text-left opacity-50"
+                    className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 sm:py-4 hover:bg-gray-50 transition-colors group text-left opacity-50"
                   >
-                    <div className="text-center shrink-0 w-14">
-                      <p className="text-xl font-black text-gray-400">
+                    <div className="text-center shrink-0 w-12 sm:w-14">
+                      <p className="text-lg sm:text-xl font-black text-gray-400">
                         {schedule.time}
                       </p>
-                      <p className="text-[10px] text-gray-400 font-semibold bg-gray-100 rounded px-1">
+                      <p className="text-[9px] sm:text-[10px] text-gray-400 font-semibold bg-gray-100 rounded px-1">
                         Parti
                       </p>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 font-semibold text-gray-600 text-sm">
-                        <MapPin size={12} className="text-gray-400 shrink-0" />
-                        {schedule.route.departure}
+                      <div className="flex items-center gap-1 font-semibold text-gray-600 text-sm">
+                        <MapPin size={11} className="text-gray-400 shrink-0" />
+                        <span className="truncate">
+                          {schedule.route.departure}
+                        </span>
                         <ArrowRight
-                          size={12}
+                          size={11}
                           className="text-gray-300 shrink-0"
                         />
-                        {schedule.route.destination}
+                        <span className="truncate">
+                          {schedule.route.destination}
+                        </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
                         {schedule.vehicle}
                       </p>
                     </div>
-                    <div className="shrink-0 w-32 hidden sm:block">
+                    <div className="shrink-0 w-24 hidden md:block">
                       <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>{schedule.passengerCount} passagers</span>
+                        <span>{schedule.passengerCount} pass.</span>
                         <span>{occupancy}%</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -562,12 +582,16 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-500 text-sm">
-                        {schedule.passengerCount} passagers
+                        {schedule.passengerCount}
+                        <span className="text-gray-400 font-normal text-xs">
+                          {" "}
+                          pass.
+                        </span>
                       </p>
                     </div>
                     <ChevronRight
-                      size={16}
-                      className="text-gray-300 group-hover:text-gray-400 transition-colors shrink-0"
+                      size={14}
+                      className="text-gray-300 group-hover:text-gray-400 transition-colors shrink-0 hidden sm:block"
                     />
                   </button>
                 );
@@ -578,9 +602,11 @@ export default function Dashboard() {
 
         {/* Recent reservations */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-50 flex items-center gap-2">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
             <Clock size={16} className="text-gray-400" />
-            <h2 className="font-bold text-gray-900">Réservations récentes</h2>
+            <h2 className="font-bold text-gray-900 text-sm sm:text-base">
+              Réservations récentes
+            </h2>
           </div>
 
           {recentReservations.length === 0 ? (
@@ -592,16 +618,16 @@ export default function Dashboard() {
               {recentReservations.map((r) => (
                 <div
                   key={r._id}
-                  className="flex items-center gap-4 px-6 py-3.5"
+                  className="flex items-center gap-3 px-4 sm:px-6 py-3"
                 >
                   {/* Avatar */}
-                  <div className="size-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">
+                  <div className="size-8 sm:size-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">
                     {r.user.name.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <p className="font-semibold text-gray-900 text-sm truncate">
                         {r.user.name}
                       </p>
@@ -635,7 +661,11 @@ export default function Dashboard() {
                   {/* Price + time */}
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold text-gray-900">
-                      {r.totalPrice.toLocaleString()} Ar
+                      {r.totalPrice.toLocaleString()}
+                      <span className="text-xs text-gray-400 font-normal">
+                        {" "}
+                        Ar
+                      </span>
                     </p>
                     <p className="text-xs text-gray-400">
                       {new Date(r.createdAt).toLocaleTimeString("fr-FR", {
