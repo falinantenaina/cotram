@@ -52,7 +52,7 @@ export interface ISchedule extends Document {
   price: number;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
   driver?: Types.ObjectId | IDriver;
-  vehicleNumber?: string;
+  vehicleNumber?: string | null;
   history?: IHistory[];
   actualDeparture?: Date;
   actualArrival?: Date;
@@ -69,7 +69,7 @@ export interface IReservation extends Document {
   paymentStatus: "pending" | "paid" | "refunded";
   bookingReference: string;
   createdAt: Date;
-  expiresAt: Date;
+  expiresAt: Date | null;
 }
 
 export interface IDriver extends Document {
@@ -89,5 +89,5 @@ export interface IDriver extends Document {
 }
 
 export interface AuthRequest extends Request {
-  user?: IUser;
+  user: IUser;
 }

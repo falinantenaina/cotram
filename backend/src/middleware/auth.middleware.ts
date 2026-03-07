@@ -1,4 +1,4 @@
-import type { NextFunction, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import type { AuthRequest } from "../types/index.js";
@@ -7,8 +7,8 @@ interface JwtPayload {
   id: string;
 }
 
-export const protect = async (
-  req: AuthRequest,
+export const protect: RequestHandler = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
@@ -43,7 +43,7 @@ export const protect = async (
       return;
     }
 
-    req.user = user;
+    (req as AuthRequest).user = user;
     next();
   } catch (error) {
     res.status(401).json({
@@ -53,9 +53,10 @@ export const protect = async (
   }
 };
 
-export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role)) {
+export const authorize = (...roles: string[]): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const authReq = req as AuthRequest;
+    if (!authReq.user || !roles.includes(authReq.user.role)) {
       res.status(403).json({
         success: false,
         message: "Accès refusé",
@@ -67,11 +68,12 @@ export const authorize = (...roles: string[]) => {
 };
 
 export const requireEmailVerification = (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): void => {
-  if (!req.user?.isEmailVerified) {
+  const authReq = req as AuthRequest;
+  if (!authReq.user?.isEmailVerified) {
     res.status(403).json({
       success: false,
       message: "Veuillez vérifier votre email avant de continuer",

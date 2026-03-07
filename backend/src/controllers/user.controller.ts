@@ -1,11 +1,8 @@
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import User from "../models/user.model.js";
 import type { AuthRequest } from "../types/index.js";
 
-export const getUsers = async (
-  req: AuthRequest,
-  res: Response,
-): Promise<void> => {
+export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await User.find().select("-password");
     res.json({ success: true, users });
@@ -14,12 +11,10 @@ export const getUsers = async (
   }
 };
 
-export const getUser = async (
-  req: AuthRequest,
-  res: Response,
-): Promise<void> => {
+export const getUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const authReq = req as AuthRequest;
+    const user = await User.findById(req.params["id"]).select("-password");
 
     if (!user) {
       res.status(404).json({
@@ -29,10 +24,9 @@ export const getUser = async (
       return;
     }
 
-    // Vérifier que c'est l'utilisateur lui-même ou un admin
     if (
-      req.user!.role !== "admin" &&
-      req.user!._id.toString() !== req.params.id
+      authReq.user.role !== "admin" &&
+      authReq.user._id.toString() !== req.params["id"]
     ) {
       res.status(403).json({
         success: false,
@@ -48,16 +42,16 @@ export const getUser = async (
 };
 
 export const updateUser = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
 ): Promise<void> => {
   try {
+    const authReq = req as AuthRequest;
     const { name, email, phone } = req.body;
 
-    // Vérifier que c'est l'utilisateur lui-même ou un admin
     if (
-      req.user!.role !== "admin" &&
-      req.user!._id.toString() !== req.params.id
+      authReq.user.role !== "admin" &&
+      authReq.user._id.toString() !== req.params["id"]
     ) {
       res.status(403).json({
         success: false,
@@ -67,7 +61,7 @@ export const updateUser = async (
     }
 
     const user = await User.findByIdAndUpdate(
-      req.params.id,
+      req.params["id"],
       { name, email, phone },
       { new: true, runValidators: true },
     ).select("-password");
@@ -87,11 +81,11 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await User.findByIdAndDelete(req.params["id"]);
 
     if (!user) {
       res.status(404).json({

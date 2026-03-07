@@ -94,7 +94,11 @@ reservationSchema.pre("save", function (next) {
 
 // Méthode virtuelle pour vérifier si expiré
 reservationSchema.virtual("isExpired").get(function () {
-  return this.status === "pending" && new Date() > this.expiresAt;
+  return (
+    this.status === "pending" &&
+    this.expiresAt != null &&
+    new Date() > this.expiresAt
+  );
 });
 
 // Méthode pour calculer le prix
