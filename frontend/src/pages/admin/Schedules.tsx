@@ -52,7 +52,7 @@ interface Schedule {
     duration: string;
     price: number;
   };
-  driver?: Driver | null;
+  driver?: Driver | string | null;
   vehicleNumber?: string | null;
   date: string;
   time: string;
@@ -139,8 +139,20 @@ const MONTHS_FR = [
   "Décembre",
 ];
 
+interface Passenger {
+  reservationId: string;
+  bookingReference: string;
+  status: "confirmed" | "pending" | "cancelled";
+  paymentStatus: "paid" | "pending" | "refunded";
+  seats: number[];
+  totalPrice: number;
+  user: { name: string; email: string; phone?: string };
+  createdAt: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function hashColor(arr: string[], id: string) {
+  if (!id || !arr.length) return arr[0] ?? "";
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
   return arr[Math.abs(h) % arr.length]!;
@@ -157,12 +169,290 @@ function driverInitials(d: Driver) {
   return `${d.firstName[0] ?? ""}${d.lastName[0] ?? ""}`.toUpperCase();
 }
 
+// Le backend peut renvoyer driver comme string (ID non-populé) ou objet Driver
+function getDriverObj(
+  driver: Driver | string | null | undefined,
+): Driver | null {
+  if (!driver || typeof driver === "string") return null;
+  return driver;
+}
+
 // Formate une Date en "YYYY-MM-DD" en heure LOCALE (pas UTC)
 function toLocalDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+// ─── Passenger Modal ──────────────────────────────────────────────────────────
+function PassengerModal({
+  schedule,
+  onClose,
+}: {
+  schedule: Schedule;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["passengers", schedule._id],
+    queryFn: async () => {
+      const { data } = await api.get(
+        `/admin/schedules/${schedule._id}/passengers`,
+      );
+      return data;
+    },
+  });
+
+  const summary = data?.summary;
+  const allPassengers: Passenger[] = data?.passengers ?? [];
+
+  const passengers = search.trim()
+    ? allPassengers.filter((p) => {
+        const q = search.toLowerCase();
+        return (
+          p.user.name.toLowerCase().includes(q) ||
+          p.user.email.toLowerCase().includes(q) ||
+          (p.user.phone && p.user.phone.includes(q)) ||
+          p.bookingReference.toLowerCase().includes(q) ||
+          p.seats.some((s) => String(s).includes(q))
+        );
+      })
+    : allPassengers;
+
+  const occupiedCount = schedule.totalSeats - schedule.availableSeats;
+  const occupancyPct =
+    schedule.totalSeats > 0
+      ? Math.round((occupiedCount / schedule.totalSeats) * 100)
+      : 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
+        {/* Drag handle mobile */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div className="bg-gray-900 text-white p-4 sm:p-6 shrink-0">
+          <div className="flex items-start justify-between mb-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-gray-400 text-xs font-medium uppercase tracking-widest mb-1">
+                <Users size={12} />
+                <span>Manifeste passagers</span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold flex items-center gap-1.5 flex-wrap">
+                <span className="truncate">{schedule.route.departure}</span>
+                <ArrowRight size={16} className="text-primary shrink-0" />
+                <span className="truncate">{schedule.route.destination}</span>
+              </h2>
+              <p className="text-gray-400 text-sm mt-1">
+                {new Date(schedule.date).toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}{" "}
+                · {schedule.time}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors shrink-0 ml-2"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Occupancy bar */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>{occupiedCount} passagers</span>
+              <span>
+                {schedule.availableSeats} libres · {occupancyPct}%
+              </span>
+            </div>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  occupancyPct >= 90
+                    ? "bg-red-400"
+                    : occupancyPct >= 60
+                      ? "bg-amber-400"
+                      : "bg-emerald-400"
+                }`}
+                style={{ width: `${occupancyPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Summary chips */}
+        {summary && (
+          <div className="flex flex-wrap gap-2 px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-100 shrink-0">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+              <Check size={11} /> {summary.confirmed} confirmés
+            </div>
+            {summary.pending > 0 && (
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                <Clock size={11} /> {summary.pending} en attente
+              </div>
+            )}
+            <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+              <TrendingUp size={11} /> {(summary.revenue ?? 0).toLocaleString()}{" "}
+              Ar
+            </div>
+          </div>
+        )}
+
+        {/* Search */}
+        {allPassengers.length > 0 && (
+          <div className="px-4 sm:px-6 py-3 border-b border-gray-100 shrink-0">
+            <div className="relative">
+              <Search
+                size={13}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Nom, siège, référence, téléphone…"
+                className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-gray-400"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5">
+          {isLoading ? (
+            <div className="flex flex-col items-center py-12">
+              <div className="size-8 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-3" />
+              <p className="text-sm text-gray-400">Chargement…</p>
+            </div>
+          ) : allPassengers.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="size-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Users size={20} className="text-gray-400" />
+              </div>
+              <p className="text-gray-500 font-medium">Aucun passager</p>
+              <p className="text-gray-400 text-sm">
+                Ce voyage n'a pas encore de réservations
+              </p>
+            </div>
+          ) : passengers.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-400 text-sm">
+                Aucun résultat pour « {search} »
+              </p>
+            </div>
+          ) : (
+            passengers.map((p, index) => (
+              <div
+                key={p.reservationId}
+                className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
+              >
+                <div className="size-7 sm:size-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                    <p className="font-semibold text-gray-900 text-sm truncate">
+                      {p.user.name}
+                    </p>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                        p.status === "confirmed"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {p.status === "confirmed" ? "Confirmé" : "En attente"}
+                    </span>
+                    {p.paymentStatus === "paid" && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 bg-blue-100 text-blue-700">
+                        Payé
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    {p.user.phone ? (
+                      <span className="flex items-center gap-1">
+                        <Phone size={10} />
+                        {p.user.phone}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 truncate max-w-[160px]">
+                        <span className="truncate">
+                          {p.user.email.includes("@cotram.local")
+                            ? "Walk-in"
+                            : p.user.email}
+                        </span>
+                      </span>
+                    )}
+                    <span className="text-gray-300 hidden sm:inline">·</span>
+                    <span className="font-mono text-[10px] text-gray-400 hidden sm:inline">
+                      {p.bookingReference}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex gap-1 flex-wrap justify-end max-w-[72px]">
+                    {p.seats.map((s) => (
+                      <span
+                        key={s}
+                        className="size-5 sm:size-6 rounded bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-xs font-semibold text-gray-500">
+                    {p.totalPrice.toLocaleString()} Ar
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+          {!isLoading && (
+            <p className="text-xs text-gray-400">
+              {search
+                ? `${passengers.length} résultat${passengers.length > 1 ? "s" : ""}`
+                : `${allPassengers.length} passager${allPassengers.length > 1 ? "s" : ""}`}
+            </p>
+          )}
+          <button
+            onClick={onClose}
+            className="ml-auto px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-colors"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── MiniStat ─────────────────────────────────────────────────────────────────
@@ -305,8 +595,11 @@ function AssignDriverModal({
 
             {drivers.map((d) => {
               const isSelected = d._id === selectedId;
+              // Indisponible seulement si en voyage EN CE MOMENT (on_trip)
+              // ou suspendu. Un chauffeur avec des voyages futurs reste disponible.
               const unavailable =
-                d.status !== "available" && d._id !== currentDriver?._id;
+                (d.status === "on_trip" || d.status === "suspended") &&
+                d._id !== currentDriver?._id;
               return (
                 <button
                   key={d._id}
@@ -340,6 +633,13 @@ function AssignDriverModal({
                     <p className="text-xs text-gray-400 font-mono">
                       {d.vehicleNumber} · {d.vehicleType}
                     </p>
+                    {unavailable && (
+                      <p className="text-[10px] text-red-400 font-semibold mt-0.5">
+                        {d.status === "on_trip"
+                          ? "En voyage actuellement"
+                          : "Suspendu"}
+                      </p>
+                    )}
                   </div>
                   {isSelected && (
                     <Check size={14} className="text-primary shrink-0" />
@@ -407,6 +707,7 @@ function ScheduleCard({
   onDelete,
   onStatusChange,
   onAssignDriver,
+  onViewPassengers,
   selected,
   onSelect,
 }: {
@@ -415,6 +716,7 @@ function ScheduleCard({
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: string) => void;
   onAssignDriver: (s: Schedule) => void;
+  onViewPassengers: (s: Schedule) => void;
   selected: boolean;
   onSelect: (id: string) => void;
 }) {
@@ -424,7 +726,10 @@ function ScheduleCard({
   const cfg = STATUS_CONFIG[schedule.status] ?? STATUS_CONFIG.scheduled;
   const occupiedCount = schedule.totalSeats - schedule.availableSeats;
   const pct = Math.round((occupiedCount / schedule.totalSeats) * 100);
-  const routeColor = hashColor(ROUTE_COLORS, schedule.route._id);
+  const routeColor = hashColor(
+    ROUTE_COLORS,
+    schedule.route?._id ?? schedule._id,
+  );
   const depDate = new Date(schedule.date);
   const isToday = depDate.toDateString() === new Date().toDateString();
   const isPast = depDate < new Date() && !isToday;
@@ -519,53 +824,62 @@ function ScheduleCard({
 
         {/* Driver badge */}
         <div className="w-36 shrink-0 hidden xl:block">
-          {schedule.driver ? (
-            <button
-              onClick={() => onAssignDriver(schedule)}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
-            >
-              <div
-                className={`size-7 rounded-lg bg-gradient-to-br ${hashColor(AVATAR_COLORS, schedule.driver._id)} flex items-center justify-center text-white text-[10px] font-black shrink-0`}
+          {(() => {
+            const d = getDriverObj(schedule.driver);
+            return d ? (
+              <button
+                onClick={() => onAssignDriver(schedule)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
               >
-                {driverInitials(schedule.driver)}
-              </div>
-              <div className="min-w-0 text-left">
-                <p className="text-xs font-bold text-gray-900 truncate">
-                  {schedule.driver.firstName} {schedule.driver.lastName}
-                </p>
-                <p className="text-[10px] text-gray-400 font-mono">
-                  {schedule.vehicleNumber ?? schedule.driver.vehicleNumber}
-                </p>
-              </div>
-            </button>
-          ) : (
-            <button
-              onClick={() => onAssignDriver(schedule)}
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary border border-dashed border-gray-200 hover:border-primary/40 hover:bg-primary/5 rounded-xl px-2.5 py-1.5 transition-all w-full justify-center"
-            >
-              <User size={11} /> Assigner
-            </button>
-          )}
+                <div
+                  className={`size-7 rounded-lg bg-gradient-to-br ${hashColor(AVATAR_COLORS, d._id)} flex items-center justify-center text-white text-[10px] font-black shrink-0`}
+                >
+                  {driverInitials(d)}
+                </div>
+                <div className="min-w-0 text-left">
+                  <p className="text-xs font-bold text-gray-900 truncate">
+                    {d.firstName} {d.lastName}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-mono">
+                    {schedule.vehicleNumber ?? d.vehicleNumber}
+                  </p>
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={() => onAssignDriver(schedule)}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary border border-dashed border-gray-200 hover:border-primary/40 hover:bg-primary/5 rounded-xl px-2.5 py-1.5 transition-all w-full justify-center"
+              >
+                <User size={11} />{" "}
+                {schedule.driver ? "Voir chauffeur" : "Assigner"}
+              </button>
+            );
+          })()}
         </div>
 
         {/* Occupancy */}
         <div className="w-32 shrink-0 hidden lg:block">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <Users size={10} /> {occupiedCount}/{schedule.totalSeats}
-            </span>
-            <span
-              className={`text-xs font-bold ${pct >= 90 ? "text-red-500" : pct >= 70 ? "text-amber-500" : "text-gray-500"}`}
-            >
-              {pct}%
-            </span>
-          </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full ${occupancyBarColor(pct)}`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          <button
+            onClick={() => onViewPassengers(schedule)}
+            className="w-full text-left hover:opacity-70 transition-opacity"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <Users size={10} /> {occupiedCount}/{schedule.totalSeats}
+              </span>
+              <span
+                className={`text-xs font-bold ${pct >= 90 ? "text-red-500" : pct >= 70 ? "text-amber-500" : "text-gray-500"}`}
+              >
+                {pct}%
+              </span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${occupancyBarColor(pct)}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </button>
         </div>
 
         {/* Price */}
@@ -616,6 +930,15 @@ function ScheduleCard({
                 >
                   <User size={14} />{" "}
                   {schedule.driver ? "Changer chauffeur" : "Assigner chauffeur"}
+                </button>
+                <button
+                  onClick={() => {
+                    onViewPassengers(schedule);
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
+                >
+                  <Users size={14} /> Voir les passagers
                 </button>
                 {schedule.status === "scheduled" && (
                   <>
@@ -832,7 +1155,7 @@ function ScheduleModal({
     price: schedule?.price ?? 0,
     vehicle: schedule?.vehicle ?? "Crafter",
     vehicleNumber: schedule?.vehicleNumber ?? "",
-    driverId: schedule?.driver?._id ?? "",
+    driverId: getDriverObj(schedule?.driver)?._id ?? "",
     notes: schedule?.notes ?? "",
   });
   const [error, setError] = useState("");
@@ -1169,6 +1492,7 @@ export default function AdminSchedules() {
     null,
   );
   const [assignTarget, setAssignTarget] = useState<Schedule | null>(null);
+  const [passengerTarget, setPassengerTarget] = useState<Schedule | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | "bulk" | null>(
     null,
   );
@@ -1252,8 +1576,9 @@ export default function AdminSchedules() {
         s.route.destination.toLowerCase().includes(q) ||
         s.time.includes(q) ||
         s.vehicle.toLowerCase().includes(q) ||
-        (s.driver?.firstName.toLowerCase().includes(q) ?? false) ||
-        (s.driver?.lastName.toLowerCase().includes(q) ?? false) ||
+        (getDriverObj(s.driver)?.firstName.toLowerCase().includes(q) ??
+          false) ||
+        (getDriverObj(s.driver)?.lastName.toLowerCase().includes(q) ?? false) ||
         (s.vehicleNumber?.toLowerCase().includes(q) ?? false)
       );
     }
@@ -1280,7 +1605,7 @@ export default function AdminSchedules() {
   }).length;
   const unassigned = schedulesRaw.filter(
     (s) =>
-      !s.driver &&
+      !getDriverObj(s.driver) &&
       s.status === "scheduled" &&
       new Date(s.date + "T00:00:00") >= today,
   ).length;
@@ -1682,6 +2007,7 @@ export default function AdminSchedules() {
                                 statusMutation.mutate({ id, status })
                               }
                               onAssignDriver={(sc) => setAssignTarget(sc)}
+                              onViewPassengers={(sc) => setPassengerTarget(sc)}
                               selected={selectedIds.has(s._id)}
                               onSelect={toggleSelect}
                             />
@@ -1711,11 +2037,18 @@ export default function AdminSchedules() {
       {assignTarget !== null && (
         <AssignDriverModal
           scheduleId={assignTarget._id}
-          currentDriver={assignTarget.driver}
+          currentDriver={getDriverObj(assignTarget.driver)}
           onClose={() => setAssignTarget(null)}
           onSuccess={() =>
             queryClient.invalidateQueries({ queryKey: ["admin-schedules"] })
           }
+        />
+      )}
+
+      {passengerTarget !== null && (
+        <PassengerModal
+          schedule={passengerTarget}
+          onClose={() => setPassengerTarget(null)}
         />
       )}
 
