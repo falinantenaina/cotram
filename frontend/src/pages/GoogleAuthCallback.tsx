@@ -3,50 +3,39 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
 
 const GoogleAuthCallback = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { setAuth } = useAuthStore();
 
   useEffect(() => {
     const token = searchParams.get("token");
     const error = searchParams.get("error");
 
-    if (error) {
+    if (error || !token) {
       navigate("/auth?error=google");
       return;
     }
 
-    if (token) {
-      // Le token sera dans l'URL ou dans les cookies
-      // Récupérer les données utilisateur
-      fetch("http://localhost:5000/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    // Appeler /api/auth/me pour récupérer les infos user avec ce token
+    fetch("http://localhost:5000/api/auth/me", {
+      // ou votre endpoint getMe
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setAuth(data.user, token);
+          navigate("/");
+        } else {
+          navigate("/auth?error=google");
+        }
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setAuth(data.user, token);
-            navigate("/");
-          } else {
-            navigate("/auth");
-          }
-        })
-        .catch(() => {
-          navigate("/auth");
-        });
-    } else {
-      navigate("/auth");
-    }
-  }, [searchParams, navigate, setAuth]);
+      .catch(() => navigate("/auth?error=google"));
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-gray-600">Connexion en cours...</p>
-      </div>
+      <p className="text-gray-500">Connexion en cours...</p>
     </div>
   );
 };

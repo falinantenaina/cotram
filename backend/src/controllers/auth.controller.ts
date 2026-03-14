@@ -7,7 +7,6 @@ import {
   sendVerificationEmail,
 } from "../config/email.js";
 import User from "../models/user.model.js";
-import type { AuthRequest } from "../types/index.js";
 
 const signToken = (id: string): string => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
@@ -142,7 +141,12 @@ export const googleAuthCallback = async (
   res: Response,
 ): Promise<void> => {
   const user = req.user as any;
-  sendTokenResponse(user, 200, res);
+  const token = signToken(user._id.toString());
+
+  // Rediriger vers le frontend avec le token en query param
+  res.redirect(
+    `${process.env.FRONTEND_URL}/auth/google/callback?token=${token}`,
+  );
 };
 
 export const verifyEmail = async (
@@ -271,7 +275,7 @@ export const logout = (req: Request, res: Response): void => {
   res.json({ success: true, message: "Déconnexion réussie" });
 };
 
-export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMe = async (req: Request, res: Response): Promise<void> => {
   res.json({
     success: true,
     user: req.user,

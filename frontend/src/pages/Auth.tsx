@@ -241,7 +241,7 @@ const Auth = () => {
 
             <button
               disabled={isLoading}
-              className="w-full bg-primary text-black font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full bg-primary text-black font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed mt-2 cursor-pointer"
             >
               {isLoading ? (
                 <Loader size={18} className="animate-spin" />
@@ -267,7 +267,7 @@ const Auth = () => {
           <button
             onClick={handleGoogleLogin}
             type="button"
-            className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-700"
+            className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-700 cursor-pointer"
           >
             <svg className="size-5" viewBox="0 0 24 24">
               <path

@@ -2,6 +2,7 @@ import express from "express";
 import { body } from "express-validator";
 import passport from "../config/passport.js";
 import * as authController from "../controllers/auth.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
 import { authLimiter } from "../middleware/security.middleware.js";
 
 const router = express.Router();
@@ -47,6 +48,8 @@ router.get(
 
 // Email verification
 router.get("/verify-email/:token", authController.verifyEmail);
+
+router.get("/me", protect, authController.getMe);
 
 // Password reset
 router.post(
