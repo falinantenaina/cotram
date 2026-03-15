@@ -1,3 +1,6 @@
+// backend/src/types/index.ts
+// Ajout de seatConfig dans ISchedule
+
 import type { Request } from "express";
 import { Document, Types } from "mongoose";
 
@@ -40,6 +43,25 @@ export interface IHistory {
   newValue?: string;
 }
 
+// Plan de sièges configurable (stocké en JSON dans MongoDB)
+export interface ISeatRowDef {
+  row: number;
+  isBackBench: boolean;
+  label?: string;
+  seats: {
+    id: number;
+    row: number;
+    col: number;
+    position: "left" | "middle" | "right" | "aisle";
+  }[];
+}
+
+export interface ISeatConfig {
+  totalSeats: number;
+  layoutName?: string;
+  rows: ISeatRowDef[];
+}
+
 export interface ISchedule extends Document {
   _id: Types.ObjectId;
   route: Types.ObjectId | IRoute;
@@ -53,6 +75,7 @@ export interface ISchedule extends Document {
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
   driver?: Types.ObjectId | IDriver;
   vehicleNumber?: string | null;
+  seatConfig?: ISeatConfig | null; // ← nouveau
   history?: IHistory[];
   actualDeparture?: Date;
   actualArrival?: Date;
@@ -77,8 +100,8 @@ export interface IDriver extends Document {
   lastName: string;
   phone: string;
   licenseNumber: string;
-  vehicleNumber: string; // Numéro d'immatriculation
-  vehicleType: string; // Crafter, Sprinter, Transit
+  vehicleNumber: string;
+  vehicleType: string;
   status: "available" | "on_trip" | "off_duty" | "suspended";
   totalTrips: number;
   joinedAt: Date;
