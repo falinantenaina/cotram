@@ -10,163 +10,34 @@ import {
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
+import { buildFallbackConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type SeatStatus = "available" | "occupied";
-
-interface SeatCell {
-  id: number;
-  row: number;
-  position: "left" | "middle" | "right";
-  status: SeatStatus;
-}
-
-// ─── Seat layout builder ──────────────────────────────────────────────────────
-function buildSeats(occupiedSeats: number[]): SeatCell[] {
-  return [
-    {
-      id: 1,
-      row: 1,
-      position: "middle",
-      status: occupiedSeats.includes(1) ? "occupied" : "available",
-    },
-    {
-      id: 2,
-      row: 1,
-      position: "right",
-      status: occupiedSeats.includes(2) ? "occupied" : "available",
-    },
-    {
-      id: 3,
-      row: 2,
-      position: "left",
-      status: occupiedSeats.includes(3) ? "occupied" : "available",
-    },
-    {
-      id: 4,
-      row: 2,
-      position: "left",
-      status: occupiedSeats.includes(4) ? "occupied" : "available",
-    },
-    {
-      id: 5,
-      row: 2,
-      position: "middle",
-      status: occupiedSeats.includes(5) ? "occupied" : "available",
-    },
-    {
-      id: 6,
-      row: 2,
-      position: "right",
-      status: occupiedSeats.includes(6) ? "occupied" : "available",
-    },
-    {
-      id: 7,
-      row: 3,
-      position: "left",
-      status: occupiedSeats.includes(7) ? "occupied" : "available",
-    },
-    {
-      id: 8,
-      row: 3,
-      position: "middle",
-      status: occupiedSeats.includes(8) ? "occupied" : "available",
-    },
-    {
-      id: 9,
-      row: 3,
-      position: "right",
-      status: occupiedSeats.includes(9) ? "occupied" : "available",
-    },
-    {
-      id: 10,
-      row: 4,
-      position: "left",
-      status: occupiedSeats.includes(10) ? "occupied" : "available",
-    },
-    {
-      id: 11,
-      row: 4,
-      position: "middle",
-      status: occupiedSeats.includes(11) ? "occupied" : "available",
-    },
-    {
-      id: 12,
-      row: 4,
-      position: "right",
-      status: occupiedSeats.includes(12) ? "occupied" : "available",
-    },
-    {
-      id: 13,
-      row: 5,
-      position: "middle",
-      status: occupiedSeats.includes(13) ? "occupied" : "available",
-    },
-    {
-      id: 14,
-      row: 5,
-      position: "middle",
-      status: occupiedSeats.includes(14) ? "occupied" : "available",
-    },
-    {
-      id: 15,
-      row: 5,
-      position: "middle",
-      status: occupiedSeats.includes(15) ? "occupied" : "available",
-    },
-    {
-      id: 16,
-      row: 5,
-      position: "right",
-      status: occupiedSeats.includes(16) ? "occupied" : "available",
-    },
-  ];
-}
-
-// ─── Mini seat map component ──────────────────────────────────────────────────
+// ─── SeatMap dynamique — utilise seatConfig de l'horaire ─────────────────────
 function SeatMap({
-  seats,
+  schedule,
   selected,
   onToggle,
 }: {
-  seats: SeatCell[];
+  schedule: any;
   selected: number[];
   onToggle: (id: number) => void;
 }) {
-  const isSelected = (id: number) => selected.includes(id);
+  const config =
+    schedule?.seatConfig ?? buildFallbackConfig(schedule?.totalSeats ?? 16);
+  const occupiedSeats: number[] = schedule?.occupiedSeats ?? [];
 
-  const btn = (seat: SeatCell) => {
-    const occupied = seat.status === "occupied";
-    const sel = isSelected(seat.id);
-    return (
-      <button
-        key={seat.id}
-        type="button"
-        disabled={occupied}
-        onClick={() => onToggle(seat.id)}
-        title={`Siège ${seat.id}`}
-        className={`
-          h-10 w-10 rounded-lg border-2 text-xs font-bold transition-all
-          ${
-            occupied
-              ? "bg-gray-200 border-gray-200 text-gray-400 cursor-not-allowed"
-              : sel
-                ? "bg-primary border-primary text-black shadow-sm shadow-primary/30"
-                : "bg-white border-gray-300 text-gray-600 hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
-          }
-        `}
-      >
-        {seat.id}
-      </button>
-    );
-  };
-
-  const row = (r: number) => seats.filter((s) => s.row === r);
+  // Calculer numCols depuis les col des sièges
+  let numCols = 1;
+  config.rows.forEach((row: any) => {
+    row.seats.forEach((s: any) => {
+      numCols = Math.max(numCols, s.col + 1);
+    });
+  });
 
   return (
     <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-      {/* Legend */}
+      {/* Légende */}
       <div className="flex gap-4 mb-4 text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="size-3 rounded bg-white border-2 border-gray-300 inline-block" />{" "}
@@ -181,39 +52,120 @@ function SeatMap({
         </span>
       </div>
 
-      <div className="max-w-[220px] mx-auto space-y-2">
-        {/* Row 1: driver + 2 seats */}
-        <div className="flex gap-2 items-center">
-          <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-            <User size={16} className="text-white" />
-          </div>
-          <div className="flex-1" />
-          {row(1).map(btn)}
-        </div>
-        <div className="border-t border-dashed border-gray-300 my-1" />
+      <div className="max-w-xs mx-auto space-y-2">
+        {config.rows.map((row: any, ri: number) => {
+          const isFirst = ri === 0;
+          const isBench = row.isBackBench;
+          const prevBench = config.rows[ri - 1]?.isBackBench;
+          const showDivider = isBench && !prevBench && ri > 0;
 
-        {/* Row 2: 4 seats */}
-        <div className="flex gap-2">{row(2).map(btn)}</div>
+          // Construire la grille de la rangée
+          const cells: Array<{
+            kind: "seat" | "aisle" | "empty";
+            seatId?: number;
+          }> = Array.from({ length: numCols }, () => ({
+            kind: "empty" as const,
+          }));
 
-        {/* Rows 3-4: 2 left + gap + 1 right */}
-        {[3, 4].map((r) => (
-          <div key={r} className="flex gap-2 items-center">
-            {row(r)
-              .filter((s) => s.position !== "right")
-              .map(btn)}
-            <div className="flex-1" />
-            {row(r)
-              .filter((s) => s.position === "right")
-              .map(btn)}
-          </div>
-        ))}
+          row.seats.forEach((seat: any) => {
+            const ci = Math.min(seat.col, numCols - 1);
+            cells[ci] = { kind: "seat", seatId: seat.id };
+          });
 
-        <div className="border-t border-dashed border-gray-300 my-1" />
-        {/* Row 5: back bench */}
-        <div className="flex gap-2">{row(5).map(btn)}</div>
-        <p className="text-center text-[10px] text-gray-400">
-          Banquette arrière
-        </p>
+          // Cases vides entre le premier et le dernier siège → allée
+          const seatCols = row.seats.map((s: any) =>
+            Math.min(s.col, numCols - 1),
+          );
+          if (seatCols.length >= 2) {
+            const minC = Math.min(...seatCols);
+            const maxC = Math.max(...seatCols);
+            for (let ci = minC + 1; ci < maxC; ci++) {
+              if (cells[ci]!.kind === "empty") cells[ci] = { kind: "aisle" };
+            }
+          }
+
+          return (
+            <div key={ri}>
+              {showDivider && (
+                <div className="flex items-center gap-2 my-1">
+                  <div className="flex-1 border-t border-dashed border-gray-300" />
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider px-1">
+                    {row.label ?? "Banquette"}
+                  </span>
+                  <div className="flex-1 border-t border-dashed border-gray-300" />
+                </div>
+              )}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isFirst
+                    ? `40px repeat(${numCols}, 1fr)`
+                    : `repeat(${numCols}, 1fr)`,
+                  gap: 6,
+                  padding: isBench ? "3px 5px" : "0",
+                  background: isBench ? "rgba(251,191,36,.06)" : "transparent",
+                  borderRadius: isBench ? 8 : 0,
+                  border: isBench ? "1px dashed rgba(251,191,36,.3)" : "none",
+                }}
+              >
+                {/* Conducteur — rangée 0 */}
+                {isFirst && (
+                  <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+                    <User size={14} className="text-white" />
+                  </div>
+                )}
+                {cells.map((cell, ci) => {
+                  if (cell.kind === "aisle") {
+                    return (
+                      <div
+                        key={ci}
+                        className="h-10 rounded-md flex items-center justify-center"
+                        style={{
+                          background: "rgba(254,249,195,.8)",
+                          border: "1px dashed #fde047",
+                        }}
+                      >
+                        <svg width="6" height="16" viewBox="0 0 6 16">
+                          <path
+                            d="M3 1v14"
+                            stroke="#ca8a04"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeDasharray="2 2"
+                          />
+                        </svg>
+                      </div>
+                    );
+                  }
+                  if (cell.kind === "empty") {
+                    return <div key={ci} className="h-10" />;
+                  }
+                  const id = cell.seatId!;
+                  const occupied = occupiedSeats.includes(id);
+                  const sel = selected.includes(id);
+                  return (
+                    <button
+                      key={ci}
+                      type="button"
+                      disabled={occupied}
+                      onClick={() => onToggle(id)}
+                      title={`Siège ${id}`}
+                      className={`h-10 rounded-lg border-2 text-xs font-bold transition-all ${
+                        occupied
+                          ? "bg-gray-200 border-gray-200 text-gray-400 cursor-not-allowed"
+                          : sel
+                            ? "bg-primary border-primary text-black shadow-sm shadow-primary/30"
+                            : "bg-white border-gray-300 text-gray-600 hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
+                      }`}
+                    >
+                      {id}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -288,9 +240,6 @@ function WalkInModal({ onClose }: { onClose: () => void }) {
   const selectedSchedule = allSchedules.find(
     (s: any) => s._id === selectedScheduleId,
   );
-  const seats = selectedSchedule
-    ? buildSeats(selectedSchedule.occupiedSeats)
-    : [];
   const totalPrice = selectedSeats.length * (selectedSchedule?.price || 0);
 
   const toggleSeat = (id: number) =>
@@ -748,7 +697,7 @@ function WalkInModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <SeatMap
-                seats={seats}
+                schedule={selectedSchedule}
                 selected={selectedSeats}
                 onToggle={toggleSeat}
               />

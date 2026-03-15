@@ -1,3 +1,4 @@
+// frontend/src/pages/Reservation.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/reservations/Header";
@@ -8,6 +9,7 @@ import { TimeStep } from "../components/reservations/TimeStep";
 import { useAuth } from "../hooks/useAuth";
 
 import type { Schedule } from "../api/scheduleApi";
+import { buildFallbackConfig, type SeatConfig } from "../config/seatLayouts";
 import { useCreateReservation } from "../hooks/useReservation";
 import { useSchedules } from "../hooks/useSchedules";
 import { useReservationTempStore } from "../stores/reservationStore";
@@ -38,6 +40,7 @@ const Reservation = () => {
     null,
   );
   const [seats, setSeats] = useState<Seat[]>([]);
+  const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
 
   const { schedules, isLoading: isLoadingSchedules } = useSchedules(
     currentStep === "time"
@@ -52,135 +55,75 @@ const Reservation = () => {
   const { createReservation, isLoading: isCreating } = useCreateReservation();
 
   useEffect(() => {
-    if (!user && currentStep === "seats") {
-      navigate("/auth");
-    }
+    if (!user && currentStep === "seats") navigate("/auth");
   }, [user, currentStep, navigate]);
 
   useEffect(() => {
-    if (selectedSchedule) {
-      const occupiedSeats = selectedSchedule.occupiedSeats || [];
-      const initialSeats: Seat[] = [
-        {
-          id: 1,
-          row: 1,
-          position: "middle",
-          status: occupiedSeats.includes(1) ? "occupied" : "available",
-        },
-        {
-          id: 2,
-          row: 1,
-          position: "right",
-          status: occupiedSeats.includes(2) ? "occupied" : "available",
-        },
-        {
-          id: 3,
-          row: 2,
-          position: "left",
-          status: occupiedSeats.includes(3) ? "occupied" : "available",
-        },
-        {
-          id: 4,
-          row: 2,
-          position: "left",
-          status: occupiedSeats.includes(4) ? "occupied" : "available",
-        },
-        {
-          id: 5,
-          row: 2,
-          position: "middle",
-          status: occupiedSeats.includes(5) ? "occupied" : "available",
-        },
-        {
-          id: 6,
-          row: 2,
-          position: "right",
-          status: occupiedSeats.includes(6) ? "occupied" : "available",
-        },
-        {
-          id: 7,
-          row: 3,
-          position: "left",
-          status: occupiedSeats.includes(7) ? "occupied" : "available",
-        },
-        {
-          id: 8,
-          row: 3,
-          position: "middle",
-          status: occupiedSeats.includes(8) ? "occupied" : "available",
-        },
-        {
-          id: 9,
-          row: 3,
-          position: "right",
-          status: occupiedSeats.includes(9) ? "occupied" : "available",
-        },
-        {
-          id: 10,
-          row: 4,
-          position: "left",
-          status: occupiedSeats.includes(10) ? "occupied" : "available",
-        },
-        {
-          id: 11,
-          row: 4,
-          position: "middle",
-          status: occupiedSeats.includes(11) ? "occupied" : "available",
-        },
-        {
-          id: 12,
-          row: 4,
-          position: "right",
-          status: occupiedSeats.includes(12) ? "occupied" : "available",
-        },
-        {
-          id: 13,
-          row: 5,
-          position: "middle",
-          status: occupiedSeats.includes(13) ? "occupied" : "available",
-        },
-        {
-          id: 14,
-          row: 5,
-          position: "middle",
-          status: occupiedSeats.includes(14) ? "occupied" : "available",
-        },
-        {
-          id: 15,
-          row: 5,
-          position: "middle",
-          status: occupiedSeats.includes(15) ? "occupied" : "available",
-        },
-        {
-          id: 16,
-          row: 5,
-          position: "middle",
-          status: occupiedSeats.includes(16) ? "occupied" : "available",
-        },
-      ];
-      setSeats(initialSeats);
+    if (!selectedSchedule) return;
+
+    const occupied = selectedSchedule.occupiedSeats || [];
+
+    // ── Récupérer le seatConfig — TOUJOURS présent dans l'objet schedule ──────
+    // Il vient directement de l'API, pas besoin de le chercher ailleurs
+    const rawConfig = (selectedSchedule as any).seatConfig;
+
+    console.log("[Reservation] seatConfig depuis API:", rawConfig);
+
+    let config: SeatConfig;
+
+    if (rawConfig && rawConfig.rows && rawConfig.rows.length > 0) {
+      // ✅ seatConfig configuré par l'admin — utiliser tel quel
+      config = rawConfig as SeatConfig;
+    } else {
+      // ⚠️ Pas de seatConfig → fallback générique selon totalSeats
+      console.warn(
+        "[Reservation] Pas de seatConfig — fallback sur",
+        selectedSchedule.totalSeats,
+        "places",
+      );
+      config = buildFallbackConfig(selectedSchedule.totalSeats);
     }
+
+    setSeatConfig(config);
+
+    // Construire la liste Seat[] depuis config.rows[].seats[]
+    const allSeats: Seat[] = [];
+    config.rows.forEach((row) => {
+      row.seats.forEach((s) => {
+        allSeats.push({
+          id: s.id,
+          row: s.row,
+          position: s.position,
+          status: occupied.includes(s.id) ? "occupied" : "available",
+        });
+      });
+    });
+
+    console.log("[Reservation] seats construits:", allSeats.length, "sièges");
+    setSeats(allSeats);
   }, [selectedSchedule]);
 
   const handleSeatClick = (seatId: number) => {
-    const seat = seats.find((s) => s.id === seatId);
-    if (!seat || seat.status === "occupied") return;
-
     setSeats((prev) =>
-      prev.map((s) => {
-        if (s.id === seatId) {
-          return {
-            ...s,
-            status: s.status === "selected" ? "available" : "selected",
-          };
-        }
-        return s;
-      }),
+      prev.map((s) =>
+        s.id !== seatId
+          ? s
+          : {
+              ...s,
+              status: s.status === "selected" ? "available" : "selected",
+            },
+      ),
     );
     toggleSeat(seatId);
   };
 
   const handleSelectSchedule = (schedule: Schedule) => {
+    console.log(
+      "[Reservation] horaire sélectionné:",
+      schedule._id,
+      "seatConfig:",
+      (schedule as any).seatConfig,
+    );
     setSelectedSchedule(schedule);
     setScheduleId(schedule._id);
     setTripDetails({
@@ -192,14 +135,17 @@ const Reservation = () => {
     });
   };
 
-  const handleConfirmReservation = async () => {
+  const handleConfirm = async () => {
     if (!scheduleId || selectedSeats.length === 0) return;
     try {
       await createReservation({ scheduleId, seats: selectedSeats });
-    } catch (error) {
-      console.error("Erreur réservation:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
+
+  const displayConfig =
+    seatConfig ?? buildFallbackConfig(selectedSchedule?.totalSeats ?? 16);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -233,7 +179,11 @@ const Reservation = () => {
 
         {currentStep === "seats" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <SeatsStep seats={seats} handleSeatClick={handleSeatClick} />
+            <SeatsStep
+              seats={seats}
+              seatConfig={displayConfig}
+              handleSeatClick={handleSeatClick}
+            />
             <Resume
               departure={localDeparture}
               destination={localDestination}
@@ -242,7 +192,7 @@ const Reservation = () => {
               setCurrentStep={setCurrentStep}
               selectedSeats={selectedSeats}
               handleSeatClick={handleSeatClick}
-              onConfirm={handleConfirmReservation}
+              onConfirm={handleConfirm}
               isLoading={isCreating}
             />
           </div>
