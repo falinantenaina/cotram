@@ -1,3 +1,6 @@
+// backend/src/models/schedule.model.ts
+// Ajout du champ seatConfig (JSON du layout configurable)
+
 import mongoose, { Schema } from "mongoose";
 import type { ISchedule } from "../types/index.js";
 
@@ -32,7 +35,7 @@ const scheduleSchema = new Schema<ISchedule>(
       type: Number,
       default: 16,
       min: [1, "Le nombre de sièges doit être positif"],
-      max: [20, "Maximum 20 sièges"],
+      max: [30, "Maximum 30 sièges"],
     },
     availableSeats: {
       type: Number,
@@ -43,13 +46,7 @@ const scheduleSchema = new Schema<ISchedule>(
       {
         type: Number,
         min: 1,
-        max: 20,
-        validate: {
-          validator: function (this: ISchedule, seatNumber: number) {
-            return seatNumber <= this.totalSeats;
-          },
-          message: "Le numéro de siège dépasse le total de sièges",
-        },
+        max: 30,
       },
     ],
     price: {
@@ -75,6 +72,14 @@ const scheduleSchema = new Schema<ISchedule>(
       default: null,
       trim: true,
     },
+    // ── NEW: plan de sièges configurable ──────────────────────────────────────
+    // Stocké en JSON. Structure : { totalSeats, layoutName, rows: [...] }
+    // Null = utiliser le layout par défaut selon totalSeats
+    seatConfig: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    // ─────────────────────────────────────────────────────────────────────────
     history: [
       {
         action: { type: String, required: true },
@@ -92,37 +97,41 @@ const scheduleSchema = new Schema<ISchedule>(
   },
 );
 
-// Index pour recherche par date et route
 scheduleSchema.index({ route: 1, date: 1, time: 1 });
 scheduleSchema.index({ date: 1, status: 1 });
 
-// Validation : vérifier que la date+heure combinées sont dans le futur
+// Sync totalSeats with seatConfig when seatConfig is provided
+scheduleSchema.pre("save", function () {
+  if (this.seatConfig && (this.seatConfig as any).totalSeats) {
+    this.totalSeats = (this.seatConfig as any).totalSeats;
+    // availableSeats = totalSeats - occupiedSeats (on creation)
+    if (this.isNew) {
+      this.availableSeats = this.totalSeats - this.occupiedSeats.length;
+    }
+  }
+});
+
 scheduleSchema.pre("save", function () {
   if (this.isNew && this.date && this.time) {
     const [hours, minutes] = this.time.split(":").map(Number);
     const departure = new Date(this.date);
     departure.setHours(hours!, minutes!, 0, 0);
-
     if (departure <= new Date()) {
       new Error("Le départ doit être dans le futur (date + heure)");
     }
   }
 });
 
-// Validation: sièges disponibles cohérents
-scheduleSchema.pre("save", function (next) {
+scheduleSchema.pre("save", function () {
   if (this.availableSeats + this.occupiedSeats.length > this.totalSeats) {
     new Error("Incohérence dans le nombre de sièges");
   }
-
-  // Vérifier les doublons dans occupiedSeats
   const uniqueSeats = new Set(this.occupiedSeats);
   if (uniqueSeats.size !== this.occupiedSeats.length) {
     new Error("Sièges en double détectés");
   }
 });
 
-// Méthode virtuelle pour vérifier si complet
 scheduleSchema.virtual("isFull").get(function () {
   return this.availableSeats === 0;
 });

@@ -1,3 +1,4 @@
+// backend/src/controllers/schedule.controller.ts
 import type { Request, Response } from "express";
 import Route from "../models/route.model.js";
 import Schedule from "../models/schedule.model.js";
@@ -9,10 +10,8 @@ export const getSchedules = async (
 ): Promise<void> => {
   try {
     const { departure, destination, date } = req.query;
-
     let filter: any = { status: { $ne: "cancelled" } };
 
-    // Filtre par route
     if (departure || destination) {
       const routeFilter: any = {};
       if (departure) routeFilter.departure = departure;
@@ -21,10 +20,8 @@ export const getSchedules = async (
       filter.route = { $in: routes.map((r: any) => r._id) };
     }
 
-    // Filtre par date
     if (date) {
       const searchDate = parseLocalDate(date as string);
-
       filter.date = { $gte: searchDate, $lt: endOfLocalDay(searchDate) };
     }
 
@@ -32,11 +29,8 @@ export const getSchedules = async (
       .populate("route")
       .sort({ date: 1, time: 1 });
 
-    // Exclure les départs dont date+heure est déjà passée
     const now = new Date();
-
     schedules = schedules.filter((schedule) => {
-      // Construire un Date complet à partir de schedule.date + schedule.time
       const [hours, minutes] = schedule.time.split(":").map(Number);
       const departure = new Date(schedule.date);
       departure.setHours(hours!, minutes!, 0, 0);
@@ -56,19 +50,12 @@ export const getSchedule = async (
 ): Promise<void> => {
   try {
     const schedule = await Schedule.findById(req.params.id).populate("route");
-
     if (!schedule) {
-      res.status(404).json({
-        success: false,
-        message: "Horaire non trouvé",
-      });
+      res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
-
     res.json({ success: true, schedule });
   } catch (error) {
-    console.log(error);
-
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
@@ -78,28 +65,30 @@ export const createSchedule = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { route, date, time, vehicle, price } = req.body;
+    const { route, date, time, vehicle, price, seatConfig } = req.body;
+
+    // Calculer totalSeats depuis seatConfig si fourni
+    const totalSeats = seatConfig?.totalSeats ?? 16;
 
     const schedule = await Schedule.create({
       route,
       date,
       time,
       vehicle: vehicle || "Crafter",
-      totalSeats: 16,
-      availableSeats: 16,
+      totalSeats,
+      availableSeats: totalSeats,
       occupiedSeats: [],
       price,
       status: "scheduled",
+      seatConfig: seatConfig ?? null,
     });
 
     const populatedSchedule = await Schedule.findById(schedule._id).populate(
       "route",
     );
-
     res.status(201).json({ success: true, schedule: populatedSchedule });
   } catch (error) {
     console.log(error);
-
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
@@ -109,20 +98,30 @@ export const updateSchedule = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const schedule = await Schedule.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("route");
+    const { seatConfig, ...rest } = req.body;
 
+    // findById + save obligatoire pour les champs Mixed (seatConfig)
+    // findByIdAndUpdate ignore les modifications Mixed sur les docs existants
+    const schedule = await Schedule.findById(req.params.id);
     if (!schedule) {
-      res.status(404).json({
-        success: false,
-        message: "Horaire non trouvé",
-      });
+      res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
 
-    res.json({ success: true, schedule });
+    Object.assign(schedule, rest);
+
+    if (seatConfig !== undefined) {
+      schedule.seatConfig = seatConfig;
+      schedule.markModified("seatConfig"); // OBLIGATOIRE pour Schema.Types.Mixed
+      if (seatConfig?.totalSeats) {
+        schedule.totalSeats = seatConfig.totalSeats;
+      }
+    }
+
+    await schedule.save({ validateBeforeSave: false });
+
+    const populated = await Schedule.findById(schedule._id).populate("route");
+    res.json({ success: true, schedule: populated });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
@@ -134,19 +133,13 @@ export const deleteSchedule = async (
 ): Promise<void> => {
   try {
     const schedule = await Schedule.findByIdAndDelete(req.params.id);
-
     if (!schedule) {
-      res.status(404).json({
-        success: false,
-        message: "Horaire non trouvé",
-      });
+      res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
-
     res.json({ success: true, message: "Horaire supprimé" });
   } catch (error) {
     console.log(error);
-
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
@@ -162,7 +155,6 @@ export const getSheduleHistory = async (req: Request, res: Response) => {
       to,
       status,
     } = req.query;
-
     const filter: Record<string, unknown> = {};
 
     if (status) {

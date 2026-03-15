@@ -14,7 +14,9 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { vehicleTemplateApi } from "../../api/vehicleTemplateApi";
+import type { SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -107,6 +109,7 @@ function ConfigStep({
     times: string[];
     price: number;
     vehicle: string;
+    seatConfig: SeatConfig | null;
   }) => void;
 }) {
   const [routeId, setRouteId] = useState("");
@@ -126,6 +129,23 @@ function ConfigStep({
   const [timeMode, setTimeMode] = useState<"hourly" | "half">("hourly");
   const [price, setPrice] = useState<number | "">("");
   const [vehicle, setVehicle] = useState("Crafter");
+  const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
+  const [templateLabel, setTemplateLabel] = useState<string | null>(null);
+
+  // Charger le template du véhicule à chaque changement
+  useEffect(() => {
+    vehicleTemplateApi.getByType(vehicle).then((tpl) => {
+      if (tpl) {
+        setSeatConfig(tpl.seatConfig);
+        setTemplateLabel(
+          `Plan "${vehicle}" chargé — ${tpl.seatConfig.totalSeats} places`,
+        );
+      } else {
+        setSeatConfig(null);
+        setTemplateLabel(null);
+      }
+    });
+  }, [vehicle]);
 
   const { data: routesData } = useQuery({
     queryKey: ["routes-gen"],
@@ -383,6 +403,7 @@ function ConfigStep({
             <select
               value={vehicle}
               onChange={(e) => setVehicle(e.target.value)}
+              // useEffect se charge de charger le template
               className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white"
             >
               {VEHICLES.map((v) => (
@@ -391,6 +412,17 @@ function ConfigStep({
                 </option>
               ))}
             </select>
+            {templateLabel && (
+              <p className="text-xs text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
+                <Check size={11} /> {templateLabel}
+              </p>
+            )}
+            {!templateLabel && vehicle && (
+              <p className="text-xs text-amber-500 mt-1.5">
+                Aucun modèle enregistré pour {vehicle} — un plan par défaut sera
+                généré
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -431,6 +463,7 @@ function ConfigStep({
                 times: selectedTimes,
                 price: effectivePrice,
                 vehicle,
+                seatConfig,
               })
             }
             className="flex items-center gap-2 bg-primary text-black font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
@@ -928,6 +961,7 @@ export default function GenerateSchedules() {
     times: string[];
     price: number;
     vehicle: string;
+    seatConfig: SeatConfig | null;
   } | null>(null);
   const [previewData, setPreviewData] = useState<{
     items: EditableItem[];
@@ -972,6 +1006,7 @@ export default function GenerateSchedules() {
           time: i.time,
           price: i.price,
           vehicle: i.vehicle,
+          seatConfig: config?.seatConfig ?? null,
         }));
       const { data } = await api.post("/admin/schedules/generate", {
         items: toCreate,

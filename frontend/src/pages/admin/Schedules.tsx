@@ -14,6 +14,7 @@ import {
   Filter,
   Hash,
   History,
+  Layers,
   Loader,
   MoreHorizontal,
   Phone,
@@ -30,6 +31,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { vehicleTemplateApi } from "../../api/vehicleTemplateApi";
+import { SeatLayoutEditor } from "../../components/admin/SeatLayoutEditor";
+import { buildFallbackConfig, type SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,6 +67,7 @@ interface Schedule {
   price: number;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
   notes?: string;
+  seatConfig?: SeatConfig | null;
 }
 
 interface Route {
@@ -73,7 +78,7 @@ interface Route {
   duration: string;
 }
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   scheduled: {
     label: "Planifié",
@@ -169,7 +174,6 @@ function driverInitials(d: Driver) {
   return `${d.firstName[0] ?? ""}${d.lastName[0] ?? ""}`.toUpperCase();
 }
 
-// Le backend peut renvoyer driver comme string (ID non-populé) ou objet Driver
 function getDriverObj(
   driver: Driver | string | null | undefined,
 ): Driver | null {
@@ -177,7 +181,6 @@ function getDriverObj(
   return driver;
 }
 
-// Formate une Date en "YYYY-MM-DD" en heure LOCALE (pas UTC)
 function toLocalDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -194,7 +197,6 @@ function PassengerModal({
   onClose: () => void;
 }) {
   const [search, setSearch] = useState("");
-
   const { data, isLoading } = useQuery({
     queryKey: ["passengers", schedule._id],
     queryFn: async () => {
@@ -207,7 +209,6 @@ function PassengerModal({
 
   const summary = data?.summary;
   const allPassengers: Passenger[] = data?.passengers ?? [];
-
   const passengers = search.trim()
     ? allPassengers.filter((p) => {
         const q = search.toLowerCase();
@@ -236,14 +237,10 @@ function PassengerModal({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-
       <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
-        {/* Drag handle mobile */}
         <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
-
-        {/* Header */}
         <div className="bg-gray-900 text-white p-4 sm:p-6 shrink-0">
           <div className="flex items-start justify-between mb-4">
             <div className="min-w-0">
@@ -272,8 +269,6 @@ function PassengerModal({
               <X size={16} />
             </button>
           </div>
-
-          {/* Occupancy bar */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-gray-400">
               <span>{occupiedCount} passagers</span>
@@ -283,20 +278,12 @@ function PassengerModal({
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${
-                  occupancyPct >= 90
-                    ? "bg-red-400"
-                    : occupancyPct >= 60
-                      ? "bg-amber-400"
-                      : "bg-emerald-400"
-                }`}
+                className={`h-full rounded-full transition-all ${occupancyPct >= 90 ? "bg-red-400" : occupancyPct >= 60 ? "bg-amber-400" : "bg-emerald-400"}`}
                 style={{ width: `${occupancyPct}%` }}
               />
             </div>
           </div>
         </div>
-
-        {/* Summary chips */}
         {summary && (
           <div className="flex flex-wrap gap-2 px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
@@ -313,8 +300,6 @@ function PassengerModal({
             </div>
           </div>
         )}
-
-        {/* Search */}
         {allPassengers.length > 0 && (
           <div className="px-4 sm:px-6 py-3 border-b border-gray-100 shrink-0">
             <div className="relative">
@@ -326,7 +311,7 @@ function PassengerModal({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Nom, siège, référence, téléphone…"
+                placeholder="Nom, siège, référence…"
                 className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-gray-400"
               />
               {search && (
@@ -340,29 +325,18 @@ function PassengerModal({
             </div>
           </div>
         )}
-
-        {/* List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5">
           {isLoading ? (
             <div className="flex flex-col items-center py-12">
               <div className="size-8 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-3" />
               <p className="text-sm text-gray-400">Chargement…</p>
             </div>
-          ) : allPassengers.length === 0 ? (
+          ) : passengers.length === 0 ? (
             <div className="text-center py-12">
               <div className="size-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Users size={20} className="text-gray-400" />
               </div>
               <p className="text-gray-500 font-medium">Aucun passager</p>
-              <p className="text-gray-400 text-sm">
-                Ce voyage n'a pas encore de réservations
-              </p>
-            </div>
-          ) : passengers.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-gray-400 text-sm">
-                Aucun résultat pour « {search} »
-              </p>
             </div>
           ) : (
             passengers.map((p, index) => (
@@ -379,19 +353,10 @@ function PassengerModal({
                       {p.user.name}
                     </p>
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-                        p.status === "confirmed"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${p.status === "confirmed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
                     >
                       {p.status === "confirmed" ? "Confirmé" : "En attente"}
                     </span>
-                    {p.paymentStatus === "paid" && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 bg-blue-100 text-blue-700">
-                        Payé
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-400">
                     {p.user.phone ? (
@@ -400,18 +365,12 @@ function PassengerModal({
                         {p.user.phone}
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 truncate max-w-[160px]">
-                        <span className="truncate">
-                          {p.user.email.includes("@cotram.local")
-                            ? "Walk-in"
-                            : p.user.email}
-                        </span>
+                      <span className="truncate max-w-[160px]">
+                        {p.user.email.includes("@cotram.local")
+                          ? "Walk-in"
+                          : p.user.email}
                       </span>
                     )}
-                    <span className="text-gray-300 hidden sm:inline">·</span>
-                    <span className="font-mono text-[10px] text-gray-400 hidden sm:inline">
-                      {p.bookingReference}
-                    </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
@@ -433,8 +392,6 @@ function PassengerModal({
             ))
           )}
         </div>
-
-        {/* Footer */}
         <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
           {!isLoading && (
             <p className="text-xs text-gray-400">
@@ -529,7 +486,6 @@ function AssignDriverModal({
       d.vehicleNumber.toLowerCase().includes(q)
     );
   });
-
   const selectedDriver = (data?.drivers ?? []).find(
     (d) => d._id === selectedId,
   );
@@ -553,14 +509,12 @@ function AssignDriverModal({
             </button>
           </div>
         </div>
-
         <div className="p-5 space-y-4">
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
               {error}
             </div>
           )}
-
           <div className="relative">
             <Search
               size={14}
@@ -573,9 +527,7 @@ function AssignDriverModal({
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>
-
           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {/* No driver */}
             <button
               onClick={() => {
                 setSelectedId("");
@@ -592,11 +544,8 @@ function AssignDriverModal({
               </div>
               {!selectedId && <Check size={14} className="text-primary" />}
             </button>
-
             {drivers.map((d) => {
               const isSelected = d._id === selectedId;
-              // Indisponible seulement si en voyage EN CE MOMENT (on_trip)
-              // ou suspendu. Un chauffeur avec des voyages futurs reste disponible.
               const unavailable =
                 (d.status === "on_trip" || d.status === "suspended") &&
                 d._id !== currentDriver?._id;
@@ -608,13 +557,7 @@ function AssignDriverModal({
                     setSelectedId(d._id);
                     setVehicleNumber(d.vehicleNumber);
                   }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                    isSelected
-                      ? "border-primary bg-primary/5"
-                      : unavailable
-                        ? "border-gray-100 opacity-40 cursor-not-allowed"
-                        : "border-gray-100 hover:border-gray-200 hover:bg-gray-50/50"
-                  }`}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${isSelected ? "border-primary bg-primary/5" : unavailable ? "border-gray-100 opacity-40 cursor-not-allowed" : "border-gray-100 hover:border-gray-200 hover:bg-gray-50/50"}`}
                 >
                   <div
                     className={`size-9 rounded-xl bg-gradient-to-br ${hashColor(AVATAR_COLORS, d._id)} flex items-center justify-center text-white font-black text-sm shrink-0`}
@@ -633,13 +576,6 @@ function AssignDriverModal({
                     <p className="text-xs text-gray-400 font-mono">
                       {d.vehicleNumber} · {d.vehicleType}
                     </p>
-                    {unavailable && (
-                      <p className="text-[10px] text-red-400 font-semibold mt-0.5">
-                        {d.status === "on_trip"
-                          ? "En voyage actuellement"
-                          : "Suspendu"}
-                      </p>
-                    )}
                   </div>
                   {isSelected && (
                     <Check size={14} className="text-primary shrink-0" />
@@ -648,7 +584,6 @@ function AssignDriverModal({
               );
             })}
           </div>
-
           {selectedId && (
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
@@ -665,16 +600,12 @@ function AssignDriverModal({
                     setVehicleNumber(e.target.value.toUpperCase())
                   }
                   placeholder={selectedDriver?.vehicleNumber ?? "1234 TA"}
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">
-                Laisser vide pour utiliser le numéro par défaut
-              </p>
             </div>
           )}
         </div>
-
         <div className="px-5 pb-5 flex gap-3">
           <button
             onClick={onClose}
@@ -722,7 +653,6 @@ function ScheduleCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
   const cfg = STATUS_CONFIG[schedule.status] ?? STATUS_CONFIG.scheduled;
   const occupiedCount = schedule.totalSeats - schedule.availableSeats;
   const pct = Math.round((occupiedCount / schedule.totalSeats) * 100);
@@ -746,24 +676,11 @@ function ScheduleCard({
 
   return (
     <div
-      className={`group relative bg-white rounded-2xl border transition-all duration-200 hover:shadow-md ${
-        selected
-          ? "border-primary shadow-sm shadow-primary/10"
-          : schedule.status === "in_progress"
-            ? "border-blue-200 shadow-sm shadow-blue-500/10"
-            : "border-gray-100 hover:border-gray-200"
-      } ${isPast && schedule.status === "completed" ? "opacity-60" : ""}`}
+      className={`group relative bg-white rounded-2xl border transition-all duration-200 hover:shadow-md ${selected ? "border-primary shadow-sm shadow-primary/10" : schedule.status === "in_progress" ? "border-blue-200 shadow-sm shadow-blue-500/10" : "border-gray-100 hover:border-gray-200"} ${isPast && schedule.status === "completed" ? "opacity-60" : ""}`}
     >
-      {/* Color strip — bleu pulsant si en cours */}
       <div
-        className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b ${
-          schedule.status === "in_progress"
-            ? "from-blue-400 to-blue-600 animate-pulse"
-            : `${routeColor} opacity-70`
-        }`}
+        className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b ${schedule.status === "in_progress" ? "from-blue-400 to-blue-600 animate-pulse" : `${routeColor} opacity-70`}`}
       />
-
-      {/* LIVE badge */}
       {schedule.status === "in_progress" && (
         <div className="absolute top-2 right-12 flex items-center gap-1.5 bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full z-10 pointer-events-none">
           <span className="relative flex size-1.5">
@@ -773,17 +690,13 @@ function ScheduleCard({
           EN COURS
         </div>
       )}
-
       <div className="flex items-center gap-3 px-5 py-3.5 pl-6">
-        {/* Checkbox */}
         <button
           onClick={() => onSelect(schedule._id)}
           className={`size-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "border-primary bg-primary" : "border-gray-300 hover:border-primary/50"}`}
         >
           {selected && <Check size={11} className="text-black" />}
         </button>
-
-        {/* Time */}
         <div className="w-20 shrink-0">
           <span className="text-xl font-black text-gray-900 font-mono leading-none">
             {schedule.time}
@@ -799,8 +712,6 @@ function ScheduleCard({
                 })}
           </p>
         </div>
-
-        {/* Route */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-gray-900 text-sm truncate">
@@ -819,10 +730,13 @@ function ScheduleCard({
             <span className="text-xs text-gray-400">
               {schedule.route.duration}
             </span>
+            {schedule.seatConfig && (
+              <span className="text-xs text-primary font-bold flex items-center gap-1">
+                <Layers size={9} /> {schedule.seatConfig.totalSeats}p
+              </span>
+            )}
           </div>
         </div>
-
-        {/* Driver badge */}
         <div className="w-36 shrink-0 hidden xl:block">
           {(() => {
             const d = getDriverObj(schedule.driver);
@@ -850,14 +764,11 @@ function ScheduleCard({
                 onClick={() => onAssignDriver(schedule)}
                 className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary border border-dashed border-gray-200 hover:border-primary/40 hover:bg-primary/5 rounded-xl px-2.5 py-1.5 transition-all w-full justify-center"
               >
-                <User size={11} />{" "}
-                {schedule.driver ? "Voir chauffeur" : "Assigner"}
+                <User size={11} /> Assigner
               </button>
             );
           })()}
         </div>
-
-        {/* Occupancy */}
         <div className="w-32 shrink-0 hidden lg:block">
           <button
             onClick={() => onViewPassengers(schedule)}
@@ -881,8 +792,6 @@ function ScheduleCard({
             </div>
           </button>
         </div>
-
-        {/* Price */}
         <div className="w-24 text-right shrink-0 hidden md:block">
           <p className="font-black text-gray-900 text-sm">
             {schedule.price.toLocaleString()}
@@ -890,8 +799,6 @@ function ScheduleCard({
           </p>
           <p className="text-[10px] text-gray-400">par siège</p>
         </div>
-
-        {/* Status */}
         <div className="shrink-0 hidden sm:block">
           <span
             className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border ${cfg.badge}`}
@@ -900,8 +807,6 @@ function ScheduleCard({
             {cfg.label}
           </span>
         </div>
-
-        {/* Context menu */}
         <div ref={menuRef} className="relative shrink-0">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -919,7 +824,7 @@ function ScheduleCard({
                   }}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
                 >
-                  <Edit3 size={14} /> Modifier l'horaire
+                  <Edit3 size={14} /> Modifier
                 </button>
                 <button
                   onClick={() => {
@@ -949,7 +854,7 @@ function ScheduleCard({
                       }}
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
                     >
-                      <Zap size={14} /> Démarrer le voyage
+                      <Zap size={14} /> Démarrer
                     </button>
                     <button
                       onClick={() => {
@@ -958,7 +863,7 @@ function ScheduleCard({
                       }}
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
                     >
-                      <X size={14} /> Annuler le voyage
+                      <X size={14} /> Annuler
                     </button>
                   </>
                 )}
@@ -1019,14 +924,12 @@ function CalendarView({
   const lastDay = new Date(year, month + 1, 0);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const totalCells = Math.ceil((startOffset + lastDay.getDate()) / 7) * 7;
-
   const byDate = schedules.reduce<Record<string, Schedule[]>>((acc, s) => {
     const k = toLocalDateKey(new Date(s.date));
     if (!acc[k]) acc[k] = [];
     acc[k].push(s);
     return acc;
   }, {});
-
   const todayMid = new Date();
   todayMid.setHours(0, 0, 0, 0);
 
@@ -1134,7 +1037,7 @@ function CalendarView({
   );
 }
 
-// ─── Schedule Modal (Create / Edit) ───────────────────────────────────────────
+// ─── Schedule Modal ────────────────────────────────────────────────────────────
 function ScheduleModal({
   schedule,
   routes,
@@ -1148,6 +1051,7 @@ function ScheduleModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState<"infos" | "seats">("infos");
   const [form, setForm] = useState({
     route: schedule?.route._id ?? "",
     date: schedule ? schedule.date.split("T")[0]! : "",
@@ -1158,11 +1062,48 @@ function ScheduleModal({
     driverId: getDriverObj(schedule?.driver)?._id ?? "",
     notes: schedule?.notes ?? "",
   });
+  const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(
+    schedule?.seatConfig ?? buildFallbackConfig(schedule?.totalSeats ?? 16),
+  );
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateSaved, setTemplateSaved] = useState(false);
   const [error, setError] = useState("");
+
+  // Quand le véhicule change et qu'on n'a pas encore de seatConfig personnalisé
+  // → charger le template du véhicule
+  const handleVehicleChange = async (vehicle: string) => {
+    setForm((f) => ({ ...f, vehicle }));
+    // Ne pas écraser un plan déjà configuré sur cet horaire
+    if (schedule?.seatConfig) return;
+    const template = await vehicleTemplateApi.getByType(vehicle);
+    if (template) setSeatConfig(template.seatConfig);
+  };
+
+  // Au montage : si pas de seatConfig sur l'horaire → charger le template du véhicule
+  useEffect(() => {
+    if (schedule?.seatConfig) return; // déjà configuré, ne pas écraser
+    vehicleTemplateApi.getByType(form.vehicle).then((template) => {
+      if (template) setSeatConfig(template.seatConfig);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveAsTemplate = async () => {
+    if (!seatConfig) return;
+    setSavingTemplate(true);
+    try {
+      await vehicleTemplateApi.save(form.vehicle, seatConfig);
+      setTemplateSaved(true);
+      setTimeout(() => setTemplateSaved(false), 3000);
+    } catch {
+      setError("Erreur lors de la sauvegarde du modèle");
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         route: form.route,
         date: form.date,
         time: form.time,
@@ -1171,7 +1112,10 @@ function ScheduleModal({
         vehicleNumber: form.vehicleNumber || null,
         driver: form.driverId || null,
         notes: form.notes || null,
+        seatConfig: seatConfig ?? null,
+        totalSeats: seatConfig?.totalSeats ?? 16,
       };
+      if (!schedule) payload.availableSeats = seatConfig?.totalSeats ?? 16;
       if (schedule) return api.put(`/schedules/${schedule._id}`, payload);
       return api.post("/schedules", payload);
     },
@@ -1189,10 +1133,10 @@ function ScheduleModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
         {/* Header */}
         <div className="bg-gray-900 text-white px-6 py-5 shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">
                 {schedule ? "Modifier l'horaire" : "Nouvel horaire"}
@@ -1210,12 +1154,40 @@ function ScheduleModal({
               <X size={16} />
             </button>
           </div>
+          {/* Tabs */}
+          <div className="flex gap-1 bg-white/10 p-1 rounded-xl w-fit">
+            {(["infos", "seats"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${activeTab === tab ? "bg-white text-gray-900" : "text-white/60 hover:text-white"}`}
+              >
+                {tab === "infos" ? (
+                  "Informations"
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <Layers size={13} />
+                    Plan des sièges
+                    {seatConfig ? (
+                      <span className="bg-primary text-black text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                        {seatConfig.totalSeats}
+                      </span>
+                    ) : (
+                      <span className="bg-white/20 text-white/60 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        Non défini
+                      </span>
+                    )}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-4">
+        <div className="p-6 overflow-y-auto flex-1">
           {error && (
-            <div className="flex gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <div className="flex gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
               <AlertTriangle
                 size={15}
                 className="text-red-500 shrink-0 mt-0.5"
@@ -1224,177 +1196,213 @@ function ScheduleModal({
             </div>
           )}
 
-          {/* Trajet */}
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Trajet
-            </label>
-            <select
-              value={form.route}
-              onChange={(e) => {
-                const r = routes.find((x) => x._id === e.target.value);
-                setForm({
-                  ...form,
-                  route: e.target.value,
-                  price: r?.price ?? form.price,
-                });
-              }}
-              className={inp}
-            >
-              <option value="">Sélectionner un trajet</option>
-              {routes.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.departure} → {r.destination}
-                </option>
-              ))}
-            </select>
-            {selectedRoute && (
-              <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                <Clock size={10} /> {selectedRoute.duration} · Prix défaut :{" "}
-                {selectedRoute.price.toLocaleString()} Ar
-              </p>
-            )}
-          </div>
-
-          {/* Date & Heure */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Date
-              </label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className={inp}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Heure
-              </label>
-              <input
-                type="time"
-                value={form.time}
-                onChange={(e) => setForm({ ...form, time: e.target.value })}
-                className={`${inp} font-mono`}
-              />
-            </div>
-          </div>
-
-          {/* Prix & Véhicule */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Prix (Ar/siège)
-              </label>
-              <input
-                type="number"
-                value={form.price}
-                onChange={(e) =>
-                  setForm({ ...form, price: Number(e.target.value) })
-                }
-                className={inp}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Type véhicule
-              </label>
-              <select
-                value={form.vehicle}
-                onChange={(e) => setForm({ ...form, vehicle: e.target.value })}
-                className={inp}
-              >
-                {VEHICLES.map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* ── Chauffeur & Immatriculation ── */}
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <User size={11} /> Chauffeur & Véhicule
-            </p>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                Chauffeur (optionnel)
-              </label>
-              <select
-                value={form.driverId}
-                onChange={(e) => {
-                  const d = drivers.find((x) => x._id === e.target.value);
-                  setForm({
-                    ...form,
-                    driverId: e.target.value,
-                    vehicleNumber: d?.vehicleNumber ?? form.vehicleNumber,
-                  });
-                }}
-                className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
-              >
-                <option value="">— Aucun chauffeur —</option>
-                {drivers.map((d) => (
-                  <option
-                    key={d._id}
-                    value={d._id}
-                    disabled={d.status === "suspended"}
-                  >
-                    {d.firstName} {d.lastName} ({d.vehicleType})
-                    {d.status !== "available"
-                      ? ` – ${DRIVER_STATUS[d.status].label}`
-                      : ""}
-                  </option>
-                ))}
-              </select>
-              {selectedDriver && (
-                <p className="text-xs text-gray-400 mt-1 flex items-center gap-2">
-                  <Phone size={10} /> {selectedDriver.phone}
-                  <span className="text-gray-300">·</span>
-                  <Hash size={10} /> {selectedDriver.vehicleNumber}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                Numéro d'immatriculation
-              </label>
-              <div className="relative">
-                <Hash
-                  size={13}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  value={form.vehicleNumber}
-                  onChange={(e) =>
+          {/* ── Tab Informations ── */}
+          {activeTab === "infos" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Trajet
+                </label>
+                <select
+                  value={form.route}
+                  onChange={(e) => {
+                    const r = routes.find((x) => x._id === e.target.value);
                     setForm({
                       ...form,
-                      vehicleNumber: e.target.value.toUpperCase(),
-                    })
-                  }
-                  placeholder="ex: 1234 TA"
-                  className="w-full border border-gray-200 rounded-xl py-2.5 pl-8 pr-3 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      route: e.target.value,
+                      price: r?.price ?? form.price,
+                    });
+                  }}
+                  className={inp}
+                >
+                  <option value="">Sélectionner un trajet</option>
+                  {routes.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      {r.departure} → {r.destination}
+                    </option>
+                  ))}
+                </select>
+                {selectedRoute && (
+                  <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                    <Clock size={10} /> {selectedRoute.duration} · Prix défaut :{" "}
+                    {selectedRoute.price.toLocaleString()} Ar
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    className={inp}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Heure
+                  </label>
+                  <input
+                    type="time"
+                    value={form.time}
+                    onChange={(e) => setForm({ ...form, time: e.target.value })}
+                    className={`${inp} font-mono`}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Prix (Ar/siège)
+                  </label>
+                  <input
+                    type="number"
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm({ ...form, price: Number(e.target.value) })
+                    }
+                    className={inp}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Type véhicule
+                  </label>
+                  <select
+                    value={form.vehicle}
+                    onChange={(e) => handleVehicleChange(e.target.value)}
+                    className={inp}
+                  >
+                    {VEHICLES.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <User size={11} /> Chauffeur & Véhicule
+                </p>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">
+                    Chauffeur (optionnel)
+                  </label>
+                  <select
+                    value={form.driverId}
+                    onChange={(e) => {
+                      const d = drivers.find((x) => x._id === e.target.value);
+                      setForm({
+                        ...form,
+                        driverId: e.target.value,
+                        vehicleNumber: d?.vehicleNumber ?? form.vehicleNumber,
+                      });
+                    }}
+                    className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                  >
+                    <option value="">— Aucun chauffeur —</option>
+                    {drivers.map((d) => (
+                      <option
+                        key={d._id}
+                        value={d._id}
+                        disabled={d.status === "suspended"}
+                      >
+                        {d.firstName} {d.lastName} ({d.vehicleType})
+                        {d.status !== "available"
+                          ? ` – ${DRIVER_STATUS[d.status].label}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedDriver && (
+                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-2">
+                      <Phone size={10} /> {selectedDriver.phone}
+                      <span className="text-gray-300">·</span>
+                      <Hash size={10} /> {selectedDriver.vehicleNumber}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">
+                    Immatriculation
+                  </label>
+                  <div className="relative">
+                    <Hash
+                      size={13}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      value={form.vehicleNumber}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          vehicleNumber: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="ex: 1234 TA"
+                      className="w-full border border-gray-200 rounded-xl py-2.5 pl-8 pr-3 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Notes (optionnel)
+                </label>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  rows={2}
+                  className="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
+              {/* CTA vers l'onglet sièges */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("seats")}
+                className="w-full py-3 border-2 border-dashed border-primary/30 rounded-xl text-sm font-semibold text-primary/70 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+              >
+                <Layers size={15} />
+                {seatConfig
+                  ? `Plan configuré — ${seatConfig.totalSeats} places · Modifier →`
+                  : "Configurer le plan des sièges →"}
+              </button>
             </div>
-          </div>
+          )}
 
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Notes (optionnel)
-            </label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={2}
-              placeholder="Remarques sur ce voyage…"
-              className="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
-            />
-          </div>
+          {/* ── Tab Plan des sièges ── */}
+          {activeTab === "seats" && (
+            <div className="space-y-4">
+              <SeatLayoutEditor value={seatConfig} onChange={setSeatConfig} />
+              {seatConfig && (
+                <button
+                  type="button"
+                  onClick={saveAsTemplate}
+                  disabled={savingTemplate}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-bold transition-all ${
+                    templateSaved
+                      ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                      : "border-dashed border-primary/40 text-primary/70 hover:border-primary hover:bg-primary/5"
+                  }`}
+                >
+                  {savingTemplate ? (
+                    <Loader size={14} className="animate-spin" />
+                  ) : templateSaved ? (
+                    <>
+                      <Check size={14} /> Modèle sauvegardé pour {form.vehicle}{" "}
+                      !
+                    </>
+                  ) : (
+                    <>
+                      <Bus size={14} /> Sauvegarder comme modèle {form.vehicle}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -1447,8 +1455,7 @@ function DeleteModal({
           Supprimer {count} horaire{count > 1 ? "s" : ""} ?
         </h3>
         <p className="text-gray-500 text-sm mb-6">
-          Cette action est irréversible. Les réservations associées devront être
-          gérées séparément.
+          Cette action est irréversible.
         </p>
         <div className="flex gap-3">
           <button
@@ -1478,7 +1485,6 @@ function DeleteModal({
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function AdminSchedules() {
   const queryClient = useQueryClient();
-
   const [view, setView] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -1496,8 +1502,6 @@ export default function AdminSchedules() {
   const [deleteTarget, setDeleteTarget] = useState<string | "bulk" | null>(
     null,
   );
-
-  // ── Queries ───────────────────────────────────────────────────────────────────
   const [includeHistory, setIncludeHistory] = useState(false);
 
   const {
@@ -1508,11 +1512,10 @@ export default function AdminSchedules() {
     queryKey: ["admin-schedules", includeHistory],
     queryFn: async () => {
       const { data } = await api.get(
-        `/schedules${includeHistory ? "?includeHistory=true" : ""}`,
+        `/admin/schedules${includeHistory ? "?includeHistory=true" : ""}`,
       );
       return data.schedules;
     },
-    // Toutes les 30s pour détecter les changements de statut automatiques (cron backend)
     refetchInterval: 30_000,
     refetchIntervalInBackground: true,
   });
@@ -1524,7 +1527,6 @@ export default function AdminSchedules() {
       return data;
     },
   });
-
   const { data: driversData } = useQuery<{ drivers: Driver[] }>({
     queryKey: ["drivers"],
     queryFn: async () => {
@@ -1536,7 +1538,6 @@ export default function AdminSchedules() {
   const routes = routesData?.routes ?? [];
   const drivers = driversData?.drivers ?? [];
 
-  // ── Mutations ─────────────────────────────────────────────────────────────────
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) =>
       Promise.all(ids.map((id) => api.delete(`/schedules/${id}`))),
@@ -1554,7 +1555,6 @@ export default function AdminSchedules() {
       queryClient.invalidateQueries({ queryKey: ["admin-schedules"] }),
   });
 
-  // ── Filters ───────────────────────────────────────────────────────────────────
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const nextWeek = new Date(today);
@@ -1585,7 +1585,6 @@ export default function AdminSchedules() {
     return true;
   });
 
-  // ── Stats ─────────────────────────────────────────────────────────────────────
   const todaySchedules = schedulesRaw.filter(
     (s) =>
       new Date(s.date + "T00:00:00").toDateString() ===
@@ -1610,7 +1609,6 @@ export default function AdminSchedules() {
       new Date(s.date + "T00:00:00") >= today,
   ).length;
 
-  // ── Selection ─────────────────────────────────────────────────────────────────
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const n = new Set(prev);
@@ -1634,7 +1632,6 @@ export default function AdminSchedules() {
     dateFilter !== "all",
   ].filter(Boolean).length;
 
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -1709,7 +1706,7 @@ export default function AdminSchedules() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Trajet, heure, chauffeur, immatriculation…"
+              placeholder="Trajet, heure, chauffeur…"
               className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
             />
             {search && (
@@ -1721,13 +1718,11 @@ export default function AdminSchedules() {
               </button>
             )}
           </div>
-
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${showFilters || activeFiltersCount > 0 ? "border-primary bg-primary/5 text-primary" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}
           >
-            <Filter size={14} />
-            Filtres
+            <Filter size={14} /> Filtres
             {activeFiltersCount > 0 && (
               <span className="size-5 bg-primary rounded-full text-black text-[10px] font-black flex items-center justify-center">
                 {activeFiltersCount}
@@ -1738,7 +1733,6 @@ export default function AdminSchedules() {
               className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
             />
           </button>
-
           <div className="flex bg-gray-100 p-1 rounded-xl">
             {(["list", "calendar"] as const).map((v) => (
               <button
@@ -1750,22 +1744,15 @@ export default function AdminSchedules() {
               </button>
             ))}
           </div>
-
-          {/* Toggle anciens voyages */}
           <button
             onClick={() => setIncludeHistory(!includeHistory)}
-            className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all whitespace-nowrap ${
-              includeHistory
-                ? "border-gray-800 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-            }`}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all whitespace-nowrap ${includeHistory ? "border-gray-800 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"}`}
           >
             <History size={14} />
             <span className="hidden sm:inline">
               {includeHistory ? "Avec historique" : "Sans historique"}
             </span>
           </button>
-
           <button
             onClick={() => refetch()}
             className="size-10 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
@@ -1852,7 +1839,7 @@ export default function AdminSchedules() {
                 }}
                 className="mt-3 text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1"
               >
-                <X size={11} /> Réinitialiser les filtres
+                <X size={11} /> Réinitialiser
               </button>
             )}
           </div>
@@ -1869,7 +1856,7 @@ export default function AdminSchedules() {
               onClick={() => setDeleteTarget("bulk")}
               className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold"
             >
-              <Trash2 size={13} /> Supprimer la sélection
+              <Trash2 size={13} /> Supprimer
             </button>
             <button
               onClick={() => setSelectedIds(new Set())}
@@ -1878,17 +1865,6 @@ export default function AdminSchedules() {
               <X size={14} />
             </button>
           </div>
-        )}
-
-        {/* Results count */}
-        {(search || activeFiltersCount > 0) && !isLoading && (
-          <p className="text-sm text-gray-500">
-            <span className="font-bold text-gray-900">{schedules.length}</span>{" "}
-            résultat{schedules.length !== 1 ? "s" : ""}
-            {search && (
-              <span className="text-gray-400"> pour « {search} »</span>
-            )}
-          </p>
         )}
 
         {/* Content */}
@@ -1906,9 +1882,8 @@ export default function AdminSchedules() {
               Aucun horaire trouvé
             </h3>
             <p className="text-gray-400 text-sm mb-6 text-center max-w-xs">
-              {search || activeFiltersCount > 0
-                ? "Essayez de modifier vos critères de recherche"
-                : "Commencez par créer un horaire ou utilisez la génération automatique"}
+              Commencez par créer un horaire ou utilisez la génération
+              automatique
             </p>
             <div className="flex gap-3">
               <Link
@@ -1932,7 +1907,6 @@ export default function AdminSchedules() {
           />
         ) : (
           <div className="space-y-2">
-            {/* Select all */}
             <div className="flex items-center gap-3 px-5 py-2">
               <button
                 onClick={toggleSelectAll}
@@ -1949,8 +1923,6 @@ export default function AdminSchedules() {
                   : `${schedules.length} horaire${schedules.length > 1 ? "s" : ""}`}
               </span>
             </div>
-
-            {/* Grouped by date */}
             {(() => {
               const grouped = schedules.reduce<Record<string, Schedule[]>>(
                 (acc, s) => {
@@ -1961,7 +1933,6 @@ export default function AdminSchedules() {
                 },
                 {},
               );
-
               return Object.entries(grouped)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([dateKey, daySchedules]) => {
@@ -2033,7 +2004,6 @@ export default function AdminSchedules() {
           }
         />
       )}
-
       {assignTarget !== null && (
         <AssignDriverModal
           scheduleId={assignTarget._id}
@@ -2044,14 +2014,12 @@ export default function AdminSchedules() {
           }
         />
       )}
-
       {passengerTarget !== null && (
         <PassengerModal
           schedule={passengerTarget}
           onClose={() => setPassengerTarget(null)}
         />
       )}
-
       {deleteTarget !== null && (
         <DeleteModal
           count={deleteTarget === "bulk" ? selectedIds.size : 1}

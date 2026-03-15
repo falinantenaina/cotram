@@ -1,3 +1,4 @@
+// frontend/src/api/scheduleApi.ts
 import api from "../lib/axios";
 
 export interface Schedule {
@@ -18,6 +19,21 @@ export interface Schedule {
   occupiedSeats: number[];
   price: number;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  seatConfig?: {
+    totalSeats: number;
+    layoutName?: string;
+    rows: Array<{
+      row: number;
+      isBackBench: boolean;
+      label?: string;
+      seats: Array<{
+        id: number;
+        row: number;
+        col: number;
+        position: "left" | "middle" | "right";
+      }>;
+    }>;
+  } | null;
 }
 
 export interface ScheduleFilters {
@@ -29,11 +45,9 @@ export interface ScheduleFilters {
 export const scheduleApi = {
   getSchedules: async (filters?: ScheduleFilters): Promise<Schedule[]> => {
     const params = new URLSearchParams();
-
     if (filters?.departure) params.append("departure", filters.departure);
     if (filters?.destination) params.append("destination", filters.destination);
     if (filters?.date) params.append("date", filters.date);
-
     const { data } = await api.get(`/schedules?${params.toString()}`);
     return data.schedules;
   },
