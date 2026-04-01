@@ -1,6 +1,7 @@
 import {
   Bus,
   Calendar,
+  Car,
   History,
   LayoutDashboard,
   LogOut,
@@ -54,13 +55,19 @@ const AdminLayout = () => {
     {
       path: "/admin/schedules",
       icon: <Calendar size={18} />,
-      label: "Horaires",
+      label: "Voyages",
     },
+
     {
       path: "/admin/schedules/generate",
       icon: <Zap size={18} />,
       label: "Génération auto",
       sub: true,
+    },
+    {
+      path: "/admin/seattemplate",
+      icon: <Car size={18} />,
+      label: "Disposition chaises",
     },
     { path: "/admin/routes", icon: <MapPin size={18} />, label: "Routes" },
     { path: "/admin/users", icon: <Users size={18} />, label: "Utilisateurs" },

@@ -313,12 +313,7 @@ function WalkInModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-lg font-black text-gray-900">
-              Réservation au bureau
-            </h2>
-            <p className="text-gray-400 text-xs mt-0.5">
-              Client se présentant physiquement
-            </p>
+            <h2 className="text-lg font-black text-gray-900">Réservation</h2>
           </div>
           <button
             onClick={onClose}
@@ -857,7 +852,7 @@ const AdminReservations = () => {
           className="flex items-center gap-2 bg-primary text-black font-bold px-5 py-3 rounded-xl hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95 whitespace-nowrap"
         >
           <Plus size={18} />
-          Réservation au bureau
+          Réservation
         </button>
       </div>
 
