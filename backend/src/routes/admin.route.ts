@@ -591,6 +591,7 @@ router.post(
           time: string;
           price: number;
           vehicle: string;
+          seatConfig?: any | null;
         }[];
       };
 
@@ -650,16 +651,18 @@ router.post(
           continue;
         }
 
+        const totalSeats = item.seatConfig?.totalSeats ?? 16;
         schedulesToCreate.push({
           route: item.routeId,
           date: new Date(item.date),
           time: item.time,
           vehicle: item.vehicle || "Crafter",
-          totalSeats: 16,
-          availableSeats: 16,
+          totalSeats,
+          availableSeats: totalSeats,
           occupiedSeats: [],
           price: item.price,
           status: "scheduled",
+          seatConfig: item.seatConfig ?? null,
         });
       }
 
@@ -672,7 +675,10 @@ router.post(
         return;
       }
 
-      const created = await Schedule.insertMany(schedulesToCreate);
+      // Utiliser create() au lieu de insertMany() pour que seatConfig (Mixed) soit bien persisté
+      const created = await Promise.all(
+        schedulesToCreate.map((s) => Schedule.create(s)),
+      );
 
       res.status(201).json({
         success: true,
