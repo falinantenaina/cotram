@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { vehicleTemplateApi } from "../../api/vehicleTemplateApi";
+import { seatTemplateApi, type SeatTemplate } from "../../api/seatTemplateApi";
 import { SeatLayoutEditor } from "../../components/admin/SeatLayoutEditor";
 import { buildFallbackConfig, type SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
@@ -1065,8 +1065,6 @@ function ScheduleModal({
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(
     schedule?.seatConfig ?? buildFallbackConfig(schedule?.totalSeats ?? 16),
   );
-  const [savingTemplate, setSavingTemplate] = useState(false);
-  const [templateSaved, setTemplateSaved] = useState(false);
   const [error, setError] = useState("");
 
   // Quand le véhicule change et qu'on n'a pas encore de seatConfig personnalisé
@@ -1079,25 +1077,19 @@ function ScheduleModal({
     if (template) setSeatConfig(template.seatConfig);
   };
 
-  // Au montage : si pas de seatConfig sur l'horaire → charger le template du véhicule
-  useEffect(() => {
-    if (schedule?.seatConfig) return; // déjà configuré, ne pas écraser
-    vehicleTemplateApi.getByType(form.vehicle).then((template) => {
-      if (template) setSeatConfig(template.seatConfig);
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Templates disponibles
+  const [templates, setTemplates] = useState<SeatTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
-  const saveAsTemplate = async () => {
-    if (!seatConfig) return;
-    setSavingTemplate(true);
-    try {
-      await vehicleTemplateApi.save(form.vehicle, seatConfig);
-      setTemplateSaved(true);
-      setTimeout(() => setTemplateSaved(false), 3000);
-    } catch {
-      setError("Erreur lors de la sauvegarde du modèle");
-    } finally {
-      setSavingTemplate(false);
+  useEffect(() => {
+    seatTemplateApi.getAll().then(setTemplates);
+  }, []);
+
+  const applyTemplate = (id: string) => {
+    const tpl = templates.find((t) => t._id === id);
+    if (tpl) {
+      setSeatConfig(tpl.seatConfig);
+      setSelectedTemplateId(id);
     }
   };
 
@@ -1273,7 +1265,9 @@ function ScheduleModal({
                   </label>
                   <select
                     value={form.vehicle}
-                    onChange={(e) => handleVehicleChange(e.target.value)}
+                    onChange={(e) =>
+                      setForm({ ...form, vehicle: e.target.value })
+                    }
                     className={inp}
                   >
                     {VEHICLES.map((v) => (
@@ -1375,32 +1369,27 @@ function ScheduleModal({
           {/* ── Tab Plan des sièges ── */}
           {activeTab === "seats" && (
             <div className="space-y-4">
-              <SeatLayoutEditor value={seatConfig} onChange={setSeatConfig} />
-              {seatConfig && (
-                <button
-                  type="button"
-                  onClick={saveAsTemplate}
-                  disabled={savingTemplate}
-                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-bold transition-all ${
-                    templateSaved
-                      ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                      : "border-dashed border-primary/40 text-primary/70 hover:border-primary hover:bg-primary/5"
-                  }`}
-                >
-                  {savingTemplate ? (
-                    <Loader size={14} className="animate-spin" />
-                  ) : templateSaved ? (
-                    <>
-                      <Check size={14} /> Modèle sauvegardé pour {form.vehicle}{" "}
-                      !
-                    </>
-                  ) : (
-                    <>
-                      <Bus size={14} /> Sauvegarder comme modèle {form.vehicle}
-                    </>
-                  )}
-                </button>
+              {/* Choisir un template existant */}
+              {templates.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Charger un template
+                  </label>
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(e) => applyTemplate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white transition-all"
+                  >
+                    <option value="">— Choisir un template —</option>
+                    {templates.map((t) => (
+                      <option key={t._id} value={t._id}>
+                        {t.name} ({t.seatConfig.totalSeats} places)
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
+              <SeatLayoutEditor value={seatConfig} onChange={setSeatConfig} />
             </div>
           )}
         </div>
@@ -1661,7 +1650,7 @@ export default function AdminSchedules() {
               onClick={() => setModalSchedule("new")}
               className="flex items-center gap-2 bg-primary text-black font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
             >
-              <Plus size={15} /> Nouvel horaire
+              <Plus size={15} /> Nouvel voyage
             </button>
           </div>
         </div>

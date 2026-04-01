@@ -15,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { vehicleTemplateApi } from "../../api/vehicleTemplateApi";
+import { seatTemplateApi, type SeatTemplate } from "../../api/seatTemplateApi";
 import type { SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
 
@@ -130,22 +130,23 @@ function ConfigStep({
   const [price, setPrice] = useState<number | "">("");
   const [vehicle, setVehicle] = useState("Crafter");
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
-  const [templateLabel, setTemplateLabel] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<SeatTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
-  // Charger le template du véhicule à chaque changement
   useEffect(() => {
-    vehicleTemplateApi.getByType(vehicle).then((tpl) => {
-      if (tpl) {
-        setSeatConfig(tpl.seatConfig);
-        setTemplateLabel(
-          `Plan "${vehicle}" chargé — ${tpl.seatConfig.totalSeats} places`,
-        );
-      } else {
-        setSeatConfig(null);
-        setTemplateLabel(null);
-      }
-    });
-  }, [vehicle]);
+    seatTemplateApi.getAll().then(setTemplates);
+  }, []);
+
+  const applyTemplate = (id: string) => {
+    const tpl = templates.find((t) => t._id === id);
+    if (tpl) {
+      setSeatConfig(tpl.seatConfig);
+      setSelectedTemplateId(id);
+    } else {
+      setSeatConfig(null);
+      setSelectedTemplateId("");
+    }
+  };
 
   const { data: routesData } = useQuery({
     queryKey: ["routes-gen"],
@@ -412,15 +413,29 @@ function ConfigStep({
                 </option>
               ))}
             </select>
-            {templateLabel && (
-              <p className="text-xs text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
-                <Check size={11} /> {templateLabel}
-              </p>
-            )}
-            {!templateLabel && vehicle && (
-              <p className="text-xs text-amber-500 mt-1.5">
-                Aucun modèle enregistré pour {vehicle} — un plan par défaut sera
-                généré
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+              Template de sièges
+            </label>
+            <select
+              value={selectedTemplateId}
+              onChange={(e) => applyTemplate(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white"
+            >
+              <option value="">
+                — Aucun template (16 places par défaut) —
+              </option>
+              {templates.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name} ({t.seatConfig.totalSeats} places)
+                </option>
+              ))}
+            </select>
+            {seatConfig && (
+              <p className="text-xs text-emerald-600 font-semibold mt-1.5">
+                ✓ {seatConfig.totalSeats} places · {seatConfig.rows?.length}{" "}
+                rangées
               </p>
             )}
           </div>
