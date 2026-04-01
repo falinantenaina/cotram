@@ -357,8 +357,13 @@ export default function Dashboard() {
     refetchInterval: 30_000,
   });
 
-  const todaySchedules = todayData?.schedules ?? [];
-  const recentReservations = recentData?.reservations ?? [];
+  const todaySchedules = (todayData?.schedules ?? []).filter(
+    (s: TodaySchedule) => s.route != null,
+  );
+  // Filtrer les réservations dont l'horaire ou la route a été supprimé (évite le crash)
+  const recentReservations = (recentData?.reservations ?? []).filter(
+    (r: RecentReservation) => r.schedule != null && r.schedule.route != null,
+  );
   const now = new Date();
   const nowStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
