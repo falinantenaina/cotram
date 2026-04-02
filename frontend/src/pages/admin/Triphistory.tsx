@@ -18,9 +18,14 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  LoadingSpinner,
+  OccupancyBar,
+  PageHeader,
+  StatCard,
+} from "../../components/common";
 import api from "../../lib/axios";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface PastSchedule {
   _id: string;
   route: {
@@ -56,18 +61,6 @@ interface GlobalStats {
   totalPassengers: number;
 }
 
-interface Route {
-  _id: string;
-  departure: string;
-  destination: string;
-}
-interface Driver {
-  _id: string;
-  firstName: string;
-  lastName: string;
-}
-
-// ─── Config ───────────────────────────────────────────────────────────────────
 const STATUS_CFG = {
   completed: {
     label: "Terminé",
@@ -95,18 +88,8 @@ const STATUS_CFG = {
   },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function occ(s: PastSchedule) {
   return s.totalSeats - s.availableSeats;
-}
-function pct(s: PastSchedule) {
-  return Math.round((occ(s) / s.totalSeats) * 100);
-}
-function barColor(p: number) {
-  if (p >= 90) return "bg-red-500";
-  if (p >= 70) return "bg-amber-400";
-  if (p >= 40) return "bg-emerald-400";
-  return "bg-gray-300";
 }
 
 function exportCSV(schedules: PastSchedule[]) {
@@ -116,11 +99,9 @@ function exportCSV(schedules: PastSchedule[]) {
       "Heure",
       "Trajet",
       "Chauffeur",
-      "Immat.",
       "Statut",
       "Passagers",
       "Sièges",
-      "Taux%",
       "Recette Ar",
     ],
     ...schedules.map((s) => {
@@ -131,11 +112,9 @@ function exportCSV(schedules: PastSchedule[]) {
         s.time,
         `${s.route.departure} → ${s.route.destination}`,
         s.driver ? `${s.driver.firstName} ${s.driver.lastName}` : "Non assigné",
-        s.vehicleNumber ?? s.vehicle,
         STATUS_CFG[s.status]?.label ?? s.status,
         o,
         s.totalSeats,
-        `${Math.round((o / s.totalSeats) * 100)}%`,
         o * s.price,
       ];
     }),
@@ -150,13 +129,11 @@ function exportCSV(schedules: PastSchedule[]) {
   URL.revokeObjectURL(url);
 }
 
-// ─── Row component ─────────────────────────────────────────────────────────────
 function HistoryRow({ s }: { s: PastSchedule }) {
   const [open, setOpen] = useState(false);
   const cfg = STATUS_CFG[s.status] ?? STATUS_CFG.completed;
   const Icon = cfg.icon;
   const occupancy = occ(s);
-  const occupancyPct = pct(s);
   const d = new Date(s.date);
   const revenue = occupancy * s.price;
 
@@ -164,11 +141,10 @@ function HistoryRow({ s }: { s: PastSchedule }) {
     <>
       <tr
         onClick={() => setOpen(!open)}
-        className={`border-b border-gray-50 hover:bg-gray-50/60 cursor-pointer transition-colors ${open ? "bg-primary/3" : ""}`}
+        className="border-b border-gray-50 hover:bg-gray-50/60 cursor-pointer transition-colors"
       >
-        {/* Date */}
-        <td className="px-5 py-3.5">
-          <div className="flex items-center gap-3">
+        <td className="px-4 sm:px-5 py-3.5">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="text-center w-9 shrink-0">
               <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">
                 {d.toLocaleDateString("fr-FR", { month: "short" })}
@@ -182,29 +158,27 @@ function HistoryRow({ s }: { s: PastSchedule }) {
               <p className="font-mono font-black text-gray-900 text-sm leading-none">
                 {s.time}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5 capitalize">
+              <p className="text-xs text-gray-400 mt-0.5 capitalize hidden sm:block">
                 {d.toLocaleDateString("fr-FR", { weekday: "long" })}
               </p>
             </div>
           </div>
         </td>
-
-        {/* Route */}
         <td className="px-4 py-3.5">
           <div className="flex items-center gap-1.5">
-            <span className="font-bold text-gray-900 text-sm">
+            <span className="font-bold text-gray-900 text-sm truncate max-w-[80px] sm:max-w-none">
               {s.route.departure}
             </span>
             <ArrowRight size={11} className="text-gray-400 shrink-0" />
-            <span className="font-bold text-gray-900 text-sm">
+            <span className="font-bold text-gray-900 text-sm truncate max-w-[80px] sm:max-w-none">
               {s.route.destination}
             </span>
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">{s.route.duration}</p>
+          <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">
+            {s.route.duration}
+          </p>
         </td>
-
-        {/* Driver */}
-        <td className="px-4 py-3.5">
+        <td className="px-4 py-3.5 hidden md:table-cell">
           {s.driver ? (
             <div>
               <p className="text-sm font-bold text-gray-800">
@@ -218,41 +192,25 @@ function HistoryRow({ s }: { s: PastSchedule }) {
             <span className="text-xs text-gray-300 italic">Non assigné</span>
           )}
         </td>
-
-        {/* Occupancy */}
-        <td className="px-4 py-3.5 hidden md:table-cell">
-          <div className="flex items-center gap-2">
-            <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${barColor(occupancyPct)}`}
-                style={{ width: `${occupancyPct}%` }}
-              />
-            </div>
-            <span className="text-xs font-bold text-gray-600">
-              {occupancy}/{s.totalSeats}
-            </span>
+        <td className="px-4 py-3.5 hidden lg:table-cell">
+          <div className="w-32">
+            <OccupancyBar value={occupancy} max={s.totalSeats} />
           </div>
         </td>
-
-        {/* Status */}
         <td className="px-4 py-3.5">
           <span
             className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-full border ${cfg.badge}`}
           >
             <Icon size={11} />
-            {cfg.label}
+            <span className="hidden sm:inline">{cfg.label}</span>
           </span>
         </td>
-
-        {/* Revenue */}
-        <td className="px-5 py-3.5 text-right hidden sm:table-cell">
+        <td className="px-4 sm:px-5 py-3.5 text-right hidden sm:table-cell">
           <p className="font-black text-gray-900 text-sm">
             {revenue.toLocaleString()}
           </p>
           <p className="text-[10px] text-gray-400">Ar</p>
         </td>
-
-        {/* Expand */}
         <td className="px-3 py-3.5">
           <ChevronDown
             size={14}
@@ -260,16 +218,15 @@ function HistoryRow({ s }: { s: PastSchedule }) {
           />
         </td>
       </tr>
-
       {open && (
         <tr className="bg-primary/[0.03] border-b border-primary/10">
-          <td colSpan={7} className="px-6 py-4">
+          <td colSpan={7} className="px-4 sm:px-6 py-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 {
                   label: "Passagers",
                   value: occupancy,
-                  sub: `sur ${s.totalSeats} sièges · ${occupancyPct}%`,
+                  sub: `sur ${s.totalSeats} · ${s.totalSeats > 0 ? Math.round((occupancy / s.totalSeats) * 100) : 0}%`,
                 },
                 {
                   label: "Recette",
@@ -290,13 +247,13 @@ function HistoryRow({ s }: { s: PastSchedule }) {
               ].map(({ label, value, sub, color }) => (
                 <div
                   key={label}
-                  className="bg-white rounded-xl border border-gray-100 px-4 py-3"
+                  className="bg-white rounded-xl border border-gray-100 px-3 sm:px-4 py-3"
                 >
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                     {label}
                   </p>
                   <p
-                    className={`text-xl font-black mt-1 ${color ?? "text-gray-900"}`}
+                    className={`text-lg sm:text-xl font-black mt-1 ${color ?? "text-gray-900"}`}
                   >
                     {value}
                   </p>
@@ -319,7 +276,6 @@ function HistoryRow({ s }: { s: PastSchedule }) {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 25;
 
 export default function TripHistory() {
@@ -332,7 +288,6 @@ export default function TripHistory() {
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // ── Queries ──────────────────────────────────────────────────────────────────
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       "trip-history",
@@ -359,15 +314,14 @@ export default function TripHistory() {
     placeholderData: (prev: any) => prev,
   });
 
-  const { data: routesData } = useQuery<{ routes: Route[] }>({
+  const { data: routesData } = useQuery({
     queryKey: ["routes-list"],
     queryFn: async () => {
       const { data } = await api.get("/routes");
       return data;
     },
   });
-
-  const { data: driversData } = useQuery<{ drivers: Driver[] }>({
+  const { data: driversData } = useQuery({
     queryKey: ["drivers"],
     queryFn: async () => {
       const { data } = await api.get("/drivers");
@@ -378,7 +332,7 @@ export default function TripHistory() {
   const schedules: PastSchedule[] = data?.schedules ?? [];
   const total: number = data?.total ?? 0;
   const pages: number = data?.pages ?? 1;
-  const globalStats: GlobalStats = data?.globalStats ?? {
+  const gs: GlobalStats = data?.globalStats ?? {
     total: 0,
     completed: 0,
     cancelled: 0,
@@ -386,7 +340,6 @@ export default function TripHistory() {
     totalPassengers: 0,
   };
 
-  // Local search filter
   const filtered = search
     ? schedules.filter((s) => {
         const q = search.toLowerCase();
@@ -409,16 +362,6 @@ export default function TripHistory() {
     !!dateTo,
   ].filter(Boolean).length;
 
-  const resetFilters = () => {
-    setStatusFilter("all");
-    setRouteFilter("all");
-    setDriverFilter("all");
-    setDateFrom("");
-    setDateTo("");
-    setPage(1);
-  };
-
-  // Quick presets
   const preset = (type: "today" | "week" | "month" | "year") => {
     const now = new Date();
     const toStr = now.toISOString().split("T")[0]!;
@@ -443,91 +386,71 @@ export default function TripHistory() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="px-6 py-4 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">
-              Historique des voyages
-            </h1>
-            <p className="text-gray-400 text-sm mt-0.5">
-              Traçabilité complète · {globalStats.total.toLocaleString()} voyage
-              {globalStats.total !== 1 ? "s" : ""} au total
-            </p>
-          </div>
+      <PageHeader
+        title="Historique des voyages"
+        subtitle={`${gs.total.toLocaleString()} voyage${gs.total !== 1 ? "s" : ""} au total`}
+        actions={
           <button
             onClick={() => exportCSV(filtered)}
             disabled={filtered.length === 0}
-            className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-gray-50 disabled:opacity-40"
           >
             <Download size={15} /> Exporter CSV
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="px-6 py-6 space-y-5">
+      <div className="px-4 sm:px-6 py-6 space-y-5">
         {/* Global stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          {[
-            {
-              label: "Total passés",
-              value: globalStats.total.toLocaleString(),
-              icon: Calendar,
-              sub: "Toutes périodes",
-            },
-            {
-              label: "Terminés",
-              value: globalStats.completed.toLocaleString(),
-              icon: CheckCircle2,
-              sub: globalStats.total
-                ? `${Math.round((globalStats.completed / globalStats.total) * 100)}% du total`
-                : "—",
-              color: "text-emerald-600",
-            },
-            {
-              label: "Annulés",
-              value: globalStats.cancelled.toLocaleString(),
-              icon: XCircle,
-              sub: globalStats.total
-                ? `${Math.round((globalStats.cancelled / globalStats.total) * 100)}% du total`
-                : "—",
-              color: "text-red-600",
-            },
-            {
-              label: "Passagers",
-              value: globalStats.totalPassengers.toLocaleString(),
-              icon: Users,
-              sub: "Cumulé total",
-            },
-            {
-              label: "Recettes",
-              value: `${Math.round(globalStats.totalRevenue / 1000).toLocaleString()}k Ar`,
-              icon: TrendingUp,
-              sub: "Générées au total",
-              color: "text-primary",
-            },
-          ].map(({ label, value, icon: Icon, sub, color }) => (
-            <div
-              key={label}
-              className="bg-white rounded-2xl border border-gray-100 px-4 py-3.5 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Icon size={13} className={color ?? "text-gray-400"} />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                  {label}
-                </p>
-              </div>
-              <p className={`text-2xl font-black ${color ?? "text-gray-900"}`}>
-                {value}
-              </p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
-            </div>
-          ))}
+          <StatCard
+            label="Total passés"
+            value={gs.total.toLocaleString()}
+            icon={Calendar}
+            accent="bg-gray-100 text-gray-600"
+          />
+          <StatCard
+            label="Terminés"
+            value={gs.completed.toLocaleString()}
+            icon={CheckCircle2}
+            accent="bg-emerald-100 text-emerald-700"
+            color="text-emerald-600"
+            sub={
+              gs.total
+                ? `${Math.round((gs.completed / gs.total) * 100)}% du total`
+                : undefined
+            }
+          />
+          <StatCard
+            label="Annulés"
+            value={gs.cancelled.toLocaleString()}
+            icon={XCircle}
+            accent="bg-red-100 text-red-600"
+            color="text-red-600"
+            sub={
+              gs.total
+                ? `${Math.round((gs.cancelled / gs.total) * 100)}% du total`
+                : undefined
+            }
+          />
+          <StatCard
+            label="Passagers"
+            value={gs.totalPassengers.toLocaleString()}
+            icon={Users}
+            accent="bg-blue-100 text-blue-700"
+          />
+          <StatCard
+            label="Recettes"
+            value={`${Math.round(gs.totalRevenue / 1000).toLocaleString()}k Ar`}
+            icon={TrendingUp}
+            accent="bg-primary/10 text-primary"
+            color="text-primary"
+          />
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-48">
             <Search
               size={15}
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -535,19 +458,18 @@ export default function TripHistory() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Chercher par trajet, chauffeur, immatriculation…"
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+              placeholder="Trajet, chauffeur…"
+              className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
               >
                 <X size={14} />
               </button>
             )}
           </div>
-
           {/* Quick presets */}
           <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
             {(
@@ -561,19 +483,17 @@ export default function TripHistory() {
               <button
                 key={key}
                 onClick={() => preset(key)}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm transition-all whitespace-nowrap"
+                className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm transition-all"
               >
                 {label}
               </button>
             ))}
           </div>
-
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${showFilters || activeFilters > 0 ? "border-primary bg-primary/5 text-primary" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${showFilters || activeFilters > 0 ? "border-primary bg-primary/5 text-primary" : "border-gray-200 bg-white text-gray-600"}`}
           >
-            <Filter size={14} />
-            Filtres
+            <Filter size={14} /> Filtres
             {activeFilters > 0 && (
               <span className="size-5 bg-primary rounded-full text-black text-[10px] font-black flex items-center justify-center">
                 {activeFilters}
@@ -586,11 +506,10 @@ export default function TripHistory() {
           </button>
         </div>
 
-        {/* Filter panel */}
+        {/* Filters panel */}
         {showFilters && (
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Status */}
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                   Statut
@@ -611,19 +530,13 @@ export default function TripHistory() {
                         setStatusFilter(s);
                         setPage(1);
                       }}
-                      className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${
-                        statusFilter === s
-                          ? "border-primary bg-primary text-black"
-                          : `border-gray-200 text-gray-600 ${s !== "all" ? STATUS_CFG[s].badge : ""}`
-                      }`}
+                      className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${statusFilter === s ? "border-primary bg-primary text-black" : `border-gray-200 text-gray-600 ${s !== "all" ? STATUS_CFG[s].badge : ""}`}`}
                     >
                       {s === "all" ? "Tous" : STATUS_CFG[s].label}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Route */}
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                   Trajet
@@ -637,15 +550,13 @@ export default function TripHistory() {
                   className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
                 >
                   <option value="all">Tous les trajets</option>
-                  {routesData?.routes.map((r) => (
+                  {routesData?.routes?.map((r: any) => (
                     <option key={r._id} value={r._id}>
                       {r.departure} → {r.destination}
                     </option>
                   ))}
                 </select>
               </div>
-
-              {/* Driver */}
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                   Chauffeur
@@ -659,18 +570,16 @@ export default function TripHistory() {
                   className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
                 >
                   <option value="all">Tous les chauffeurs</option>
-                  {driversData?.drivers.map((d) => (
+                  {driversData?.drivers?.map((d: any) => (
                     <option key={d._id} value={d._id}>
                       {d.firstName} {d.lastName}
                     </option>
                   ))}
                 </select>
               </div>
-
-              {/* Date */}
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  Période personnalisée
+                  Période
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -680,7 +589,7 @@ export default function TripHistory() {
                       setDateFrom(e.target.value);
                       setPage(1);
                     }}
-                    className="flex-1 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="flex-1 border border-gray-200 rounded-xl py-2 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   <input
                     type="date"
@@ -689,17 +598,24 @@ export default function TripHistory() {
                       setDateTo(e.target.value);
                       setPage(1);
                     }}
-                    className="flex-1 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="flex-1 border border-gray-200 rounded-xl py-2 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
             </div>
             {activeFilters > 0 && (
               <button
-                onClick={resetFilters}
+                onClick={() => {
+                  setStatusFilter("all");
+                  setRouteFilter("all");
+                  setDriverFilter("all");
+                  setDateFrom("");
+                  setDateTo("");
+                  setPage(1);
+                }}
                 className="mt-3 text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1"
               >
-                <X size={11} /> Réinitialiser tous les filtres
+                <X size={11} /> Réinitialiser
               </button>
             )}
           </div>
@@ -708,19 +624,12 @@ export default function TripHistory() {
         {/* Table */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-24">
-              <div className="size-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
-              <p className="text-gray-400 text-sm">
-                Chargement de l'historique…
-              </p>
-            </div>
+            <LoadingSpinner message="Chargement de l'historique…" />
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Calendar size={32} className="text-gray-200 mb-3" />
               <p className="text-gray-500 font-bold">Aucun voyage trouvé</p>
-              <p className="text-gray-400 text-sm mt-1">
-                Modifiez les filtres ou sélectionnez une autre période
-              </p>
+              <p className="text-gray-400 text-sm mt-1">Modifiez les filtres</p>
             </div>
           ) : (
             <>
@@ -729,19 +638,22 @@ export default function TripHistory() {
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50/50">
                       {[
-                        "Date & Heure",
-                        "Trajet",
-                        "Chauffeur",
-                        "Occupation",
-                        "Statut",
-                        "Recette",
-                        "",
+                        { label: "Date & Heure" },
+                        { label: "Trajet" },
+                        { label: "Chauffeur", cls: "hidden md:table-cell" },
+                        { label: "Occupation", cls: "hidden lg:table-cell" },
+                        { label: "Statut" },
+                        {
+                          label: "Recette",
+                          cls: "text-right hidden sm:table-cell",
+                        },
+                        { label: "" },
                       ].map((h, i) => (
                         <th
                           key={i}
-                          className={`px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider ${i === 3 ? "hidden md:table-cell" : ""} ${i === 5 ? "text-right hidden sm:table-cell" : ""} ${i === 6 ? "w-8" : ""}`}
+                          className={`px-4 sm:px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider ${h.cls ?? ""}`}
                         >
-                          {h}
+                          {h.label}
                         </th>
                       ))}
                     </tr>
@@ -756,7 +668,7 @@ export default function TripHistory() {
 
               {/* Pagination */}
               {pages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-50 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     {isFetching && (
                       <>
@@ -770,7 +682,7 @@ export default function TripHistory() {
                       </>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mr-4">
+                  <p className="text-sm text-gray-400">
                     Page <span className="font-bold text-gray-700">{page}</span>{" "}
                     sur {pages} ·{" "}
                     <span className="font-bold text-gray-700">{total}</span>{" "}
@@ -780,7 +692,7 @@ export default function TripHistory() {
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="size-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="size-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40"
                     >
                       <ChevronLeft size={16} />
                     </button>
@@ -804,7 +716,7 @@ export default function TripHistory() {
                     <button
                       onClick={() => setPage((p) => Math.min(pages, p + 1))}
                       disabled={page === pages}
-                      className="size-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="size-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40"
                     >
                       <ChevronRight size={16} />
                     </button>
