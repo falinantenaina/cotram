@@ -133,7 +133,7 @@ const AdminLayout = () => {
                     : "bg-primary text-black font-bold"
                   : item.sub
                     ? "text-primary/50 hover:text-primary hover:bg-primary/10 border border-transparent"
-                    : "text-white/60 hover:text-white hover:bg-white/[0.08]"
+                    : "text-white/60 hover:text-white hover:bg-white/8"
               }`}
             >
               <span className="shrink-0">{item.icon}</span>
@@ -151,7 +151,7 @@ const AdminLayout = () => {
       {/* User + Logout */}
       <div className="p-3 border-t border-white/10 space-y-1 shrink-0">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5">
-          <div className="size-8 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-black font-black text-sm shrink-0">
+          <div className="size-8 rounded-full bg-linear-to-br from-primary to-amber-500 flex items-center justify-center text-black font-black text-sm shrink-0">
             {user.name[0]?.toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -177,7 +177,7 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex w-full">
       {/* ── Desktop Sidebar ─────────────────────────────────────── */}
-      <aside className="hidden lg:flex w-60 xl:w-64 bg-[#141414] fixed h-full z-30 flex-col">
+      <aside className="hidden lg:flex w-60 xl:w-64 bg-dark-gray fixed h-full z-30 flex-col">
         <SidebarContent />
       </aside>
 
@@ -191,7 +191,7 @@ const AdminLayout = () => {
 
       {/* ── Mobile Sidebar (drawer) ───────────────────────────────── */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-[#141414] z-50 transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 left-0 h-full w-72 bg-dark-gray z-50 transition-transform duration-300 ease-in-out lg:hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

@@ -23,8 +23,8 @@ export const Hero = () => {
           alt="Transport Cotram"
           className="w-full h-full object-cover opacity-20"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/80 via-[#0a0a0a]/60 to-[#0a0a0a]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-[#0a0a0a]/80 via-[#0a0a0a]/60 to-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-linear-to-r from-[#0a0a0a] via-transparent to-transparent" />
       </div>
 
       {/* Decorative glow */}
@@ -44,7 +44,7 @@ export const Hero = () => {
         <div className="max-w-3xl">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
             Voyagez
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-amber-300">
+            <span className="block text-transparent bg-clip-text bg-linear-to-r from-primary to-amber-300">
               en confiance
             </span>
             vers le sud
@@ -119,7 +119,7 @@ export const Hero = () => {
         id="search-form"
         className="relative max-w-7xl mx-auto px-4 md:px-8 w-full pb-12"
       >
-        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+        <div className="bg-white/4 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-4">
             Rechercher un trajet
           </p>
@@ -187,7 +187,7 @@ export const Hero = () => {
                   type="date"
                   min={today}
                   defaultValue={today}
-                  className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 transition-colors [color-scheme:dark]"
+                  className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 transition-colors scheme-dark"
                 />
               </div>
             </div>

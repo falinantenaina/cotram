@@ -65,7 +65,7 @@ export const Navbar = () => {
   const visibleMenus = menus.filter((m) => !m.authRequired || user);
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#0a0a0a] border-b border-white/[0.06] backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 bg-[#0a0a0a] border-b border-white/6 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -116,7 +116,7 @@ export const Navbar = () => {
                       className="size-8 rounded-full ring-2 ring-primary/30"
                     />
                   ) : (
-                    <div className="size-8 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-black text-sm font-bold">
+                    <div className="size-8 rounded-full bg-linear-to-br from-primary to-amber-500 flex items-center justify-center text-black text-sm font-bold">
                       {user.name[0].toUpperCase()}
                     </div>
                   )}
@@ -221,7 +221,7 @@ export const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden border-t border-white/[0.06] bg-[#0a0a0a]">
+        <div className="md:hidden border-t border-white/6 bg-[#0a0a0a]">
           <div className="px-4 py-4 space-y-1">
             {visibleMenus.map((menu) => (
               <Link
@@ -240,7 +240,7 @@ export const Navbar = () => {
           </div>
 
           {user ? (
-            <div className="px-4 pb-4 space-y-2 border-t border-white/[0.06] pt-4">
+            <div className="px-4 pb-4 space-y-2 border-t border-white/6 pt-4">
               <div className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl">
                 {user.avatar ? (
                   <img
@@ -249,7 +249,7 @@ export const Navbar = () => {
                     className="size-10 rounded-full"
                   />
                 ) : (
-                  <div className="size-10 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-black font-bold">
+                  <div className="size-10 rounded-full bg-linear-to-br from-primary to-amber-500 flex items-center justify-center text-black font-bold">
                     {user.name[0]}
                   </div>
                 )}
@@ -278,7 +278,7 @@ export const Navbar = () => {
               </button>
             </div>
           ) : (
-            <div className="px-4 pb-4 space-y-2 border-t border-white/[0.06] pt-4">
+            <div className="px-4 pb-4 space-y-2 border-t border-white/6 pt-4">
               <Link
                 to="/auth"
                 className="flex items-center gap-3 px-4 py-3 text-white/60 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-colors"

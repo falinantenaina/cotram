@@ -64,7 +64,7 @@ export const Destination = () => {
           {destinations.map((dest) => (
             <div
               key={dest.route}
-              className="group bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] hover:border-white/[0.12] rounded-2xl p-6 md:p-8 transition-all duration-200"
+              className="group bg-white/3 hover:bg-white/6 border border-white/[0.07] hover:border-white/12 rounded-2xl p-6 md:p-8 transition-all duration-200"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 {/* Route info */}
@@ -74,9 +74,9 @@ export const Destination = () => {
                       <div className="size-2 rounded-full bg-primary" />
                       <span className="text-white/50 text-sm">{dest.from}</span>
                     </div>
-                    <div className="h-px flex-1 max-w-16 bg-gradient-to-r from-white/20 to-white/5" />
+                    <div className="h-px flex-1 max-w-16 bg-linear-to-r from-white/20 to-white/5" />
                     <ArrowRight size={14} className="text-white/30" />
-                    <div className="h-px flex-1 max-w-16 bg-gradient-to-l from-white/20 to-white/5" />
+                    <div className="h-px flex-1 max-w-16 bg-linear-to-l from-white/20 to-white/5" />
                     <div className="flex items-center gap-2">
                       <div className="size-2 rounded-full bg-white/30" />
                       <span className="text-white text-sm font-semibold">
