@@ -1,7 +1,7 @@
-// backend/src/controllers/vehicleTemplate.controller.ts
-
 import type { Request, Response } from "express";
 import VehicleTemplate from "../models/vehicleTemplate.model.js";
+
+type VehicleType = "Crafter" | "Sprinter" | "Transit";
 
 // GET /api/vehicle-templates — tous les templates
 export const getTemplates = async (_req: Request, res: Response) => {
@@ -16,9 +16,8 @@ export const getTemplates = async (_req: Request, res: Response) => {
 // GET /api/vehicle-templates/:vehicleType — un template
 export const getTemplate = async (req: Request, res: Response) => {
   try {
-    const template = await VehicleTemplate.findOne({
-      vehicleType: req.params.vehicleType,
-    });
+    const vehicleType = req.params.vehicleType as VehicleType;
+    const template = await VehicleTemplate.findOne({ vehicleType });
     if (!template) {
       res
         .status(404)
@@ -34,7 +33,7 @@ export const getTemplate = async (req: Request, res: Response) => {
 // PUT /api/vehicle-templates/:vehicleType — créer ou mettre à jour
 export const upsertTemplate = async (req: Request, res: Response) => {
   try {
-    const { vehicleType } = req.params;
+    const vehicleType = req.params.vehicleType as VehicleType;
     const { seatConfig } = req.body;
 
     if (!seatConfig) {
