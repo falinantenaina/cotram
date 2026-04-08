@@ -4,6 +4,8 @@ import express from "express";
 import session from "express-session";
 import { connectDB } from "./config/database.js";
 
+await connectDB();
+
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import adminRoutes from "./routes/admin.route.js";
@@ -18,16 +20,18 @@ import vehicleTemplateRoutes from "./routes/vehicleTemplate.routes.js";
 dotenv.config();
 
 import compression from "compression";
-import helmet from "helmet";
+
 import "./config/passport.js";
-import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
 import driverRouter from "./routes/driver.route.js";
 const PORT = process.env.PORT || 5000;
+
+import * as helmetPkg from "helmet";
+const helmet = (helmetPkg as any).default ?? helmetPkg;
 
 const app = express();
 
 app.use(helmet());
-app.use(express.json({ limit: "100mb" }));
+app.use(express.json());
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
@@ -82,12 +86,16 @@ app.use((err: any, req: any, res: any, next: any) => {
   });
 });
 
-(async () => {
+app.get("/", (req, res) => {
+  res.json({ message: "API OK" });
+});
+
+/*(async () => {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`The server is running on http://localhost:${PORT}`);
     startScheduleAutoStatusJob();
   });
-})();
+})();*/
 
 export default app;

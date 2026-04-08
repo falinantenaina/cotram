@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import rateLimit from "express-rate-limit";
+import * as rateLimitPkg from "express-rate-limit";
+const rateLimit = (rateLimitPkg as any).default ?? rateLimitPkg;
 
 export const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
