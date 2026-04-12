@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
 
+const CALLBACK_URL =
+  import.meta.env.MODE === "production"
+    ? "https://cotram.vercel.app"
+    : "http://localhost:5000";
+
 const GoogleAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17,7 +22,7 @@ const GoogleAuthCallback = () => {
     }
 
     // Appeler /api/auth/me pour récupérer les infos user avec ce token
-    fetch("http://localhost:5000/api/auth/me", {
+    fetch(`${CALLBACK_URL}/api/auth/me`, {
       // ou votre endpoint getMe
       headers: { Authorization: `Bearer ${token}` },
     })
