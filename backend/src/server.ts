@@ -4,7 +4,7 @@ import express from "express";
 import session from "express-session";
 import { connectDB } from "./config/database.js";
 
-await connectDB();
+if (process.env.NODE_ENV === "production") await connectDB();
 
 import cookieParser from "cookie-parser";
 import passport from "passport";
@@ -26,6 +26,7 @@ import driverRouter from "./routes/driver.route.js";
 const PORT = process.env.PORT || 5000;
 
 import * as helmetPkg from "helmet";
+import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
 const helmet = (helmetPkg as any).default ?? helmetPkg;
 
 const app = express();
@@ -90,12 +91,14 @@ app.get("/", (req, res) => {
   res.json({ message: "API OK" });
 });
 
-/*(async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`The server is running on http://localhost:${PORT}`);
-    startScheduleAutoStatusJob();
-  });
-})();*/
+if (process.env.NODE_ENV === "development") {
+  (async () => {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`The server is running on http://localhost:${PORT}`);
+      startScheduleAutoStatusJob();
+    });
+  })();
+}
 
 export default app;
