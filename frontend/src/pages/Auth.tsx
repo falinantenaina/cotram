@@ -61,7 +61,11 @@ const Auth = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:5000/api/auth/google";
+    const CALLBACK_URL =
+      import.meta.env.MODE === "production"
+        ? "https://cotram.vercel.app"
+        : "http://localhost:5000";
+    window.location.href = `${CALLBACK_URL}/api/auth/google`;
   };
 
   const error = tab === "login" ? loginError : registerError;
