@@ -5,12 +5,10 @@ import MainLayout from "./components/layout/MainLayout";
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
 import AdminDrivers from "./pages/admin/Drivers";
-import GenerateSchedules from "./pages/admin/GenerateSchedules";
 import AdminReservations from "./pages/admin/Reservations";
 import AdminRoutes from "./pages/admin/Routes";
 import AdminSchedules from "./pages/admin/Schedules";
 import SeatTemplates from "./pages/admin/SeatTemplates";
-import TripHistory from "./pages/admin/TripHistory";
 import AdminUsers from "./pages/admin/Users";
 
 // Public pages
@@ -24,6 +22,8 @@ import Profile from "./pages/Profile";
 import Reservation from "./pages/Reservation";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import GenerateSchedules from "./pages/admin/GenerateSchedules";
+import TripHistory from "./pages/admin/TripHistory";
 
 const router = createBrowserRouter([
   {
