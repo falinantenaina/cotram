@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { seatTemplateApi, type SeatTemplate } from "../../api/seatTemplateApi";
+import { vehicleTemplateApi } from "../../api/vehicleTemplateApi";
 import type { SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
 
@@ -121,10 +122,24 @@ function ConfigStep({
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
   const [templates, setTemplates] = useState<SeatTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [loadingVehicleTemplate, setLoadingVehicleTemplate] = useState(false);
 
   useEffect(() => {
     seatTemplateApi.getAll().then(setTemplates);
   }, []);
+
+  useEffect(() => {
+    setLoadingVehicleTemplate(true);
+    vehicleTemplateApi
+      .getByType(vehicle)
+      .then((tpl) => {
+        if (tpl?.seatConfig) {
+          setSeatConfig(tpl.seatConfig);
+          setSelectedTemplateId("");
+        }
+      })
+      .finally(() => setLoadingVehicleTemplate(false));
+  }, [vehicle]);
 
   const { data: routesData } = useQuery({
     queryKey: ["routes-gen"],
@@ -349,9 +364,14 @@ function ConfigStep({
               className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
             >
               {VEHICLES.map((v) => (
-                <option key={v}>{v}</option>
+                <option key={v} value={v}>{v}</option>
               ))}
             </select>
+            {loadingVehicleTemplate && (
+              <p className="text-xs text-blue-500 mt-1 flex items-center gap-1">
+                <Loader size={10} className="animate-spin" /> Chargement du plan véhicule...
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">
@@ -366,14 +386,19 @@ function ConfigStep({
               }}
               className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
             >
-              <option value="">— Aucun (16 places) —</option>
+              <option value="">— Par défaut (véhicule) —</option>
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name} ({t.seatConfig.totalSeats}p)
                 </option>
               ))}
             </select>
-            {seatConfig && (
+            {seatConfig && !selectedTemplateId && (
+              <p className="text-xs text-blue-600 font-semibold mt-1">
+                🚐 Plan du véhicule {vehicle} ({seatConfig.totalSeats} places)
+              </p>
+            )}
+            {seatConfig && selectedTemplateId && (
               <p className="text-xs text-emerald-600 font-semibold mt-1">
                 ✓ {seatConfig.totalSeats} places configurées
               </p>

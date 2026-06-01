@@ -239,14 +239,12 @@ function TemplateCard({
           >
             <Edit3 size={12} /> Modifier
           </button>
-          {!template.isPreset && (
-            <button
-              onClick={onDelete}
-              className="size-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-all"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
+          <button
+            onClick={onDelete}
+            className="size-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-all"
+          >
+            <Trash2 size={13} />
+          </button>
         </div>
       </div>
     </div>

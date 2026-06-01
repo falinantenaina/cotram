@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { buildFallbackConfig, type SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
+import { seatTemplateApi, type SeatTemplate } from "../../api/seatTemplateApi";
 import { SeatLayoutEditor } from "../admin/SeatLayoutEditor";
 import type { Schedule } from "./ScheduleCard";
 
@@ -39,7 +40,6 @@ const DRIVER_STATUS: Record<string, string> = {
   off_duty: "Hors service",
   suspended: "Suspendu",
 };
-const VEHICLES = ["Crafter", "Sprinter", "Transit"];
 
 interface Props {
   schedule: Schedule | null;
@@ -69,7 +69,6 @@ export function ScheduleModal({
     date: schedule ? schedule.date.split("T")[0]! : "",
     time: schedule?.time ?? "",
     price: schedule?.price ?? 0,
-    vehicle: schedule?.vehicle ?? "Crafter",
     vehicleNumber: schedule?.vehicleNumber ?? "",
     driverId: getDriverObj(schedule?.driver)?.id ?? "",
     notes: schedule?.notes ?? "",
@@ -78,15 +77,22 @@ export function ScheduleModal({
     schedule?.seatConfig ?? buildFallbackConfig(schedule?.totalSeats ?? 16),
   );
   const [error, setError] = useState("");
+  const [templates, setTemplates] = useState<SeatTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+
+  useEffect(() => {
+    seatTemplateApi.getAll().then(setTemplates);
+  }, []);
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const selectedTpl = templates.find((t) => t.id === selectedTemplateId);
       const payload: any = {
         route: form.route,
         date: form.date,
         time: form.time,
         price: form.price,
-        vehicle: form.vehicle,
+        vehicle: "Crafter",
         vehicleNumber: form.vehicleNumber || null,
         driver: form.driverId || null,
         notes: form.notes || null,
@@ -249,19 +255,29 @@ export function ScheduleModal({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                    Véhicule
+                    Template sièges
                   </label>
                   <select
-                    value={form.vehicle}
-                    onChange={(e) =>
-                      setForm({ ...form, vehicle: e.target.value })
-                    }
+                    value={selectedTemplateId}
+                    onChange={(e) => {
+                      const tpl = templates.find((t) => t.id === e.target.value);
+                      if (tpl?.seatConfig) setSeatConfig(tpl.seatConfig);
+                      setSelectedTemplateId(e.target.value);
+                    }}
                     className={inp}
                   >
-                    {VEHICLES.map((v) => (
-                      <option key={v}>{v}</option>
+                    <option value="">— Sélectionner —</option>
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.seatConfig.totalSeats}p)
+                      </option>
                     ))}
                   </select>
+                  {seatConfig && (
+                    <p className="text-xs text-emerald-600 font-semibold mt-1">
+                      ✓ {seatConfig.totalSeats} places
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -359,6 +375,32 @@ export function ScheduleModal({
 
           {activeTab === "seats" && (
             <div className="space-y-4">
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Choisir un template de sièges
+                </label>
+                <select
+                  value={selectedTemplateId}
+                  onChange={(e) => {
+                    const tpl = templates.find((t) => t.id === e.target.value);
+                    if (tpl?.seatConfig) setSeatConfig(tpl.seatConfig);
+                    setSelectedTemplateId(e.target.value);
+                  }}
+                  className="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                >
+                  <option value="">— Sélectionner un template —</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.seatConfig.totalSeats} places)
+                    </option>
+                  ))}
+                </select>
+                {seatConfig && (
+                  <p className="text-xs text-emerald-600 font-semibold mt-2">
+                    ✓ {seatConfig.totalSeats} places configurées
+                  </p>
+                )}
+              </div>
               <SeatLayoutEditor
                 value={seatConfig ?? buildFallbackConfig(16)}
                 onChange={setSeatConfig}

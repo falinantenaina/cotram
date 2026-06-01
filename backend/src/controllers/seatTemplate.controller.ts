@@ -66,13 +66,6 @@ export const deleteTemplate = async (req: Request, res: Response) => {
       res.status(404).json({ success: false, message: "Template non trouvé" });
       return;
     }
-    if (template.isPreset) {
-      res.status(400).json({
-        success: false,
-        message: "Impossible de supprimer un template prédéfini",
-      });
-      return;
-    }
     await prisma.seatTemplate.delete({
       where: { id: String(req.params.id) },
     });
