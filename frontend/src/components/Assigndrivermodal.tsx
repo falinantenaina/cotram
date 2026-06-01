@@ -7,7 +7,7 @@ import { useState } from "react";
 import api from "../lib/axios";
 
 interface Driver {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -96,7 +96,7 @@ export function AssignDriverModal({
     );
   });
 
-  const selectedDriver = drivers.find((d) => d._id === selectedId);
+  const selectedDriver = drivers.find((d) => d.id === selectedId);
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -171,16 +171,16 @@ export function AssignDriverModal({
               </div>
             ) : (
               drivers.map((d) => {
-                const color = getColor(d._id);
-                const isSelected = d._id === selectedId;
+                const color = getColor(d.id);
+                const isSelected = d.id === selectedId;
                 const isUnavailable =
-                  d.status !== "available" && d._id !== currentDriverId;
+                  d.status !== "available" && d.id !== currentDriverId;
 
                 return (
                   <button
-                    key={d._id}
+                    key={d.id}
                     onClick={() => {
-                      setSelectedId(d._id);
+                      setSelectedId(d.id);
                       setVehicleNumber(d.vehicleNumber);
                     }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${

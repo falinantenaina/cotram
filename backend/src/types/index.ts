@@ -1,49 +1,44 @@
-// backend/src/types/index.ts
-// Ajout de seatConfig dans ISchedule
-
 import type { Request } from "express";
-import { Document, Types } from "mongoose";
 
-export interface IUser extends Document {
-  _id: Types.ObjectId;
+export interface IUser {
+  id: string;
   name: string;
   email: string;
-  phone?: string;
-  password?: string;
+  phone?: string | null;
+  password?: string | null;
   role: "user" | "admin" | "driver";
-  googleId?: string;
-  avatar?: string;
+  googleId?: string | null;
+  avatar?: string | null;
   isEmailVerified: boolean;
-  emailVerificationToken?: string;
-  emailVerificationExpires?: Date;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
+  passwordResetToken?: string | null;
+  passwordResetExpires?: Date | null;
   createdAt: Date;
-  comparePassword(candidatePassword: string): Promise<boolean>;
-  generateEmailVerificationToken(): string;
-  generatePasswordResetToken(): string;
+  updatedAt: Date;
 }
 
-export interface IRoute extends Document {
-  _id: Types.ObjectId;
+export interface IRoute {
+  id: string;
   departure: string;
   destination: string;
   duration: string;
   distance: number;
   price: number;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IHistory {
+  id: string;
+  scheduleId: string;
   action: string;
   performedBy?: string;
   timestamp?: Date;
   details?: string;
-  previousValue?: string;
-  newValue?: string;
 }
 
-// Plan de sièges configurable (stocké en JSON dans MongoDB)
 export interface ISeatRowDef {
   row: number;
   isBackBench: boolean;
@@ -62,40 +57,43 @@ export interface ISeatConfig {
   rows: ISeatRowDef[];
 }
 
-export interface ISchedule extends Document {
-  _id: Types.ObjectId;
-  route: Types.ObjectId | IRoute;
+export interface ISchedule {
+  id: string;
+  routeId: string;
   date: Date;
   time: string;
   vehicle: string;
   totalSeats: number;
   availableSeats: number;
-  occupiedSeats: number[];
   price: number;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
-  driver?: Types.ObjectId | IDriver;
+  driverId?: string | null;
   vehicleNumber?: string | null;
-  seatConfig?: ISeatConfig | null; // ← nouveau
+  seatConfig?: ISeatConfig | null;
   history?: IHistory[];
-  actualDeparture?: Date;
-  actualArrival?: Date;
-  notes?: string;
+  actualDeparture?: Date | null;
+  actualArrival?: Date | null;
+  notes?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface IReservation extends Document {
-  _id: Types.ObjectId;
-  user: Types.ObjectId | IUser;
-  schedule: Types.ObjectId | ISchedule;
+export interface IReservation {
+  id: string;
+  userId: string;
+  scheduleId: string;
   seats: number[];
   totalPrice: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   paymentStatus: "pending" | "paid" | "refunded";
   bookingReference: string;
   createdAt: Date;
+  updatedAt: Date;
   expiresAt: Date | null;
 }
 
-export interface IDriver extends Document {
+export interface IDriver {
+  id: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -105,8 +103,8 @@ export interface IDriver extends Document {
   status: "available" | "on_trip" | "off_duty" | "suspended";
   totalTrips: number;
   joinedAt: Date;
-  notes?: string;
-  avatar?: string;
+  notes?: string | null;
+  avatar?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

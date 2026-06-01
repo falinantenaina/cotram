@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { OccupancyBar, StatusBadge } from "../common";
 
 interface Driver {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   vehicleNumber: string;
@@ -24,9 +24,9 @@ interface Driver {
 }
 
 export interface Schedule {
-  _id: string;
+  id: string;
   route: {
-    _id: string;
+    id: string;
     departure: string;
     destination: string;
     duration: string;
@@ -122,7 +122,7 @@ export function ScheduleCard({
   const occupiedCount = schedule.totalSeats - schedule.availableSeats;
   const routeColor = hashColor(
     ROUTE_COLORS,
-    schedule.route?._id ?? schedule._id,
+    schedule.route?.id ?? schedule.id,
   );
   const depDate = new Date(schedule.date);
   const isToday = depDate.toDateString() === new Date().toDateString();
@@ -160,7 +160,7 @@ export function ScheduleCard({
       <div className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3.5 pl-5 sm:pl-6 flex-wrap sm:flex-nowrap">
         {/* Checkbox */}
         <button
-          onClick={() => onSelect(schedule._id)}
+          onClick={() => onSelect(schedule.id)}
           className={`size-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "border-primary bg-primary" : "border-gray-300 hover:border-primary/50"}`}
         >
           {selected && <Check size={11} className="text-black" />}
@@ -216,7 +216,7 @@ export function ScheduleCard({
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full text-left"
               >
                 <div
-                  className={`size-7 rounded-lg bg-gradient-to-br ${hashColor(AVATAR_COLORS, d._id)} flex items-center justify-center text-white text-[10px] font-black shrink-0`}
+                  className={`size-7 rounded-lg bg-gradient-to-br ${hashColor(AVATAR_COLORS, d.id)} flex items-center justify-center text-white text-[10px] font-black shrink-0`}
                 >
                   {d.firstName[0]}
                   {d.lastName[0]}
@@ -309,7 +309,7 @@ export function ScheduleCard({
                       color="text-blue-600"
                       hoverBg="hover:bg-blue-50"
                       onClick={() => {
-                        onStatusChange(schedule._id, "in_progress");
+                        onStatusChange(schedule.id, "in_progress");
                         setMenuOpen(false);
                       }}
                     />
@@ -319,7 +319,7 @@ export function ScheduleCard({
                       color="text-red-600"
                       hoverBg="hover:bg-red-50"
                       onClick={() => {
-                        onStatusChange(schedule._id, "cancelled");
+                        onStatusChange(schedule.id, "cancelled");
                         setMenuOpen(false);
                       }}
                     />
@@ -332,7 +332,7 @@ export function ScheduleCard({
                     color="text-emerald-600"
                     hoverBg="hover:bg-emerald-50"
                     onClick={() => {
-                      onStatusChange(schedule._id, "completed");
+                      onStatusChange(schedule.id, "completed");
                       setMenuOpen(false);
                     }}
                   />
@@ -344,7 +344,7 @@ export function ScheduleCard({
                     color="text-emerald-600"
                     hoverBg="hover:bg-emerald-50"
                     onClick={() => {
-                      onStatusChange(schedule._id, "scheduled");
+                      onStatusChange(schedule.id, "scheduled");
                       setMenuOpen(false);
                     }}
                   />
@@ -357,7 +357,7 @@ export function ScheduleCard({
                   color="text-red-500"
                   hoverBg="hover:bg-red-50"
                   onClick={() => {
-                    onDelete(schedule._id);
+                    onDelete(schedule.id);
                     setMenuOpen(false);
                   }}
                 />

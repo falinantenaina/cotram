@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
+import prisma from "../lib/prisma.js";
 import type { AuthRequest } from "../types/index.js";
 
 interface JwtPayload {
@@ -33,7 +33,9 @@ export const protect: RequestHandler = async (
       token,
       process.env.JWT_SECRET as string,
     ) as JwtPayload;
-    const user = await User.findById(decoded.id);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
 
     if (!user) {
       res.status(401).json({

@@ -20,7 +20,7 @@ import {
 } from "./DriverCard";
 
 interface Schedule {
-  _id: string;
+  id: string;
   route: {
     departure: string;
     destination: string;
@@ -63,15 +63,15 @@ interface Props {
 
 export function DriverPanel({ driver, onEdit, onClose }: Props) {
   const { data, isLoading } = useQuery({
-    queryKey: ["driver-detail", driver._id],
+    queryKey: ["driver-detail", driver.id],
     queryFn: async () => {
-      const { data } = await api.get(`/drivers/${driver._id}`);
+      const { data } = await api.get(`/drivers/${driver.id}`);
       return data;
     },
   });
 
   const cfg = STATUS_CONFIG[driver.status];
-  const color = getAvatarColor(driver._id);
+  const color = getAvatarColor(driver.id);
   const trips: Schedule[] = data?.schedules ?? [];
   const completed = trips.filter((t) => t.status === "completed").length;
   const upcoming = trips.filter((t) => t.status === "scheduled").length;
@@ -208,7 +208,7 @@ export function DriverPanel({ driver, onEdit, onClose }: Props) {
                 const d = new Date(t.date);
                 return (
                   <div
-                    key={t._id}
+                    key={t.id}
                     className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/50 transition-all"
                   >
                     <div className="text-center shrink-0 w-10">

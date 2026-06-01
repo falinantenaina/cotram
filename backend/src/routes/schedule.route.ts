@@ -1,27 +1,32 @@
 import express from "express";
 import * as scheduleController from "../controllers/schedule.controller.js";
 import { authorize, protect } from "../middleware/auth.middleware.js";
-import Driver from "../models/driver.model.js";
-import Schedule from "../models/schedule.model.js";
+import prisma from "../lib/prisma.js";
 
 const router = express.Router();
 
 async function syncDriverStatus(driverId: string): Promise<void> {
-  const driver = await Driver.findById(driverId);
+  const driver = await prisma.driver.findUnique({
+    where: { id: driverId },
+  });
   if (!driver) return;
 
-  // Ne pas écraser off_duty ou suspended — ces statuts sont gérés manuellement
   if (driver.status === "off_duty" || driver.status === "suspended") return;
 
-  const hasActiveTrip = await Schedule.exists({
-    driver: driverId,
-    status: "in_progress",
+  const hasActiveTrip = await prisma.schedule.findFirst({
+    where: {
+      driverId,
+      status: "in_progress",
+    },
   });
 
   const newStatus = hasActiveTrip ? "on_trip" : "available";
 
   if (driver.status !== newStatus) {
-    await Driver.findByIdAndUpdate(driverId, { status: newStatus });
+    await prisma.driver.update({
+      where: { id: driverId },
+      data: { status: newStatus },
+    });
   }
 }
 
@@ -60,29 +65,31 @@ router.put(
     try {
       const { driverId, vehicleNumber } = req.body;
 
-      const schedule = await Schedule.findById(req.params.id);
+      const schedule = await prisma.schedule.findUnique({
+        where: { id: String(req.params.id) },
+      });
       if (!schedule)
         return res
           .status(404)
           .json({ success: false, message: "Horaire introuvable" });
 
-      // Vérifier que le chauffeur n'est pas déjà assigné à un voyage
-      // qui chevauche la même plage horaire (même jour, heure proche)
       if (driverId) {
-        const driver = await Driver.findById(driverId);
+        const driver = await prisma.driver.findUnique({
+          where: { id: driverId },
+        });
         if (!driver)
           return res
             .status(404)
             .json({ success: false, message: "Chauffeur introuvable" });
 
-        // Vérifier conflit : même chauffeur, même date, statut scheduled/in_progress
-        // On exclut le schedule courant (cas de réassignation)
-        const conflict = await Schedule.findOne({
-          _id: { $ne: schedule._id },
-          driver: driverId,
-          date: schedule.date,
-          time: schedule.time,
-          status: { $in: ["scheduled", "in_progress"] },
+        const conflict = await prisma.schedule.findFirst({
+          where: {
+            id: { not: schedule.id },
+            driverId,
+            date: schedule.date,
+            time: schedule.time,
+            status: { in: ["scheduled", "in_progress"] },
+          },
         });
 
         if (conflict) {
@@ -92,58 +99,72 @@ router.put(
           });
         }
 
-        const previousDriver = schedule.driver;
+        const previousDriver = schedule.driverId;
 
-        schedule.driver = driverId as any;
-        schedule.vehicleNumber = vehicleNumber || driver.vehicleNumber;
+        await prisma.$transaction([
+          prisma.schedule.update({
+            where: { id: schedule.id },
+            data: {
+              driverId,
+              vehicleNumber: vehicleNumber || driver.vehicleNumber,
+            },
+          }),
+          prisma.scheduleHistory.create({
+            data: {
+              scheduleId: schedule.id,
+              action: "assigned_driver",
+              performedBy: "admin",
+              details: `Chauffeur assigné: ${driver.firstName} ${driver.lastName}`,
+            },
+          }),
+        ]);
 
-        schedule.history = schedule.history || [];
-        schedule.history.push({
-          action: "assigned_driver",
-          performedBy: "admin",
-          timestamp: new Date(),
-          details: `Chauffeur assigné: ${driver.firstName} ${driver.lastName}`,
-          previousValue: previousDriver?.toString() || "Aucun",
-          newValue: `${driver.firstName} ${driver.lastName} (${schedule.vehicleNumber})`,
-        });
-
-        await schedule.save();
-
-        // Si l'ancien chauffeur était différent, recalculer son statut aussi
-        if (previousDriver && previousDriver.toString() !== driverId) {
-          await syncDriverStatus(previousDriver.toString());
+        if (previousDriver && previousDriver !== driverId) {
+          await syncDriverStatus(previousDriver);
         }
 
-        // Recalculer le statut du nouveau chauffeur (ne pas forcer on_trip)
         await syncDriverStatus(driverId);
       } else {
-        // driverId null/vide = désassigner le chauffeur
-        const previousDriver = schedule.driver;
+        const previousDriver = schedule.driverId;
 
-        schedule.driver = null as any;
-        schedule.vehicleNumber = null;
+        await prisma.$transaction([
+          prisma.schedule.update({
+            where: { id: schedule.id },
+            data: {
+              driverId: null,
+              vehicleNumber: null,
+            },
+          }),
+          prisma.scheduleHistory.create({
+            data: {
+              scheduleId: schedule.id,
+              action: "unassigned_driver",
+              performedBy: "admin",
+              details: "Chauffeur retiré",
+            },
+          }),
+        ]);
 
-        schedule.history = schedule.history || [];
-        schedule.history.push({
-          action: "unassigned_driver",
-          performedBy: "admin",
-          timestamp: new Date(),
-          details: "Chauffeur retiré",
-        });
-
-        await schedule.save();
-
-        // Recalculer le statut de l'ancien chauffeur
         if (previousDriver) {
-          await syncDriverStatus(previousDriver.toString());
+          await syncDriverStatus(previousDriver);
         }
       }
 
-      // Repopuler le schedule avec les données du driver pour le frontend
-      const populated = await Schedule.findById(schedule._id).populate(
-        "driver",
-        "firstName lastName phone vehicleNumber vehicleType status",
-      );
+      const populated = await prisma.schedule.findUnique({
+        where: { id: schedule.id },
+        include: {
+          driver: {
+            select: {
+              firstName: true,
+              lastName: true,
+              phone: true,
+              vehicleNumber: true,
+              vehicleType: true,
+              status: true,
+            },
+          },
+        },
+      });
 
       res.json({ success: true, schedule: populated });
     } catch (err) {

@@ -3,7 +3,7 @@ import { Clock } from "lucide-react";
 import api from "../../lib/axios";
 
 interface RecentReservation {
-  _id: string;
+  id: string;
   bookingReference: string;
   status: string;
   totalPrice: number;
@@ -55,7 +55,7 @@ export function RecentReservations() {
             const s = STATUS_LABELS[r.status] ?? STATUS_LABELS.pending;
             return (
               <div
-                key={r._id}
+                key={r.id}
                 className="flex items-center gap-3 px-4 sm:px-6 py-3"
               >
                 <div className="size-8 sm:size-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">

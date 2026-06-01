@@ -1,13 +1,15 @@
+import "dotenv/config";
+
 import cors from "cors";
-import dotenv from "dotenv";
 import express from "express";
 import session from "express-session";
 import { connectDB } from "./config/database.js";
-
-if (process.env.NODE_ENV === "production") await connectDB();
-
 import cookieParser from "cookie-parser";
 import passport from "passport";
+import compression from "compression";
+import * as helmetPkg from "helmet";
+
+import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
 import reservationRoutes from "./routes/reservation.route.js";
@@ -16,17 +18,12 @@ import scheduleRoutes from "./routes/schedule.route.js";
 import seatTemplateRoutes from "./routes/seatTemplate.routes.js";
 import userRoutes from "./routes/user.route.js";
 import vehicleTemplateRoutes from "./routes/vehicleTemplate.routes.js";
-
-dotenv.config();
-
-import compression from "compression";
-
-import "./config/passport.js";
 import driverRouter from "./routes/driver.route.js";
-const PORT = process.env.PORT || 5000;
-
-import * as helmetPkg from "helmet";
 import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
+
+if (process.env.NODE_ENV === "production") await connectDB();
+
+const PORT = process.env.PORT || 5000;
 const helmet = (helmetPkg as any).default ?? helmetPkg;
 
 const app = express();

@@ -43,7 +43,7 @@ export function DriverModal({ driver, onClose, onSuccess }: Props) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (driver) return api.put(`/drivers/${driver._id}`, form);
+      if (driver) return api.put(`/drivers/${driver.id}`, form);
       return api.post("/drivers", form);
     },
     onSuccess: () => {

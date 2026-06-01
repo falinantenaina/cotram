@@ -92,12 +92,12 @@ export const TimeStep = (props: Props) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
                 {props.schedules.map((schedule) => {
                   const isSelected =
-                    props.selectedSchedule?._id === schedule._id;
+                    props.selectedSchedule?.id === schedule.id;
                   const isFull = schedule.availableSeats === 0;
 
                   return (
                     <button
-                      key={schedule._id}
+                      key={schedule.id}
                       onClick={() =>
                         !isFull && props.setSelectedSchedule(schedule)
                       }

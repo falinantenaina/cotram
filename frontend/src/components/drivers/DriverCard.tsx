@@ -2,7 +2,7 @@ import { ChevronRight, Edit3, Hash, Phone, TrendingUp, Trash2 } from "lucide-rea
 import { StatusBadge } from "../common";
 
 export interface Driver {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -49,7 +49,7 @@ interface Props {
 
 export function DriverCard({ driver, onEdit, onDelete, onClick }: Props) {
   const cfg = STATUS_CONFIG[driver.status];
-  const color = getAvatarColor(driver._id);
+  const color = getAvatarColor(driver.id);
 
   return (
     <div

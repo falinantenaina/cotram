@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  user
+  admin
+  driver
+}
+
+enum DriverStatus {
+  available
+  on_trip
+  off_duty
+  suspended
+}
+
+enum VehicleType {
+  Crafter
+  Sprinter
+  Transit
+}
+
+enum ScheduleStatus {
+  scheduled
+  in_progress
+  completed
+  cancelled
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  refunded
+}
+
+enum City {
+  Antananarivo
+  Antsirabe
+  Ambatolampy
+}
+
+model User {
+  id                        String    @id @default(cuid())
+  name                      String
+  email                     String    @unique
+  phone                     String?   @unique
+  password                  String?
+  role                      UserRole  @default(user)
+  googleId                  String?   @unique
+  avatar                    String?
+  isEmailVerified           Boolean   @default(false)
+  emailVerificationToken    String?
+  emailVerificationExpires  DateTime?
+  passwordResetToken        String?
+  passwordResetExpires      DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  reservations              Reservation[]
+
+  @@map("users")
+}
+
+model Driver {
+  id              String       @id @default(cuid())
+  firstName       String
+  lastName        String
+  phone           String
+  licenseNumber   String       @unique
+  vehicleNumber   String
+  vehicleType     VehicleType  @default(Crafter)
+  status          DriverStatus @default(available)
+  totalTrips      Int          @default(0)
+  joinedAt        DateTime     @default(now())
+  notes           String?
+  avatar          String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  schedules       Schedule[]
+
+  @@map("drivers")
+}
+
+model Route {
+  id          String   @id @default(cuid())
+  departure   City
+  destination City
+  duration    String
+  distance    Float
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schedules   Schedule[]
+
+  @@index([departure, destination])
+  @@map("routes")
+}
+
+model Schedule {
+  id              String         @id @default(cuid())
+  routeId         String
+  date            DateTime
+  time            String
+  vehicle         VehicleType    @default(Crafter)
+  totalSeats      Int            @default(16)
+  availableSeats  Int            @default(16)
+  price           Float
+  status          ScheduleStatus @default(scheduled)
+  driverId        String?
+  vehicleNumber   String?
+  seatConfig      Json?
+  actualDeparture DateTime?
+  actualArrival   DateTime?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  route               Route              @relation(fields: [routeId], references: [id])
+  driver              Driver?            @relation(fields: [driverId], references: [id])
+  occupiedSeats       OccupiedSeat[]
+  reservations        Reservation[]
+  history             ScheduleHistory[]
+
+  @@index([routeId, date, time])
+  @@index([date, status])
+  @@map("schedules")
+}
+
+model OccupiedSeat {
+  id          String   @id @default(cuid())
+  scheduleId  String
+  seatNumber  Int
+
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, seatNumber])
+  @@map("occupied_seats")
+}
+
+model ScheduleHistory {
+  id          String   @id @default(cuid())
+  scheduleId  String
+  action      String
+  performedBy String   @default("admin")
+  timestamp   DateTime @default(now())
+  details     String?
+
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@map("schedule_history")
+}
+
+model Reservation {
+  id                String          @id @default(cuid())
+  userId            String
+  scheduleId        String
+  totalPrice        Float
+  status            ReservationStatus @default(pending)
+  paymentStatus     PaymentStatus     @default(pending)
+  bookingReference  String          @unique
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  expiresAt         DateTime?
+
+  user              User            @relation(fields: [userId], references: [id])
+  schedule          Schedule        @relation(fields: [scheduleId], references: [id])
+  seats             ReservationSeat[]
+
+  @@index([userId, status])
+  @@index([scheduleId])
+  @@map("reservations")
+}
+
+model ReservationSeat {
+  id              String      @id @default(cuid())
+  reservationId   String
+  seatNumber      Int
+
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@unique([reservationId, seatNumber])
+  @@map("reservation_seats")
+}
+
+model SeatTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  seatConfig  Json
+  isPreset    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("seat_templates")
+}
+
+model VehicleTemplate {
+  id          String      @id @default(cuid())
+  vehicleType VehicleType @unique
+  seatConfig  Json
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("vehicle_templates")
+}

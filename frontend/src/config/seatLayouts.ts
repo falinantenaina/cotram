@@ -20,6 +20,7 @@ export interface SeatConfig {
   totalSeats: number;
   rows: RowDef[];
   layoutName?: string;
+  hasAisle?: boolean;
 }
 
 function makeSeat(
@@ -32,8 +33,20 @@ function makeSeat(
 }
 
 /**
- * Auto-generate a SeatConfig for any number of seats.
- * Works for 1–99 seats without any code changes.
+ * Generate a bus-like layout for N seats.
+ *
+ * Standard rows: 2 seats | aisle | 2 seats  (4 seats per row)
+ * If a row has < 4 seats, they fill left-first then right.
+ * Row 1 is the driver row (marked with isDriverRow for the preview).
+ *
+ * Layout grid columns (7 total):
+ *   0: left wall pad
+ *   1: seat (left group)
+ *   2: seat (left group)
+ *   3: aisle
+ *   4: seat (right group)
+ *   5: seat (right group)
+ *   6: right wall pad
  */
 export function buildFallbackConfig(totalSeats: number): SeatConfig {
   if (totalSeats <= 0) totalSeats = 1;
@@ -41,57 +54,52 @@ export function buildFallbackConfig(totalSeats: number): SeatConfig {
   let id = 1;
   const rows: RowDef[] = [];
 
-  const benchCount =
-    totalSeats <= 9 ? Math.min(totalSeats, 3) : totalSeats <= 16 ? 4 : 5;
-  const normalSeats = totalSeats - benchCount;
-  const row1Count = normalSeats >= 2 ? 2 : normalSeats;
+  // Row 1: driver row — only 1 passenger seat (right side)
+  const driverSeats: SeatDef[] = [];
+  driverSeats.push(makeSeat(id++, 1, 4, "right"));
+  rows.push({ row: 1, seats: driverSeats, isBackBench: false, label: "Chauffeur" });
 
-  if (row1Count > 0) {
-    const seats: SeatDef[] = [];
-    if (row1Count === 1) {
-      seats.push(makeSeat(id++, 1, 0, "right"));
-    } else {
-      seats.push(makeSeat(id++, 1, 0, "middle"));
-      seats.push(makeSeat(id++, 1, 1, "right"));
-    }
-    rows.push({ row: 1, seats, isBackBench: false });
-  }
-
-  let remaining = normalSeats - row1Count;
+  let remaining = totalSeats - 1;
   let rowNum = 2;
+
+  // Normal rows: 4 seats each (2 left, aisle, 2 right)
   while (remaining > 0) {
-    const n = Math.min(remaining, 3);
+    const seatsInRow = Math.min(remaining, 4);
     const seats: SeatDef[] = [];
-    if (n === 1) seats.push(makeSeat(id++, rowNum, 0, "left"));
-    else if (n === 2) {
-      seats.push(makeSeat(id++, rowNum, 0, "left"));
-      seats.push(makeSeat(id++, rowNum, 1, "right"));
+
+    if (seatsInRow === 1) {
+      seats.push(makeSeat(id++, rowNum, 4, "right"));
+    } else if (seatsInRow === 2) {
+      seats.push(makeSeat(id++, rowNum, 1, "left"));
+      seats.push(makeSeat(id++, rowNum, 5, "right"));
+    } else if (seatsInRow === 3) {
+      seats.push(makeSeat(id++, rowNum, 1, "left"));
+      seats.push(makeSeat(id++, rowNum, 4, "right"));
+      seats.push(makeSeat(id++, rowNum, 5, "right"));
     } else {
-      seats.push(makeSeat(id++, rowNum, 0, "left"));
-      seats.push(makeSeat(id++, rowNum, 1, "middle"));
-      seats.push(makeSeat(id++, rowNum, 2, "right"));
+      seats.push(makeSeat(id++, rowNum, 1, "left"));
+      seats.push(makeSeat(id++, rowNum, 2, "left"));
+      seats.push(makeSeat(id++, rowNum, 4, "right"));
+      seats.push(makeSeat(id++, rowNum, 5, "right"));
     }
-    rows.push({ row: rowNum, seats, isBackBench: false });
-    remaining -= n;
+
+    // Last row is the bench (banquette arrière)
+    if (remaining <= 4 && rows.length > 1) {
+      rows.push({ row: rowNum, seats, isBackBench: true, label: "Banquette" });
+    } else {
+      rows.push({ row: rowNum, seats, isBackBench: false });
+    }
+
+    remaining -= seatsInRow;
     rowNum++;
   }
 
-  if (benchCount > 0) {
-    const benchSeats: SeatDef[] = [];
-    for (let i = 0; i < benchCount; i++) {
-      const pos: SeatPosition =
-        i === 0 ? "left" : i === benchCount - 1 ? "right" : "middle";
-      benchSeats.push(makeSeat(id++, rowNum, i, pos));
-    }
-    rows.push({
-      row: rowNum,
-      seats: benchSeats,
-      isBackBench: true,
-      label: "Banquette",
-    });
-  }
-
-  return { totalSeats, layoutName: `Véhicule ${totalSeats} places`, rows };
+  return {
+    totalSeats,
+    layoutName: `Véhicule ${totalSeats} places`,
+    rows,
+    hasAisle: true,
+  };
 }
 
 /** Recalculate sequential IDs after manual edits */

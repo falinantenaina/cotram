@@ -27,16 +27,16 @@ import {
 import api from "../../lib/axios";
 
 interface PastSchedule {
-  _id: string;
+  id: string;
   route: {
-    _id: string;
+    id: string;
     departure: string;
     destination: string;
     duration: string;
     price: number;
   };
   driver?: {
-    _id: string;
+    id: string;
     firstName: string;
     lastName: string;
     phone: string;
@@ -551,7 +551,7 @@ export default function TripHistory() {
                 >
                   <option value="all">Tous les trajets</option>
                   {routesData?.routes?.map((r: any) => (
-                    <option key={r._id} value={r._id}>
+                    <option key={r.id} value={r.id}>
                       {r.departure} → {r.destination}
                     </option>
                   ))}
@@ -571,7 +571,7 @@ export default function TripHistory() {
                 >
                   <option value="all">Tous les chauffeurs</option>
                   {driversData?.drivers?.map((d: any) => (
-                    <option key={d._id} value={d._id}>
+                    <option key={d.id} value={d.id}>
                       {d.firstName} {d.lastName}
                     </option>
                   ))}
@@ -660,7 +660,7 @@ export default function TripHistory() {
                   </thead>
                   <tbody>
                     {filtered.map((s) => (
-                      <HistoryRow key={s._id} s={s} />
+                      <HistoryRow key={s.id} s={s} />
                     ))}
                   </tbody>
                 </table>

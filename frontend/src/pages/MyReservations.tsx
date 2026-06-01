@@ -113,7 +113,7 @@ const MyReservations = () => {
 
                 return (
                   <div
-                    key={reservation._id}
+                    key={reservation.id}
                     className="bg-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all overflow-hidden"
                   >
                     {/* Top bar */}
@@ -210,7 +210,7 @@ const MyReservations = () => {
                           ⏱ En attente de confirmation par nos équipes
                         </p>
                         <button
-                          onClick={() => setCancelId(reservation._id)}
+                          onClick={() => setCancelId(reservation.id)}
                           className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors"
                         >
                           Annuler

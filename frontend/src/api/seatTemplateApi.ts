@@ -2,7 +2,7 @@ import type { SeatConfig } from "../config/seatLayouts";
 import api from "../lib/axios";
 
 export interface SeatTemplate {
-  _id: string;
+  id: string;
   name: string;
   seatConfig: SeatConfig;
   updatedAt: string;

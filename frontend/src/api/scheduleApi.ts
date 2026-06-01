@@ -2,9 +2,9 @@
 import api from "../lib/axios";
 
 export interface Schedule {
-  _id: string;
+  id: string;
   route: {
-    _id: string;
+    id: string;
     departure: string;
     destination: string;
     duration: string;

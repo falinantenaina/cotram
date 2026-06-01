@@ -70,7 +70,7 @@ export const useConfirmReservation = () => {
   const mutation = useMutation({
     mutationFn: reservationApi.confirmReservation,
     onSuccess: (data) => {
-      queryClient.setQueryData(["reservation", data._id], data);
+      queryClient.setQueryData(["reservation", data.id], data);
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
     },
   });
@@ -88,7 +88,7 @@ export const useCancelReservation = () => {
   const mutation = useMutation({
     mutationFn: reservationApi.cancelReservation,
     onSuccess: (data) => {
-      queryClient.setQueryData(["reservation", data._id], data);
+      queryClient.setQueryData(["reservation", data.id], data);
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
     },

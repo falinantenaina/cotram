@@ -1,14 +1,14 @@
 import api from "../lib/axios";
 
 export interface Reservation {
-  _id: string;
+  id: string;
   user: {
-    _id: string;
+    id: string;
     name: string;
     email: string;
   };
   schedule: {
-    _id: string;
+    id: string;
     date: string;
     time: string;
     route: {

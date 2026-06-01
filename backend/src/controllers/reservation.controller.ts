@@ -1,8 +1,22 @@
 import type { Request, Response } from "express";
 import { sendReservationConfirmation } from "../config/email.js";
-import Reservation from "../models/reservation.model.js";
-import Schedule from "../models/schedule.model.js";
+import prisma from "../lib/prisma.js";
 import type { AuthRequest } from "../types/index.js";
+
+function flattenSeats(reservation: any) {
+  return {
+    ...reservation,
+    seats: (reservation.seats ?? []).map((s: { seatNumber: number }) => s.seatNumber),
+    schedule: reservation.schedule
+      ? {
+          ...reservation.schedule,
+          occupiedSeats: (reservation.schedule.occupiedSeats ?? []).map(
+            (s: { seatNumber: number }) => s.seatNumber,
+          ),
+        }
+      : undefined,
+  };
+}
 
 export const getReservations = async (
   req: Request,
@@ -10,11 +24,18 @@ export const getReservations = async (
 ): Promise<void> => {
   try {
     const { user } = req as AuthRequest;
-    const reservations = await Reservation.find({ user: user._id })
-      .populate({ path: "schedule", populate: { path: "route" } })
-      .sort({ createdAt: -1 });
+    const reservations = await prisma.reservation.findMany({
+      where: { userId: user.id },
+      include: {
+        schedule: {
+          include: { route: true, occupiedSeats: true },
+        },
+        seats: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-    res.json({ success: true, reservations });
+    res.json({ success: true, reservations: reservations.map(flattenSeats) });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
@@ -26,10 +47,18 @@ export const getReservation = async (
 ): Promise<void> => {
   try {
     const { user } = req as AuthRequest;
-    const reservation = await Reservation.findOne({
-      _id: req.params["id"] as string,
-      user: user._id,
-    }).populate({ path: "schedule", populate: { path: "route" } });
+    const reservation = await prisma.reservation.findFirst({
+      where: {
+        id: String(req.params["id"]),
+        userId: user.id,
+      },
+      include: {
+        schedule: {
+          include: { route: true, occupiedSeats: true },
+        },
+        seats: true,
+      },
+    });
 
     if (!reservation) {
       res
@@ -38,7 +67,7 @@ export const getReservation = async (
       return;
     }
 
-    res.json({ success: true, reservation });
+    res.json({ success: true, reservation: flattenSeats(reservation) });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
@@ -50,10 +79,16 @@ export const cancelReservation = async (
 ): Promise<void> => {
   try {
     const { user } = req as AuthRequest;
-    const reservation = await Reservation.findOne({
-      _id: req.params["id"] as string,
-      user: user._id,
-    }).populate("schedule");
+    const reservation = await prisma.reservation.findFirst({
+      where: {
+        id: String(req.params["id"]),
+        userId: user.id,
+      },
+      include: {
+        schedule: true,
+        seats: true,
+      },
+    });
 
     if (!reservation) {
       res
@@ -80,24 +115,34 @@ export const cancelReservation = async (
       return;
     }
 
-    const schedule = await Schedule.findById(reservation.schedule);
-    if (schedule) {
-      schedule.occupiedSeats = schedule.occupiedSeats.filter(
-        (seat) => !reservation.seats.includes(seat),
-      );
-      schedule.availableSeats += reservation.seats.length;
-      await schedule.save();
-    }
+    const seatNumbers = reservation.seats.map((s: { seatNumber: number }) => s.seatNumber);
 
-    reservation.status = "cancelled";
-    if (reservation.paymentStatus === "paid")
-      reservation.paymentStatus = "refunded";
-    await reservation.save();
+    await prisma.$transaction([
+      prisma.occupiedSeat.deleteMany({
+        where: {
+          scheduleId: reservation.scheduleId,
+          seatNumber: { in: seatNumbers },
+        },
+      }),
+      prisma.schedule.update({
+        where: { id: reservation.scheduleId },
+        data: {
+          availableSeats: { increment: seatNumbers.length },
+        },
+      }),
+      prisma.reservation.update({
+        where: { id: reservation.id },
+        data: {
+          status: "cancelled",
+          paymentStatus: reservation.paymentStatus === "paid" ? "refunded" : reservation.paymentStatus,
+        },
+      }),
+    ]);
 
     res.json({
       success: true,
       message: "Réservation annulée avec succès",
-      reservation,
+      reservation: { ...flattenSeats(reservation), status: "cancelled" },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
@@ -112,15 +157,23 @@ export const createReservation = async (
     const { user } = req as AuthRequest;
     const { scheduleId, seats } = req.body;
 
-    const schedule = await Schedule.findById(scheduleId).populate("route");
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: { route: true },
+    });
     if (!schedule) {
       res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
 
-    const unavailableSeats = seats.filter((seat: number) =>
-      schedule.occupiedSeats.includes(seat),
-    );
+    const occupiedSeats = await prisma.occupiedSeat.findMany({
+      where: {
+        scheduleId,
+        seatNumber: { in: seats },
+      },
+    });
+
+    const unavailableSeats = occupiedSeats.map((s: { seatNumber: number }) => s.seatNumber);
     if (unavailableSeats.length > 0) {
       res
         .status(400)
@@ -133,25 +186,55 @@ export const createReservation = async (
     }
 
     const totalPrice = seats.length * schedule.price;
-    const reservation = await Reservation.create({
-      user: user._id,
-      schedule: scheduleId,
-      seats,
-      totalPrice,
+
+    const bookingReference = `CTR${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+    const reservation = await prisma.$transaction(async (tx) => {
+      const res = await tx.reservation.create({
+        data: {
+          userId: user.id,
+          scheduleId,
+          totalPrice,
+          bookingReference,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+
+      await tx.reservationSeat.createMany({
+        data: seats.map((seatNumber: number) => ({
+          reservationId: res.id,
+          seatNumber,
+        })),
+      });
+
+      await tx.occupiedSeat.createMany({
+        data: seats.map((seatNumber: number) => ({
+          scheduleId,
+          seatNumber,
+        })),
+      });
+
+      await tx.schedule.update({
+        where: { id: scheduleId },
+        data: {
+          availableSeats: { decrement: seats.length },
+        },
+      });
+
+      return res;
     });
 
-    schedule.occupiedSeats.push(...seats);
-    schedule.availableSeats -= seats.length;
-    await schedule.save();
-
-    const populatedReservation = await Reservation.findById(
-      reservation._id,
-    ).populate({
-      path: "schedule",
-      populate: { path: "route" },
+    const populatedReservation = await prisma.reservation.findUnique({
+      where: { id: reservation.id },
+      include: {
+        schedule: {
+          include: { route: true, occupiedSeats: true },
+        },
+        seats: true,
+      },
     });
 
-    res.status(201).json({ success: true, reservation: populatedReservation });
+    res.status(201).json({ success: true, reservation: flattenSeats(populatedReservation) });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
@@ -162,9 +245,16 @@ export const confirmReservation = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const reservation = await Reservation.findById(req.params["id"])
-      .populate({ path: "schedule", populate: { path: "route" } })
-      .populate("user");
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: String(req.params["id"]) },
+      include: {
+        schedule: {
+          include: { route: true, occupiedSeats: true },
+        },
+        user: true,
+        seats: true,
+      },
+    });
 
     if (!reservation) {
       res
@@ -173,25 +263,27 @@ export const confirmReservation = async (
       return;
     }
 
-    reservation.status = "confirmed";
-    reservation.paymentStatus = "paid";
-    reservation.expiresAt = null;
-    await reservation.save();
+    await prisma.reservation.update({
+      where: { id: reservation.id },
+      data: {
+        status: "confirmed",
+        paymentStatus: "paid",
+        expiresAt: null,
+      },
+    });
 
     try {
-      const route = (reservation.schedule as any).route;
+      const route = reservation.schedule.route;
       await sendReservationConfirmation(
-        (reservation.user as any).email,
-        (reservation.user as any).name,
+        reservation.user.email,
+        reservation.user.name,
         reservation.bookingReference,
         {
           departure: route.departure,
           destination: route.destination,
-          date: new Date((reservation.schedule as any).date).toLocaleDateString(
-            "fr-FR",
-          ),
-          time: (reservation.schedule as any).time,
-          seats: reservation.seats,
+          date: new Date(reservation.schedule.date).toLocaleDateString("fr-FR"),
+          time: reservation.schedule.time,
+          seats: reservation.seats.map((s: { seatNumber: number }) => s.seatNumber),
           totalPrice: reservation.totalPrice,
         },
       );
@@ -199,7 +291,7 @@ export const confirmReservation = async (
       console.error("Erreur envoi email confirmation:", error);
     }
 
-    res.json({ success: true, reservation });
+    res.json({ success: true, reservation: flattenSeats(reservation) });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }

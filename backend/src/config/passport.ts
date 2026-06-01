@@ -1,7 +1,7 @@
+import bcrypt from "bcryptjs";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/user.model.js";
-import type { IUser } from "../types/index.js";
+import prisma from "../lib/prisma.js";
 
 passport.use(
   new GoogleStrategy(
@@ -12,33 +12,41 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await User.findOne({ googleId: profile.id });
+        let user = await prisma.user.findUnique({
+          where: { googleId: profile.id },
+        });
 
         const email = profile.emails?.[0]?.value;
 
         if (!user && email) {
-          user = await User.findOne({ email });
+          user = await prisma.user.findUnique({
+            where: { email },
+          });
 
           if (user) {
-            user.googleId = profile.id;
-            user.isEmailVerified = true;
-            if (profile.photos?.[0]?.value) {
-              user.avatar = profile.photos[0].value;
-            }
-            await user.save();
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                googleId: profile.id,
+                isEmailVerified: true,
+                avatar: profile.photos?.[0]?.value ?? user.avatar,
+              },
+            });
           } else {
-            user = await User.create({
-              googleId: profile.id,
-              email: profile.emails?.[0]?.value as string,
-              name: profile.displayName,
-              avatar: profile.photos?.[0]?.value as string,
-              isEmailVerified: true,
-              role: "user",
+            user = await prisma.user.create({
+              data: {
+                googleId: profile.id,
+                email: profile.emails?.[0]?.value as string,
+                name: profile.displayName,
+                avatar: profile.photos?.[0]?.value as string,
+                isEmailVerified: true,
+                role: "user",
+              },
             });
           }
         }
 
-        done(null, user as IUser);
+        done(null, user as any);
       } catch (error) {
         done(error as Error, undefined);
       }
@@ -52,7 +60,9 @@ passport.serializeUser((user: any, done) => {
 
 passport.deserializeUser(async (id: string, done) => {
   try {
-    const user = await User.findById(id);
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
     done(null, user);
   } catch (error) {
     done(error, null);

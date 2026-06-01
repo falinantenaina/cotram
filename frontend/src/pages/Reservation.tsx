@@ -120,12 +120,12 @@ const Reservation = () => {
   const handleSelectSchedule = (schedule: Schedule) => {
     console.log(
       "[Reservation] horaire sélectionné:",
-      schedule._id,
+      schedule.id,
       "seatConfig:",
       (schedule as any).seatConfig,
     );
     setSelectedSchedule(schedule);
-    setScheduleId(schedule._id);
+    setScheduleId(schedule.id);
     setTripDetails({
       departure: localDeparture,
       destination: localDestination,

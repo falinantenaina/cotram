@@ -27,7 +27,7 @@ interface Passenger {
 }
 
 interface ScheduleInfo {
-  _id: string;
+  id: string;
   time: string;
   date: string;
   totalSeats: number;
@@ -45,10 +45,10 @@ export function PassengerModal({ schedule, onClose }: Props) {
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["passengers", schedule._id],
+    queryKey: ["passengers", schedule.id],
     queryFn: async () => {
       const { data } = await api.get(
-        `/admin/schedules/${schedule._id}/passengers`,
+        `/admin/schedules/${schedule.id}/passengers`,
       );
       return data;
     },

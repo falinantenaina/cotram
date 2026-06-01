@@ -135,7 +135,7 @@ function ConfigStep({
   });
 
   const times = timeMode === "hourly" ? TIMES_HOURLY : TIMES_HALF;
-  const selectedRoute = routesData?.find((r) => r._id === routeId);
+  const selectedRoute = routesData?.find((r) => r.id === routeId);
   const dayCount =
     startDate && endDate && startDate <= endDate
       ? Math.round(
@@ -160,12 +160,12 @@ function ConfigStep({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {routesData?.map((route) => (
             <button
-              key={route._id}
+              key={route.id}
               onClick={() => {
-                setRouteId(route._id);
+                setRouteId(route.id);
                 if (price === "") setPrice(route.price);
               }}
-              className={`flex items-center justify-between p-4 rounded-xl border-2 text-left transition-all ${routeId === route._id ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"}`}
+              className={`flex items-center justify-between p-4 rounded-xl border-2 text-left transition-all ${routeId === route.id ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"}`}
             >
               <div>
                 <p className="font-bold text-gray-900 text-sm">
@@ -180,7 +180,7 @@ function ConfigStep({
                   {route.price?.toLocaleString()} Ar / siège
                 </p>
               </div>
-              {routeId === route._id && (
+              {routeId === route.id && (
                 <div className="size-6 bg-primary rounded-full flex items-center justify-center shrink-0">
                   <Check size={12} className="text-black" />
                 </div>
@@ -360,7 +360,7 @@ function ConfigStep({
             <select
               value={selectedTemplateId}
               onChange={(e) => {
-                const tpl = templates.find((t) => t._id === e.target.value);
+                const tpl = templates.find((t) => t.id === e.target.value);
                 setSeatConfig(tpl?.seatConfig ?? null);
                 setSelectedTemplateId(e.target.value);
               }}
@@ -368,7 +368,7 @@ function ConfigStep({
             >
               <option value="">— Aucun (16 places) —</option>
               {templates.map((t) => (
-                <option key={t._id} value={t._id}>
+                <option key={t.id} value={t.id}>
                   {t.name} ({t.seatConfig.totalSeats}p)
                 </option>
               ))}

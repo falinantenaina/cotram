@@ -37,14 +37,14 @@ import { ScheduleModal } from "../../components/schedules/ScheduleModal";
 import api from "../../lib/axios";
 
 interface Route {
-  _id: string;
+  id: string;
   departure: string;
   destination: string;
   price: number;
   duration: string;
 }
 interface Driver {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -141,7 +141,7 @@ export default function AdminSchedules() {
     const d = new Date(toLocalDateKey(new Date(s.date)).replace(/-/g, "/"));
     d.setHours(0, 0, 0, 0);
     if (statusFilter !== "all" && s.status !== statusFilter) return false;
-    if (routeFilter !== "all" && s.route._id !== routeFilter) return false;
+    if (routeFilter !== "all" && s.route.id !== routeFilter) return false;
     if (dateFilter === "today" && d.toDateString() !== today.toDateString())
       return false;
     if (dateFilter === "week" && (d < today || d >= nextWeek)) return false;
@@ -197,7 +197,7 @@ export default function AdminSchedules() {
     setSelectedIds(
       selectedIds.size === schedules.length
         ? new Set()
-        : new Set(schedules.map((s) => s._id)),
+        : new Set(schedules.map((s) => s.id)),
     );
 
   const activeFiltersCount = [
@@ -372,7 +372,7 @@ export default function AdminSchedules() {
                 >
                   <option value="all">Tous les trajets</option>
                   {routes.map((r) => (
-                    <option key={r._id} value={r._id}>
+                    <option key={r.id} value={r.id}>
                       {r.departure} → {r.destination}
                     </option>
                   ))}
@@ -539,9 +539,9 @@ export default function AdminSchedules() {
                           .sort((a, b) => a.time.localeCompare(b.time))
                           .map((s) => (
                             <ScheduleCard
-                              key={s._id}
+                              key={s.id}
                               schedule={s}
-                              selected={selectedIds.has(s._id)}
+                              selected={selectedIds.has(s.id)}
                               onSelect={toggleSelect}
                               onEdit={() => setModalSchedule(s)}
                               onDelete={(id) => setDeleteTarget(id)}
@@ -575,7 +575,7 @@ export default function AdminSchedules() {
       )}
       {assignTarget !== null && (
         <AssignDriverModal
-          scheduleId={assignTarget._id}
+          scheduleId={assignTarget.id}
           currentDriver={getDriverObj(assignTarget.driver) as any}
           onClose={() => setAssignTarget(null)}
           onSuccess={() =>

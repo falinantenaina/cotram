@@ -184,7 +184,7 @@ export function WalkInModal({ onClose }: Props) {
   ] as string[];
 
   const selectedSchedule = allSchedules.find(
-    (s: any) => s._id === selectedScheduleId,
+    (s: any) => s.id === selectedScheduleId,
   );
   const totalPrice = selectedSeats.length * (selectedSchedule?.price || 0);
   const toggleSeat = (id: number) =>
@@ -390,16 +390,16 @@ export function WalkInModal({ onClose }: Props) {
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {filteredSchedules.map((s: any) => {
-                      const isSelected = selectedScheduleId === s._id;
+                      const isSelected = selectedScheduleId === s.id;
                       const occupancyPct = Math.round(
                         ((s.totalSeats - s.availableSeats) / s.totalSeats) *
                           100,
                       );
                       return (
                         <button
-                          key={s._id}
+                          key={s.id}
                           onClick={() => {
-                            setSelectedScheduleId(s._id);
+                            setSelectedScheduleId(s.id);
                             setSelectedSeats([]);
                           }}
                           className={`w-full flex items-center gap-4 p-3.5 rounded-xl border-2 text-left transition-all ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"}`}

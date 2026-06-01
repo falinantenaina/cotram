@@ -5,7 +5,7 @@ import api from "../../lib/axios";
 import { ErrorAlert } from "../common";
 
 interface Driver {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -62,7 +62,7 @@ export function AssignDriverModal({
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string>(
-    currentDriver?._id ?? "",
+    currentDriver?.id ?? "",
   );
   const [vehicleNumber, setVehicleNumber] = useState(
     currentDriver?.vehicleNumber ?? "",
@@ -102,7 +102,7 @@ export function AssignDriverModal({
   });
 
   const selectedDriver = (data?.drivers ?? []).find(
-    (d) => d._id === selectedId,
+    (d) => d.id === selectedId,
   );
 
   return (
@@ -164,18 +164,18 @@ export function AssignDriverModal({
             </button>
 
             {drivers.map((d) => {
-              const isSelected = d._id === selectedId;
+              const isSelected = d.id === selectedId;
               const unavailable =
                 (d.status === "on_trip" || d.status === "suspended") &&
-                d._id !== currentDriver?._id;
-              const color = getAvatarColor(d._id);
+                d.id !== currentDriver?.id;
+              const color = getAvatarColor(d.id);
 
               return (
                 <button
-                  key={d._id}
+                  key={d.id}
                   onClick={() => {
                     if (unavailable) return;
-                    setSelectedId(d._id);
+                    setSelectedId(d.id);
                     setVehicleNumber(d.vehicleNumber);
                   }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${isSelected ? "border-primary bg-primary/5" : unavailable ? "border-gray-100 opacity-40 cursor-not-allowed" : "border-gray-100 hover:border-gray-200 hover:bg-gray-50/50"}`}

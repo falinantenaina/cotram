@@ -10,14 +10,13 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { seatTemplateApi, type SeatTemplate } from "../../api/seatTemplateApi";
 import { buildFallbackConfig, type SeatConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
 import { SeatLayoutEditor } from "../admin/SeatLayoutEditor";
 import type { Schedule } from "./ScheduleCard";
 
 interface Route {
-  _id: string;
+  id: string;
   departure: string;
   destination: string;
   price: number;
@@ -25,7 +24,7 @@ interface Route {
 }
 
 interface Driver {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   phone?: string;
@@ -66,25 +65,19 @@ export function ScheduleModal({
 }: Props) {
   const [activeTab, setActiveTab] = useState<"infos" | "seats">("infos");
   const [form, setForm] = useState({
-    route: schedule?.route._id ?? "",
+    route: schedule?.route.id ?? "",
     date: schedule ? schedule.date.split("T")[0]! : "",
     time: schedule?.time ?? "",
     price: schedule?.price ?? 0,
     vehicle: schedule?.vehicle ?? "Crafter",
     vehicleNumber: schedule?.vehicleNumber ?? "",
-    driverId: getDriverObj(schedule?.driver)?._id ?? "",
+    driverId: getDriverObj(schedule?.driver)?.id ?? "",
     notes: schedule?.notes ?? "",
   });
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(
     schedule?.seatConfig ?? buildFallbackConfig(schedule?.totalSeats ?? 16),
   );
   const [error, setError] = useState("");
-  const [templates, setTemplates] = useState<SeatTemplate[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState("");
-
-  useEffect(() => {
-    seatTemplateApi.getAll().then(setTemplates);
-  }, []);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -101,7 +94,7 @@ export function ScheduleModal({
         totalSeats: seatConfig?.totalSeats ?? 16,
       };
       if (!schedule) payload.availableSeats = seatConfig?.totalSeats ?? 16;
-      if (schedule) return api.put(`/schedules/${schedule._id}`, payload);
+      if (schedule) return api.put(`/schedules/${schedule.id}`, payload);
       return api.post("/schedules", payload);
     },
     onSuccess: () => {
@@ -111,8 +104,8 @@ export function ScheduleModal({
     onError: (err: any) => setError(err?.response?.data?.message ?? "Erreur"),
   });
 
-  const selectedRoute = routes.find((r) => r._id === form.route);
-  const selectedDriver = drivers.find((d) => d._id === form.driverId);
+  const selectedRoute = routes.find((r) => r.id === form.route);
+  const selectedDriver = drivers.find((d) => d.id === form.driverId);
   const inp =
     "w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white";
 
@@ -191,7 +184,7 @@ export function ScheduleModal({
                 <select
                   value={form.route}
                   onChange={(e) => {
-                    const r = routes.find((x) => x._id === e.target.value);
+                    const r = routes.find((x) => x.id === e.target.value);
                     setForm({
                       ...form,
                       route: e.target.value,
@@ -202,7 +195,7 @@ export function ScheduleModal({
                 >
                   <option value="">Sélectionner un trajet</option>
                   {routes.map((r) => (
-                    <option key={r._id} value={r._id}>
+                    <option key={r.id} value={r.id}>
                       {r.departure} → {r.destination}
                     </option>
                   ))}
@@ -284,7 +277,7 @@ export function ScheduleModal({
                   <select
                     value={form.driverId}
                     onChange={(e) => {
-                      const d = drivers.find((x) => x._id === e.target.value);
+                      const d = drivers.find((x) => x.id === e.target.value);
                       setForm({
                         ...form,
                         driverId: e.target.value,
@@ -296,8 +289,8 @@ export function ScheduleModal({
                     <option value="">— Aucun chauffeur —</option>
                     {drivers.map((d) => (
                       <option
-                        key={d._id}
-                        value={d._id}
+                        key={d.id}
+                        value={d.id}
                         disabled={d.status === "suspended"}
                       >
                         {d.firstName} {d.lastName} ({d.vehicleType})
@@ -366,34 +359,10 @@ export function ScheduleModal({
 
           {activeTab === "seats" && (
             <div className="space-y-4">
-              {templates.length > 0 && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                    Charger un template
-                  </label>
-                  <select
-                    value={selectedTemplateId}
-                    onChange={(e) => {
-                      const tpl = templates.find(
-                        (t) => t._id === e.target.value,
-                      );
-                      if (tpl) {
-                        setSeatConfig(tpl.seatConfig);
-                        setSelectedTemplateId(e.target.value);
-                      }
-                    }}
-                    className="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                  >
-                    <option value="">— Choisir un template —</option>
-                    {templates.map((t) => (
-                      <option key={t._id} value={t._id}>
-                        {t.name} ({t.seatConfig.totalSeats} places)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <SeatLayoutEditor value={seatConfig} onChange={setSeatConfig} />
+              <SeatLayoutEditor
+                value={seatConfig ?? buildFallbackConfig(16)}
+                onChange={setSeatConfig}
+              />
             </div>
           )}
         </div>

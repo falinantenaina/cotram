@@ -10,7 +10,7 @@ import {
 import api from "../../lib/axios";
 
 interface User {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   phone?: string;
@@ -117,7 +117,7 @@ export default function AdminUsers() {
                   {users.map((user) => {
                     return (
                       <tr
-                        key={user._id}
+                        key={user.id}
                         className="hover:bg-gray-50/50 transition-colors"
                       >
                         <td className="px-5 py-4">
@@ -145,7 +145,7 @@ export default function AdminUsers() {
                             value={user.role}
                             onChange={(e) =>
                               updateRoleMutation.mutate({
-                                id: user._id,
+                                id: user.id,
                                 role: e.target.value,
                               })
                             }
@@ -172,7 +172,7 @@ export default function AdminUsers() {
                         </td>
                         <td className="px-5 py-4">
                           <button
-                            onClick={() => setDeleteId(user._id)}
+                            onClick={() => setDeleteId(user.id)}
                             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Trash2 size={16} />
@@ -191,7 +191,7 @@ export default function AdminUsers() {
                 const roleInfo = ROLE_LABELS[user.role] ?? ROLE_LABELS.user;
                 return (
                   <div
-                    key={user._id}
+                    key={user.id}
                     className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -210,7 +210,7 @@ export default function AdminUsers() {
                         </div>
                       </div>
                       <button
-                        onClick={() => setDeleteId(user._id)}
+                        onClick={() => setDeleteId(user.id)}
                         className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 size={15} />
@@ -233,7 +233,7 @@ export default function AdminUsers() {
                         value={user.role}
                         onChange={(e) =>
                           updateRoleMutation.mutate({
-                            id: user._id,
+                            id: user.id,
                             role: e.target.value,
                           })
                         }

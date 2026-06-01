@@ -1,9 +1,11 @@
 import type { Request, Response } from "express";
-import Route from "../models/route.model.js";
+import prisma from "../lib/prisma.js";
 
 export const getRoutes = async (req: Request, res: Response): Promise<void> => {
   try {
-    const routes = await Route.find({ isActive: true });
+    const routes = await prisma.route.findMany({
+      where: { isActive: true },
+    });
     res.json({ success: true, routes });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
@@ -12,7 +14,9 @@ export const getRoutes = async (req: Request, res: Response): Promise<void> => {
 
 export const getRoute = async (req: Request, res: Response): Promise<void> => {
   try {
-    const route = await Route.findById(req.params.id);
+    const route = await prisma.route.findUnique({
+      where: { id: String(req.params.id) },
+    });
 
     if (!route) {
       res.status(404).json({
@@ -35,12 +39,14 @@ export const createRoute = async (
   try {
     const { departure, destination, duration, distance, price } = req.body;
 
-    const route = await Route.create({
-      departure,
-      destination,
-      duration,
-      distance,
-      price,
+    const route = await prisma.route.create({
+      data: {
+        departure,
+        destination,
+        duration,
+        distance,
+        price,
+      },
     });
 
     res.status(201).json({ success: true, route });
@@ -54,21 +60,20 @@ export const updateRoute = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const route = await Route.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
+    const route = await prisma.route.update({
+      where: { id: String(req.params.id) },
+      data: req.body,
     });
 
-    if (!route) {
+    res.json({ success: true, route });
+  } catch (error: any) {
+    if (error.code === "P2025") {
       res.status(404).json({
         success: false,
         message: "Trajet non trouvé",
       });
       return;
     }
-
-    res.json({ success: true, route });
-  } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
@@ -78,18 +83,19 @@ export const deleteRoute = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const route = await Route.findByIdAndDelete(req.params.id);
+    await prisma.route.delete({
+      where: { id: String(req.params.id) },
+    });
 
-    if (!route) {
+    res.json({ success: true, message: "Trajet supprimé" });
+  } catch (error: any) {
+    if (error.code === "P2025") {
       res.status(404).json({
         success: false,
         message: "Trajet non trouvé",
       });
       return;
     }
-
-    res.json({ success: true, message: "Trajet supprimé" });
-  } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };

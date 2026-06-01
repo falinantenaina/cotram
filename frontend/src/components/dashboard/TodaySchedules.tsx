@@ -11,7 +11,7 @@ import api from "../../lib/axios";
 import { OccupancyBar } from "../common";
 
 export interface TodaySchedule {
-  _id: string;
+  id: string;
   time: string;
   date: string;
   status: string;
@@ -72,14 +72,14 @@ export function TodaySchedules({ onSelectSchedule }: Props) {
         <div className="divide-y divide-gray-50">
           {upcoming.map((s) => (
             <ScheduleRow
-              key={s._id}
+              key={s.id}
               schedule={s}
               onClick={onSelectSchedule}
               isActive
             />
           ))}
           {departed.map((s) => (
-            <ScheduleRow key={s._id} schedule={s} onClick={onSelectSchedule} />
+            <ScheduleRow key={s.id} schedule={s} onClick={onSelectSchedule} />
           ))}
         </div>
       )}

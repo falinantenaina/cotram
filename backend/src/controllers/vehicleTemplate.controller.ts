@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import VehicleTemplate from "../models/vehicleTemplate.model.js";
+import prisma from "../lib/prisma.js";
 
 type VehicleType = "Crafter" | "Sprinter" | "Transit";
 
 // GET /api/vehicle-templates — tous les templates
 export const getTemplates = async (_req: Request, res: Response) => {
   try {
-    const templates = await VehicleTemplate.find();
+    const templates = await prisma.vehicleTemplate.findMany();
     res.json({ success: true, templates });
   } catch (err) {
     res.status(500).json({ success: false, message: (err as Error).message });
@@ -17,7 +17,9 @@ export const getTemplates = async (_req: Request, res: Response) => {
 export const getTemplate = async (req: Request, res: Response) => {
   try {
     const vehicleType = req.params.vehicleType as VehicleType;
-    const template = await VehicleTemplate.findOne({ vehicleType });
+    const template = await prisma.vehicleTemplate.findUnique({
+      where: { vehicleType },
+    });
     if (!template) {
       res
         .status(404)
@@ -41,11 +43,11 @@ export const upsertTemplate = async (req: Request, res: Response) => {
       return;
     }
 
-    const template = await VehicleTemplate.findOneAndUpdate(
-      { vehicleType },
-      { vehicleType, seatConfig, $set: { updatedAt: new Date() } },
-      { upsert: true, new: true },
-    );
+    const template = await prisma.vehicleTemplate.upsert({
+      where: { vehicleType },
+      update: { seatConfig },
+      create: { vehicleType, seatConfig },
+    });
 
     res.json({ success: true, template });
   } catch (err) {

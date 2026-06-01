@@ -180,10 +180,10 @@ export default function AdminDrivers() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {drivers.map((d) => (
               <DriverCard
-                key={d._id}
+                key={d.id}
                 driver={d}
                 onEdit={() => setModal(d)}
-                onDelete={() => setDeleteId(d._id)}
+                onDelete={() => setDeleteId(d.id)}
                 onClick={() => setDetailDriver(d)}
               />
             ))}

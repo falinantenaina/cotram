@@ -3,7 +3,7 @@ import type { SeatConfig } from "../config/seatLayouts";
 import api from "../lib/axios";
 
 export interface VehicleTemplate {
-  _id: string;
+  id: string;
   vehicleType: "Crafter" | "Sprinter" | "Transit";
   seatConfig: SeatConfig;
   updatedAt: string;

@@ -141,7 +141,7 @@ export default function AdminReservations() {
                         STATUS_LABELS[res.status] ?? STATUS_LABELS.pending;
                       return (
                         <tr
-                          key={res._id}
+                          key={res.id}
                           className="hover:bg-gray-50/50 transition-colors"
                         >
                           <td className="px-4 py-4 font-mono text-sm font-semibold text-gray-900 whitespace-nowrap">
@@ -197,7 +197,7 @@ export default function AdminReservations() {
                                 <>
                                   <button
                                     onClick={() =>
-                                      confirmMutation.mutate(res._id)
+                                      confirmMutation.mutate(res.id)
                                     }
                                     className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"
                                     title="Confirmer"
@@ -213,7 +213,7 @@ export default function AdminReservations() {
                                   </button>
                                   <button
                                     onClick={() =>
-                                      cancelMutation.mutate(res._id)
+                                      cancelMutation.mutate(res.id)
                                     }
                                     className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
                                     title="Annuler"
@@ -242,7 +242,7 @@ export default function AdminReservations() {
                 {filteredReservations?.map((res: any) => {
                   const s = STATUS_LABELS[res.status] ?? STATUS_LABELS.pending;
                   return (
-                    <div key={res._id} className="p-4 space-y-3">
+                    <div key={res.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-mono font-bold text-sm text-gray-900">
@@ -290,13 +290,13 @@ export default function AdminReservations() {
                       {res.status === "pending" && (
                         <div className="flex gap-2 pt-1">
                           <button
-                            onClick={() => confirmMutation.mutate(res._id)}
+                            onClick={() => confirmMutation.mutate(res.id)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200"
                           >
                             <CheckCircle size={14} /> Confirmer
                           </button>
                           <button
-                            onClick={() => cancelMutation.mutate(res._id)}
+                            onClick={() => cancelMutation.mutate(res.id)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-200"
                           >
                             <XCircle size={14} /> Annuler

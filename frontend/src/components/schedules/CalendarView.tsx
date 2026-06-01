@@ -129,7 +129,7 @@ export function CalendarView({ schedules, onEdit }: Props) {
                         STATUS_CONFIG[s.status] ?? STATUS_CONFIG.scheduled;
                       return (
                         <button
-                          key={s._id}
+                          key={s.id}
                           onClick={() => onEdit(s)}
                           className={`w-full text-left text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border hover:scale-[1.02] transition-all ${cfg.badge}`}
                         >

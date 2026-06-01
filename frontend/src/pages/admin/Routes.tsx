@@ -11,7 +11,7 @@ import {
 import api from "../../lib/axios";
 
 interface Route {
-  _id: string;
+  id: string;
   departure: string;
   destination: string;
   duration: string;
@@ -53,7 +53,7 @@ function RouteModal({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (route) return api.put(`/routes/${route._id}`, form);
+      if (route) return api.put(`/routes/${route.id}`, form);
       return api.post("/routes", form);
     },
     onSuccess: () => {
@@ -289,7 +289,7 @@ export default function AdminRoutes() {
                 <tbody className="divide-y divide-gray-50">
                   {routes.map((route) => (
                     <tr
-                      key={route._id}
+                      key={route.id}
                       className="hover:bg-gray-50/50 transition-colors"
                     >
                       <td className="px-6 py-4">
@@ -322,7 +322,7 @@ export default function AdminRoutes() {
                             <Edit size={16} />
                           </button>
                           <button
-                            onClick={() => setDeleteId(route._id)}
+                            onClick={() => setDeleteId(route.id)}
                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Trash2 size={16} />
@@ -339,7 +339,7 @@ export default function AdminRoutes() {
             <div className="md:hidden grid grid-cols-1 gap-3">
               {routes.map((route) => (
                 <div
-                  key={route._id}
+                  key={route.id}
                   className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -365,7 +365,7 @@ export default function AdminRoutes() {
                         <Edit size={15} />
                       </button>
                       <button
-                        onClick={() => setDeleteId(route._id)}
+                        onClick={() => setDeleteId(route.id)}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 size={15} />
