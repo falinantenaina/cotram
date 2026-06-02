@@ -1,4 +1,6 @@
 import express from "express";
+import { Prisma } from "@prisma/client";
+import rateLimit from "express-rate-limit";
 import { sendReservationConfirmation } from "../config/email.js";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
@@ -226,11 +228,23 @@ router.get(
   },
 );
 
+const walkInLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: {
+    success: false,
+    message: "Trop de tentatives de réservation. Veuillez réessayer dans 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── Walk-in reservation ───────────────────────────────────────────────────────
 router.post(
   "/reservations/walk-in",
   protect,
   authorize("admin"),
+  walkInLimiter,
   async (req, res) => {
     try {
       const { name, phone, scheduleId, seats } = req.body;
@@ -239,32 +253,6 @@ router.post(
         res.status(400).json({
           success: false,
           message: "Nom, horaire et sièges sont requis",
-        });
-        return;
-      }
-
-      const schedule = await prisma.schedule.findUnique({
-        where: { id: scheduleId },
-        include: { route: true },
-      });
-      if (!schedule) {
-        res.status(404).json({ success: false, message: "Horaire non trouvé" });
-        return;
-      }
-
-      const occupiedSeats = await prisma.occupiedSeat.findMany({
-        where: {
-          scheduleId,
-          seatNumber: { in: seats },
-        },
-      });
-
-      const unavailableSeats = occupiedSeats.map((s: any) => s.seatNumber);
-      if (unavailableSeats.length > 0) {
-        res.status(400).json({
-          success: false,
-          message: "Certains sièges sont déjà occupés",
-          unavailableSeats,
         });
         return;
       }
@@ -292,10 +280,35 @@ router.post(
         });
       }
 
-      const totalPrice = seats.length * schedule.price;
       const bookingReference = `CTR${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
       const reservation = await prisma.$transaction(async (tx: any) => {
+        const lockedScheduleResults = await tx.$queryRaw`
+          SELECT id, "totalSeats", "availableSeats", price
+          FROM "Schedule"
+          WHERE id = ${scheduleId}
+          FOR UPDATE
+        `;
+        const lockedSchedule = (lockedScheduleResults as any[])[0];
+
+        if (!lockedSchedule) {
+          throw new Error("SCHEDULE_NOT_FOUND");
+        }
+
+        const occupiedSeats = await tx.occupiedSeat.findMany({
+          where: {
+            scheduleId,
+            seatNumber: { in: seats },
+          },
+        });
+
+        const unavailableSeats = occupiedSeats.map((s: any) => s.seatNumber);
+        if (unavailableSeats.length > 0) {
+          throw new Error(`SEATS_UNAVAILABLE:${JSON.stringify(unavailableSeats)}`);
+        }
+
+        const totalPrice = seats.length * (lockedSchedule as any).price;
+
         const res = await tx.reservation.create({
           data: {
             userId: user!.id,
@@ -372,6 +385,28 @@ router.post(
         message: `Réservation créée avec succès — Référence: ${reservation.bookingReference}`,
       });
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === "SCHEDULE_NOT_FOUND") {
+          res.status(404).json({ success: false, message: "Horaire non trouvé" });
+          return;
+        }
+        if (error.message.startsWith("SEATS_UNAVAILABLE:")) {
+          const unavailableSeats = JSON.parse(error.message.substring("SEATS_UNAVAILABLE:".length));
+          res.status(400).json({
+            success: false,
+            message: "Certains sièges sont déjà occupés",
+            unavailableSeats,
+          });
+          return;
+        }
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        res.status(409).json({
+          success: false,
+          message: "Conflit de réservation - ces sièges sont en cours de réservation par un autre utilisateur",
+        });
+        return;
+      }
       res
         .status(500)
         .json({ success: false, message: (error as Error).message });

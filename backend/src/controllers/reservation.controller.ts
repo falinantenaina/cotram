@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { sendReservationConfirmation } from "../config/email.js";
 import prisma from "../lib/prisma.js";
 import type { AuthRequest } from "../types/index.js";
@@ -157,6 +158,11 @@ export const createReservation = async (
     const { user } = req as AuthRequest;
     const { scheduleId, seats } = req.body;
 
+    if (!scheduleId || !seats || seats.length === 0) {
+      res.status(400).json({ success: false, message: "scheduleId et seats sont requis" });
+      return;
+    }
+
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
       include: { route: true },
@@ -166,30 +172,35 @@ export const createReservation = async (
       return;
     }
 
-    const occupiedSeats = await prisma.occupiedSeat.findMany({
-      where: {
-        scheduleId,
-        seatNumber: { in: seats },
-      },
-    });
-
-    const unavailableSeats = occupiedSeats.map((s: { seatNumber: number }) => s.seatNumber);
-    if (unavailableSeats.length > 0) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Certains sièges sont déjà occupés",
-          unavailableSeats,
-        });
-      return;
-    }
-
-    const totalPrice = seats.length * schedule.price;
-
     const bookingReference = `CTR${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
     const reservation = await prisma.$transaction(async (tx) => {
+      const lockedScheduleResults = await tx.$queryRaw`
+        SELECT id, "totalSeats", "availableSeats", price
+        FROM "Schedule"
+        WHERE id = ${scheduleId}
+        FOR UPDATE
+      `;
+      const lockedSchedule = (lockedScheduleResults as any[])[0];
+
+      if (!lockedSchedule) {
+        throw new Error("SCHEDULE_NOT_FOUND");
+      }
+
+      const occupiedSeats = await tx.occupiedSeat.findMany({
+        where: {
+          scheduleId,
+          seatNumber: { in: seats },
+        },
+      });
+
+      const unavailableSeats = occupiedSeats.map((s: { seatNumber: number }) => s.seatNumber);
+      if (unavailableSeats.length > 0) {
+        throw new Error(`SEATS_UNAVAILABLE:${JSON.stringify(unavailableSeats)}`);
+      }
+
+      const totalPrice = seats.length * (lockedSchedule as any).price;
+
       const res = await tx.reservation.create({
         data: {
           userId: user.id,
@@ -236,6 +247,28 @@ export const createReservation = async (
 
     res.status(201).json({ success: true, reservation: flattenSeats(populatedReservation) });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "SCHEDULE_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "Horaire non trouvé" });
+        return;
+      }
+      if (error.message.startsWith("SEATS_UNAVAILABLE:")) {
+        const unavailableSeats = JSON.parse(error.message.substring("SEATS_UNAVAILABLE:".length));
+        res.status(400).json({
+          success: false,
+          message: "Certains sièges sont déjà occupés",
+          unavailableSeats,
+        });
+        return;
+      }
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      res.status(409).json({
+        success: false,
+        message: "Conflit de réservation - ces sièges sont en cours de réservation par un autre utilisateur",
+      });
+      return;
+    }
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
