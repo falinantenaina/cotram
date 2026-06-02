@@ -29,7 +29,7 @@ const helmet = (helmetPkg as any).default ?? helmetPkg;
 const app = express();
 
 app.use(helmet());
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,

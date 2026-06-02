@@ -2,6 +2,10 @@ import express from "express";
 import * as scheduleController from "../controllers/schedule.controller.js";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
+import {
+  parseDurationToMinutes,
+  hasTimeOverlap,
+} from "../utils/date.utils.js";
 
 const router = express.Router();
 
@@ -67,6 +71,7 @@ router.put(
 
       const schedule = await prisma.schedule.findUnique({
         where: { id: String(req.params.id) },
+        include: { route: { select: { duration: true } } },
       });
       if (!schedule)
         return res
@@ -87,16 +92,32 @@ router.put(
             id: { not: schedule.id },
             driverId,
             date: schedule.date,
-            time: schedule.time,
             status: { in: ["scheduled", "in_progress"] },
           },
+          include: { route: { select: { duration: true } } },
         });
 
         if (conflict) {
-          return res.status(400).json({
-            success: false,
-            message: `Ce chauffeur est déjà assigné à un voyage à ${conflict.time} le même jour.`,
-          });
+          const [targetH, targetM] = schedule.time.split(":").map(Number);
+          const targetStart = targetH! * 60 + targetM!;
+          const targetDuration = parseDurationToMinutes(
+            schedule.route?.duration ?? "2h",
+          );
+          const targetEnd = targetStart + targetDuration;
+
+          const [conflictH, conflictM] = conflict.time.split(":").map(Number);
+          const conflictStart = conflictH! * 60 + conflictM!;
+          const conflictDuration = parseDurationToMinutes(
+            conflict.route?.duration ?? "2h",
+          );
+          const conflictEnd = conflictStart + conflictDuration;
+
+          if (hasTimeOverlap(targetStart, targetEnd, conflictStart, conflictEnd)) {
+            return res.status(400).json({
+              success: false,
+              message: `Ce chauffeur est déjà assigné à un voyage à ${conflict.time} le même jour (durée: ${conflict.route?.duration}). Il ne sera pas disponible avant ${Math.floor(conflictEnd / 60)}h${String(conflictEnd % 60).padStart(2, "0")}.`,
+            });
+          }
         }
 
         const previousDriver = schedule.driverId;

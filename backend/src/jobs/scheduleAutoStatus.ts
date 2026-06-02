@@ -1,20 +1,5 @@
 import prisma from "../lib/prisma.js";
-
-/**
- * Convertit une durée texte ("2h30", "1h", "45min", "2h 30min") en minutes
- */
-function parseDurationToMinutes(duration: string): number {
-  const hoursMatch = duration.match(/(\d+)\s*h/);
-  const minutesMatch = duration.match(/(\d+)\s*min/);
-  const hours = hoursMatch ? parseInt(hoursMatch[1]!) : 0;
-  const minutes = minutesMatch ? parseInt(minutesMatch[1]!) : 0;
-  if (hours === 0 && minutes === 0) {
-    const direct = parseInt(duration);
-    if (!isNaN(direct)) return direct;
-    return 120;
-  }
-  return hours * 60 + minutes;
-}
+import { parseDurationToMinutes } from "../utils/date.utils.js";
 
 /**
  * Démarre le job automatique de mise à jour des statuts.

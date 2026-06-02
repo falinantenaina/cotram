@@ -34,3 +34,31 @@ export function toLocalDateString(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Parse une durée texte ("2h30", "1h", "45min", "2h 30min") en minutes
+ */
+export function parseDurationToMinutes(duration: string): number {
+  const hoursMatch = duration.match(/(\d+)\s*h/);
+  const minutesMatch = duration.match(/(\d+)\s*min/);
+  const hours = hoursMatch ? parseInt(hoursMatch[1]!) : 0;
+  const minutes = minutesMatch ? parseInt(minutesMatch[1]!) : 0;
+  if (hours === 0 && minutes === 0) {
+    const direct = parseInt(duration);
+    if (!isNaN(direct)) return direct;
+    return 120;
+  }
+  return hours * 60 + minutes;
+}
+
+/**
+ * Vérifie si deux plages horaires se chevauchent sur la même journee
+ */
+export function hasTimeOverlap(
+  start1Minutes: number,
+  end1Minutes: number,
+  start2Minutes: number,
+  end2Minutes: number,
+): boolean {
+  return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
+}

@@ -82,7 +82,8 @@ const AVATAR_COLORS = [
   "from-rose-500 to-pink-600",
 ];
 
-function hashColor(arr: string[], id: string) {
+function hashColor(arr: string[], id: string | undefined | null) {
+  if (!id) return arr[0]!;
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
   return arr[Math.abs(h) % arr.length] ?? arr[0]!;
