@@ -15,20 +15,6 @@ export const useCities = () => {
   };
 };
 
-export const useAllCities = () => {
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["allCities"],
-    queryFn: () => cityApi.getAllCities(),
-  });
-
-  return {
-    cities: data || [],
-    isLoading,
-    error,
-    refetch,
-  };
-};
-
 export const useCity = (id: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["city", id],

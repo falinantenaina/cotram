@@ -30,7 +30,9 @@ const Reservation = () => {
     toggleSeat,
   } = useReservationTempStore();
 
-  const [currentStep, setCurrentStep] = useState<Step>("route");
+  const [currentStep, setCurrentStep] = useState<Step>(
+    departure && destination ? "time" : "route",
+  );
   const [localDeparture, setLocalDeparture] = useState(departure);
   const [localDestination, setLocalDestination] = useState(destination);
   const [localDate, setLocalDate] = useState(

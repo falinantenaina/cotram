@@ -7,14 +7,26 @@ import {
   Star,
   Zap,
 } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import hero from "../assets/hero.webp";
 import { useCities } from "../hooks/useCities";
+import { useReservationTempStore } from "../stores/reservationStore";
 
 export const Hero = () => {
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
   const { cities } = useCities();
+  const { setTripDetails } = useReservationTempStore();
+  const [departure, setDeparture] = useState("");
+  const [destination, setDestination] = useState("");
+  const [date, setDate] = useState(today);
+
+  const handleSearch = () => {
+    if (!departure || !destination || departure === destination) return;
+    setTripDetails({ departure, destination, date, time: "", price: 0 });
+    navigate("/reservation");
+  };
 
   return (
     <section className="relative bg-[#0a0a0a] overflow-hidden min-h-[92vh] flex flex-col">
@@ -135,7 +147,11 @@ export const Hero = () => {
                   size={15}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
                 />
-                <select className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-colors appearance-none">
+                <select
+                  value={departure}
+                  onChange={(e) => setDeparture(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-colors appearance-none"
+                >
                   <option value="" className="bg-gray-900">
                     Sélectionnez
                   </option>
@@ -156,15 +172,21 @@ export const Hero = () => {
                   size={15}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
                 />
-                <select className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-colors appearance-none">
+                <select
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 focus:bg-white/8 transition-colors appearance-none"
+                >
                   <option value="" className="bg-gray-900">
                     Sélectionnez
                   </option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.name} className="bg-gray-900">
-                      {city.name}
-                    </option>
-                  ))}
+                  {cities
+                    .filter((c) => c.name !== departure)
+                    .map((city) => (
+                      <option key={city.id} value={city.name} className="bg-gray-900">
+                        {city.name}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -180,15 +202,17 @@ export const Hero = () => {
                 <input
                   type="date"
                   min={today}
-                  defaultValue={today}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 text-white pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-primary/50 transition-colors scheme-dark"
                 />
               </div>
             </div>
           </div>
           <button
-            onClick={() => navigate("/reservation")}
-            className="mt-4 w-full bg-primary text-black font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+            onClick={handleSearch}
+            disabled={!departure || !destination || departure === destination}
+            className="mt-4 w-full bg-primary text-black font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ArrowRight size={18} />
             Rechercher les trajets disponibles
