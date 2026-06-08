@@ -744,6 +744,7 @@ router.post(
           price: number;
           vehicle: string;
           seatConfig?: any | null;
+          seatTemplateId?: string | null;
         }[];
       };
 
@@ -818,6 +819,7 @@ router.post(
           price: item.price,
           status: "scheduled",
           seatConfig: item.seatConfig ?? undefined,
+          seatTemplateId: item.seatTemplateId ?? undefined,
         });
       }
 

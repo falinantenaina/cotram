@@ -43,6 +43,20 @@ export const updateTemplate = async (req: Request, res: Response) => {
       where: { id: String(req.params.id) },
       data,
     });
+
+    // Propager le nouveau seatConfig à tous les schedules liés
+    if (seatConfig !== undefined) {
+      const totalSeats = (seatConfig as any)?.totalSeats ?? undefined;
+      const updateData: any = { seatConfig };
+      if (totalSeats !== undefined) {
+        updateData.totalSeats = totalSeats;
+      }
+      await prisma.schedule.updateMany({
+        where: { seatTemplateId: template.id },
+        data: updateData,
+      });
+    }
+
     res.json({ success: true, template });
   } catch (err: any) {
     if (err.code === "P2025") {

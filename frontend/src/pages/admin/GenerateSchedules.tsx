@@ -100,6 +100,7 @@ function ConfigStep({
     price: number;
     vehicle: string;
     seatConfig: SeatConfig | null;
+    seatTemplateId: string | null;
   }) => void;
 }) {
   const [routeId, setRouteId] = useState("");
@@ -431,6 +432,7 @@ function ConfigStep({
                   price !== "" ? Number(price) : (selectedRoute?.price ?? 0),
                 vehicle,
                 seatConfig,
+                seatTemplateId: selectedTemplateId || null,
               })
             }
             className="flex items-center gap-2 bg-primary text-black font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-all whitespace-nowrap"
@@ -870,6 +872,7 @@ export default function GenerateSchedules() {
           price: i.price,
           vehicle: i.vehicle,
           seatConfig: config?.seatConfig ?? null,
+          seatTemplateId: config?.seatTemplateId ?? null,
         }));
       const { data } = await api.post("/admin/schedules/generate", {
         items: toCreate,

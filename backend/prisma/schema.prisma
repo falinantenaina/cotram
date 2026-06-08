@@ -134,6 +134,7 @@ model Schedule {
   driverId        String?
   vehicleNumber   String?
   seatConfig      Json?
+  seatTemplateId  String?
   actualDeparture DateTime?
   actualArrival   DateTime?
   notes           String?
@@ -142,12 +143,14 @@ model Schedule {
 
   route               Route              @relation(fields: [routeId], references: [id])
   driver              Driver?            @relation(fields: [driverId], references: [id])
+  seatTemplate        SeatTemplate?      @relation(fields: [seatTemplateId], references: [id])
   occupiedSeats       OccupiedSeat[]
   reservations        Reservation[]
   history             ScheduleHistory[]
 
   @@index([routeId, date, time])
   @@index([date, status])
+  @@index([seatTemplateId])
   @@map("schedules")
 }
 
@@ -208,12 +211,14 @@ model ReservationSeat {
 }
 
 model SeatTemplate {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String     @id @default(cuid())
+  name        String     @unique
   seatConfig  Json
-  isPreset    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPreset    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  schedules   Schedule[]
 
   @@map("seat_templates")
 }

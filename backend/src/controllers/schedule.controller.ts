@@ -99,7 +99,7 @@ export const createSchedule = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { route, date, time, vehicle, price, seatConfig } = req.body;
+    const { route, date, time, vehicle, price, seatConfig, seatTemplateId } = req.body;
 
     const totalSeats = seatConfig?.totalSeats ?? 16;
 
@@ -114,6 +114,7 @@ export const createSchedule = async (
         price,
         status: "scheduled",
         seatConfig: seatConfig ?? undefined,
+        seatTemplateId: seatTemplateId ?? undefined,
       },
     });
 

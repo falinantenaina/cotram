@@ -19,6 +19,7 @@ export interface Schedule {
   occupiedSeats: number[];
   price: number;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  seatTemplateId?: string | null;
   seatConfig?: {
     totalSeats: number;
     layoutName?: string;
