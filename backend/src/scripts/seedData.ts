@@ -12,30 +12,43 @@ const seedData = async () => {
     await prisma.reservation.deleteMany();
     await prisma.schedule.deleteMany();
     await prisma.route.deleteMany();
+    await prisma.city.deleteMany();
     await prisma.user.deleteMany();
     console.log("🗑️  Données existantes supprimées");
+
+    const citiesResult = await prisma.city.createManyAndReturn({
+      data: [
+        { name: "Antananarivo", region: "Analamanga" },
+        { name: "Antsirabe", region: "Vakinankaratra" },
+        { name: "Ambatolampy", region: "Vakinankaratra" },
+      ],
+    });
+
+    console.log("✅ Villes créées:", citiesResult.length);
+
+    const cityMap = new Map(citiesResult.map((c) => [c.name, c.id]));
 
     const routesResult = await prisma.route.createManyAndReturn({
       data: [
         {
-          departure: "Antananarivo",
-          destination: "Antsirabe",
+          departureId: cityMap.get("Antananarivo")!,
+          destinationId: cityMap.get("Antsirabe")!,
           duration: "5h 30min",
           distance: 170,
           price: 20000,
           isActive: true,
         },
         {
-          departure: "Antananarivo",
-          destination: "Ambatolampy",
+          departureId: cityMap.get("Antananarivo")!,
+          destinationId: cityMap.get("Ambatolampy")!,
           duration: "2h 30min",
           distance: 68,
           price: 15000,
           isActive: true,
         },
         {
-          departure: "Antsirabe",
-          destination: "Antananarivo",
+          departureId: cityMap.get("Antsirabe")!,
+          destinationId: cityMap.get("Antananarivo")!,
           duration: "5h 30min",
           distance: 170,
           price: 20000,

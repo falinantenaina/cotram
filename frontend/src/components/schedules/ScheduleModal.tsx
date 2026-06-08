@@ -127,7 +127,7 @@ export function ScheduleModal({
               </p>
               <h2 className="text-lg font-black">
                 {schedule
-                  ? `${schedule.route.departure} → ${schedule.route.destination}`
+                  ? `${schedule.route.departure?.name} → ${schedule.route.destination?.name}`
                   : "Créer un voyage"}
               </h2>
             </div>
@@ -202,7 +202,7 @@ export function ScheduleModal({
                   <option value="">Sélectionner un trajet</option>
                   {routes.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.departure} → {r.destination}
+                      {r.departure?.name} → {r.destination?.name}
                     </option>
                   ))}
                 </select>

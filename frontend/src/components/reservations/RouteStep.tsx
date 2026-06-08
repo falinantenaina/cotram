@@ -1,4 +1,5 @@
 import { ArrowRight, Calendar, Clock, MapPin, RotateCcw } from "lucide-react";
+import { useCities } from "../../hooks/useCities";
 import type { Step } from "../../type";
 
 type Props = {
@@ -11,8 +12,6 @@ type Props = {
   setCurrentStep: React.Dispatch<React.SetStateAction<Step>>;
 };
 
-const cities = ["Antananarivo", "Antsirabe", "Ambatolampy"];
-
 const quickDates = [
   { label: "Aujourd'hui", value: 0 },
   { label: "Demain", value: 1 },
@@ -20,12 +19,12 @@ const quickDates = [
 ];
 
 export const RouteStep = (props: Props) => {
+  const { cities } = useCities();
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   const isToday = props.selectedDate === todayStr;
   const currentHour = today.getHours();
   const currentMinute = today.getMinutes();
-  // Format HH:MM pour affichage
   const nowStr = `${String(currentHour).padStart(2, "0")}:${String(currentMinute).padStart(2, "0")}`;
 
   const handleSwap = () => {
@@ -48,13 +47,11 @@ export const RouteStep = (props: Props) => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        {/* Form body */}
         <div className="p-6 md:p-8 space-y-6">
           <h2 className="text-xl md:text-2xl font-bold text-gray-900">
             Choisissez votre trajet
           </h2>
 
-          {/* Departure / Destination */}
           <div className="relative space-y-3">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -72,15 +69,14 @@ export const RouteStep = (props: Props) => {
                 >
                   <option value="">Sélectionnez un lieu de départ</option>
                   {cities.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                    <option key={c.id} value={c.name}>
+                      {c.name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Swap button */}
             <div className="flex justify-center">
               <button
                 onClick={handleSwap}
@@ -108,10 +104,10 @@ export const RouteStep = (props: Props) => {
                 >
                   <option value="">Sélectionnez une destination</option>
                   {cities
-                    .filter((c) => c !== props.departure)
+                    .filter((c) => c.name !== props.departure)
                     .map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                      <option key={c.id} value={c.name}>
+                        {c.name}
                       </option>
                     ))}
                 </select>
@@ -119,7 +115,6 @@ export const RouteStep = (props: Props) => {
             </div>
           </div>
 
-          {/* Same city warning */}
           {props.departure &&
             props.destination &&
             props.departure === props.destination && (
@@ -128,13 +123,11 @@ export const RouteStep = (props: Props) => {
               </p>
             )}
 
-          {/* Date */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               Date de départ
             </label>
 
-            {/* Quick date buttons */}
             <div className="flex gap-2 mb-3">
               {quickDates.map((qd) => {
                 const d = new Date();
@@ -172,9 +165,7 @@ export const RouteStep = (props: Props) => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 md:px-8 pb-8">
-          {/* Info banner when today is selected */}
           {isToday && (
             <div className="flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <Clock size={15} className="text-amber-500 shrink-0 mt-0.5" />

@@ -46,7 +46,13 @@ router.get("/:id", protect, authorize("admin"), async (req, res) => {
     const schedules = await prisma.schedule.findMany({
       where: { driverId: driver.id },
       include: {
-        route: { select: { departure: true, destination: true, duration: true, price: true } },
+        route: {
+          include: {
+            departure: true,
+            destination: true,
+          },
+          select: { duration: true, price: true },
+        },
       },
       orderBy: { date: "desc" },
       take: 50,

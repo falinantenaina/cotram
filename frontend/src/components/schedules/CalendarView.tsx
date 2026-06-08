@@ -138,7 +138,7 @@ export function CalendarView({ schedules, onEdit }: Props) {
                           />
                           <span className="font-mono">{s.time}</span>
                           <span className="truncate opacity-70 hidden sm:inline">
-                            {s.route.destination}
+                            {s.route.destination?.name}
                           </span>
                         </button>
                       );

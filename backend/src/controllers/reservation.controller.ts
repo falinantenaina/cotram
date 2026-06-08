@@ -177,7 +177,7 @@ export const createReservation = async (
     const reservation = await prisma.$transaction(async (tx) => {
       const lockedScheduleResults = await tx.$queryRaw`
         SELECT id, "totalSeats", "availableSeats", price
-        FROM "Schedule"
+        FROM "schedules"
         WHERE id = ${scheduleId}
         FOR UPDATE
       `;
@@ -282,7 +282,15 @@ export const confirmReservation = async (
       where: { id: String(req.params["id"]) },
       include: {
         schedule: {
-          include: { route: true, occupiedSeats: true },
+          include: {
+            route: {
+              include: {
+                departure: true,
+                destination: true,
+              },
+            },
+            occupiedSeats: true,
+          },
         },
         user: true,
         seats: true,
@@ -312,8 +320,8 @@ export const confirmReservation = async (
         reservation.user.name,
         reservation.bookingReference,
         {
-          departure: route.departure,
-          destination: route.destination,
+          departure: route.departure.name,
+          destination: route.destination.name,
           date: new Date(reservation.schedule.date).toLocaleDateString("fr-FR"),
           time: reservation.schedule.time,
           seats: reservation.seats.map((s: { seatNumber: number }) => s.seatNumber),

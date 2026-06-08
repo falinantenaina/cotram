@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import hero from "../assets/hero.webp";
+import { useCities } from "../hooks/useCities";
 
 export const Hero = () => {
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
+  const { cities } = useCities();
 
   return (
     <section className="relative bg-[#0a0a0a] overflow-hidden min-h-[92vh] flex flex-col">
@@ -137,15 +139,11 @@ export const Hero = () => {
                   <option value="" className="bg-gray-900">
                     Sélectionnez
                   </option>
-                  <option value="Antananarivo" className="bg-gray-900">
-                    Antananarivo
-                  </option>
-                  <option value="Antsirabe" className="bg-gray-900">
-                    Antsirabe
-                  </option>
-                  <option value="Ambatolampy" className="bg-gray-900">
-                    Ambatolampy
-                  </option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.name} className="bg-gray-900">
+                      {city.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -162,15 +160,11 @@ export const Hero = () => {
                   <option value="" className="bg-gray-900">
                     Sélectionnez
                   </option>
-                  <option value="Antananarivo" className="bg-gray-900">
-                    Antananarivo
-                  </option>
-                  <option value="Antsirabe" className="bg-gray-900">
-                    Antsirabe
-                  </option>
-                  <option value="Ambatolampy" className="bg-gray-900">
-                    Ambatolampy
-                  </option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.name} className="bg-gray-900">
+                      {city.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

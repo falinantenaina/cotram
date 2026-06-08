@@ -70,6 +70,7 @@ const AdminLayout = () => {
       label: "Disposition chaises",
     },
     { path: "/admin/routes", icon: <MapPin size={18} />, label: "Routes" },
+    { path: "/admin/cities", icon: <MapPin size={18} />, label: "Villes" },
     { path: "/admin/users", icon: <Users size={18} />, label: "Utilisateurs" },
     { path: "/admin/drivers", label: "Chauffeurs", icon: <User2 size={18} /> },
     {

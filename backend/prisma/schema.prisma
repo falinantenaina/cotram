@@ -45,10 +45,18 @@ enum PaymentStatus {
   refunded
 }
 
-enum City {
-  Antananarivo
-  Antsirabe
-  Ambatolampy
+model City {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  region    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routesDeparture Route[] @relation("DepartureCity")
+  routesArrival   Route[] @relation("ArrivalCity")
+
+  @@map("cities")
 }
 
 model User {
@@ -95,19 +103,21 @@ model Driver {
 }
 
 model Route {
-  id          String   @id @default(cuid())
-  departure   City
-  destination City
-  duration    String
-  distance    Float
-  price       Float
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  departureId     String
+  destinationId   String
+  duration        String
+  distance        Float
+  price           Float
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  schedules   Schedule[]
+  departure       City     @relation("DepartureCity", fields: [departureId], references: [id])
+  destination     City     @relation("ArrivalCity", fields: [destinationId], references: [id])
+  schedules       Schedule[]
 
-  @@index([departure, destination])
+  @@index([departureId, destinationId])
   @@map("routes")
 }
 

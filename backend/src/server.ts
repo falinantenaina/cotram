@@ -12,6 +12,7 @@ import * as helmetPkg from "helmet";
 import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
+import cityRoutes from "./routes/city.route.js";
 import reservationRoutes from "./routes/reservation.route.js";
 import routeRoutes from "./routes/route.route.js";
 import scheduleRoutes from "./routes/schedule.route.js";
@@ -54,6 +55,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/cities", cityRoutes);
 app.use("/api/routes", routeRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/reservations", reservationRoutes);

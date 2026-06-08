@@ -184,12 +184,12 @@ function ConfigStep({
             >
               <div>
                 <p className="font-bold text-gray-900 text-sm">
-                  {route.departure}
+                  {route.departure?.name}
                   <ArrowRight
                     size={13}
                     className="inline mx-1.5 text-gray-400"
                   />
-                  {route.destination}
+                  {route.destination?.name}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {route.price?.toLocaleString()} Ar / siège
@@ -412,7 +412,7 @@ function ConfigStep({
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="font-bold text-gray-900">
-              {selectedRoute?.departure} → {selectedRoute?.destination}
+              {selectedRoute?.departure?.name} → {selectedRoute?.destination?.name}
             </p>
             <p className="text-sm text-gray-500 mt-0.5">
               {selectedTimes.length} départ{selectedTimes.length > 1 ? "s" : ""}
@@ -852,7 +852,7 @@ export default function GenerateSchedules() {
       }));
       setPreviewData({
         items,
-        routeLabel: `${data.route.departure} → ${data.route.destination}`,
+        routeLabel: `${data.route.departure?.name} → ${data.route.destination?.name}`,
         summary: data.summary,
       });
       setStep("preview");

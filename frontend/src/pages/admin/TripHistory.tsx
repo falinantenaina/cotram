@@ -110,7 +110,7 @@ function exportCSV(schedules: PastSchedule[]) {
       return [
         d.toLocaleDateString("fr-FR"),
         s.time,
-        `${s.route.departure} → ${s.route.destination}`,
+        `${s.route.departure?.name} → ${s.route.destination?.name}`,
         s.driver ? `${s.driver.firstName} ${s.driver.lastName}` : "Non assigné",
         STATUS_CFG[s.status]?.label ?? s.status,
         o,
@@ -167,11 +167,11 @@ function HistoryRow({ s }: { s: PastSchedule }) {
         <td className="px-4 py-3.5">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-gray-900 text-sm truncate max-w-[80px] sm:max-w-none">
-              {s.route.departure}
+              {s.route.departure?.name}
             </span>
             <ArrowRight size={11} className="text-gray-400 shrink-0" />
             <span className="font-bold text-gray-900 text-sm truncate max-w-[80px] sm:max-w-none">
-              {s.route.destination}
+              {s.route.destination?.name}
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">
@@ -552,7 +552,7 @@ export default function TripHistory() {
                   <option value="all">Tous les trajets</option>
                   {routesData?.routes?.map((r: any) => (
                     <option key={r.id} value={r.id}>
-                      {r.departure} → {r.destination}
+                      {r.departure?.name} → {r.destination?.name}
                     </option>
                   ))}
                 </select>

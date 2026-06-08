@@ -98,9 +98,9 @@ export function PassengerModal({ schedule, onClose }: Props) {
                 <span>Manifeste passagers</span>
               </div>
               <h2 className="text-lg sm:text-xl font-bold flex items-center gap-1.5 flex-wrap">
-                <span className="truncate">{schedule.route.departure}</span>
+                <span className="truncate">{schedule.route.departure?.name}</span>
                 <ArrowRight size={16} className="text-primary shrink-0" />
-                <span className="truncate">{schedule.route.destination}</span>
+                <span className="truncate">{schedule.route.destination?.name}</span>
               </h2>
               <p className="text-gray-400 text-sm mt-1">
                 {new Date(schedule.date).toLocaleDateString("fr-FR", {

@@ -117,9 +117,9 @@ function ScheduleRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 font-semibold text-gray-900 text-sm">
           <MapPin size={11} className="text-gray-400 shrink-0" />
-          <span className="truncate">{schedule.route.departure}</span>
+          <span className="truncate">{schedule.route.departure?.name}</span>
           <ArrowRight size={11} className="text-gray-300 shrink-0" />
-          <span className="truncate">{schedule.route.destination}</span>
+          <span className="truncate">{schedule.route.destination?.name}</span>
         </div>
         <p className="text-xs text-gray-400 mt-0.5 truncate">
           {schedule.vehicle}

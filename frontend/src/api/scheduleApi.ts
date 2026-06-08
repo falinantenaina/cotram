@@ -5,8 +5,8 @@ export interface Schedule {
   id: string;
   route: {
     id: string;
-    departure: string;
-    destination: string;
+    departure: { id: string; name: string; region?: string | null };
+    destination: { id: string; name: string; region?: string | null };
     duration: string;
     distance: number;
     price: number;

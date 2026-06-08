@@ -149,8 +149,8 @@ export default function AdminSchedules() {
     if (search) {
       const q = search.toLowerCase();
       return (
-        s.route.departure.toLowerCase().includes(q) ||
-        s.route.destination.toLowerCase().includes(q) ||
+        s.route.departure?.name?.toLowerCase().includes(q) ||
+        s.route.destination?.name?.toLowerCase().includes(q) ||
         s.time.includes(q) ||
         s.vehicle.toLowerCase().includes(q) ||
         (getDriverObj(s.driver)?.firstName.toLowerCase().includes(q) ??
@@ -373,7 +373,7 @@ export default function AdminSchedules() {
                   <option value="all">Tous les trajets</option>
                   {routes.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.departure} → {r.destination}
+                      {r.departure?.name} → {r.destination?.name}
                     </option>
                   ))}
                 </select>

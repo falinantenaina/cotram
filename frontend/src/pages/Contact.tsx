@@ -18,8 +18,8 @@ const Contact = () => {
           Parlons de votre voyage
         </h2>
         <p className="max-w-lg mx-auto text-center text-black/60">
-          Notre équpe est disponible 7j/7 pour répondre à vos questions sur les
-          trajets Antananarivo - Antsirabe - Ambatolampy.
+          Notre équipe est disponible 7j/7 pour répondre à vos questions sur
+          nos trajets interurbains à Madagascar.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-12">

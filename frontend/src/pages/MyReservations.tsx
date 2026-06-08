@@ -147,10 +147,10 @@ const MyReservations = () => {
                           <div>
                             <p className="text-xs text-gray-400 mb-1">Trajet</p>
                             <p className="font-semibold text-gray-900 text-sm">
-                              {reservation.schedule?.route?.departure}
+                              {reservation.schedule?.route?.departure?.name}
                             </p>
                             <p className="text-xs text-gray-400">
-                              → {reservation.schedule?.route?.destination}
+                              → {reservation.schedule?.route?.destination?.name}
                             </p>
                           </div>
                         </div>

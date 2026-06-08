@@ -156,8 +156,8 @@ export default function AdminReservations() {
                             </div>
                           </td>
                           <td className="px-4 py-4 text-sm text-gray-700 whitespace-nowrap">
-                            {res.schedule?.route?.departure} →{" "}
-                            {res.schedule?.route?.destination}
+                            {res.schedule?.route?.departure?.name} →{" "}
+                            {res.schedule?.route?.destination?.name}
                           </td>
                           <td className="px-4 py-4 text-sm text-gray-700 whitespace-nowrap">
                             <div>
@@ -263,8 +263,8 @@ export default function AdminReservations() {
                       </div>
                       <div className="text-sm text-gray-700">
                         <span className="font-semibold">
-                          {res.schedule?.route?.departure} →{" "}
-                          {res.schedule?.route?.destination}
+                          {res.schedule?.route?.departure?.name} →{" "}
+                          {res.schedule?.route?.destination?.name}
                         </span>
                         <span className="text-gray-400 mx-1">·</span>
                         {new Date(res.schedule?.date).toLocaleDateString(

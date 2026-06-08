@@ -224,7 +224,7 @@ export function DriverPanel({ driver, onEdit, onClose }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">
-                        {t.route.departure} → {t.route.destination}
+                        {t.route.departure?.name} → {t.route.destination?.name}
                       </p>
                       <p className="text-xs text-gray-400">
                         {t.vehicleNumber || t.vehicle}

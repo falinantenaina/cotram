@@ -164,21 +164,21 @@ export function WalkInModal({ onClose }: Props) {
     const sDate = new Date(s.date).toISOString().split("T")[0];
     return (
       sDate === selectedDate &&
-      (!departure || s.route?.departure === departure) &&
-      (!destination || s.route?.destination === destination)
+      (!departure || s.route?.departure?.name === departure) &&
+      (!destination || s.route?.destination?.name === destination)
     );
   });
 
   const availableDepartures: string[] = [
     ...new Set(
-      allSchedules.map((s: any) => s.route?.departure).filter(Boolean),
+      allSchedules.map((s: any) => s.route?.departure?.name).filter(Boolean),
     ),
   ] as string[];
   const availableDestinations: string[] = [
     ...new Set(
       allSchedules
-        .filter((s: any) => !departure || s.route?.departure === departure)
-        .map((s: any) => s.route?.destination)
+        .filter((s: any) => !departure || s.route?.departure?.name === departure)
+        .map((s: any) => s.route?.destination?.name)
         .filter(Boolean),
     ),
   ] as string[];
@@ -413,7 +413,7 @@ export function WalkInModal({ onClose }: Props) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm text-gray-900">
-                              {s.route?.departure} → {s.route?.destination}
+                              {s.route?.departure?.name} → {s.route?.destination?.name}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -461,8 +461,8 @@ export function WalkInModal({ onClose }: Props) {
                 <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold text-gray-900">
-                      {selectedSchedule.route?.departure} →{" "}
-                      {selectedSchedule.route?.destination}
+                      {selectedSchedule.route?.departure?.name} →{" "}
+                      {selectedSchedule.route?.destination?.name}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {new Date(selectedSchedule.date).toLocaleDateString(
@@ -540,8 +540,8 @@ export function WalkInModal({ onClose }: Props) {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Trajet</span>
                   <span className="font-semibold">
-                    {selectedSchedule?.route?.departure} →{" "}
-                    {selectedSchedule?.route?.destination}
+                    {selectedSchedule?.route?.departure?.name} →{" "}
+                    {selectedSchedule?.route?.destination?.name}
                   </span>
                 </div>
               </div>

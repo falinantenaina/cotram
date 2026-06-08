@@ -330,9 +330,7 @@ const Auth = () => {
             Cotram Plus
           </p>
           <h2 className="text-3xl font-black text-white leading-tight mb-6">
-            Voyagez serein entre <span className="text-primary">Tana</span>,{" "}
-            <span className="text-primary">Ambatolampy</span> et{" "}
-            <span className="text-primary">Antsirabe</span>
+            Voyagez serein entre les villes de Madagascar
           </h2>
           <ul className="space-y-3">
             {[
@@ -366,7 +364,7 @@ const Auth = () => {
             </div>
           </div>
           <p className="text-white/70 text-sm leading-relaxed italic">
-            "Service impeccable ! J'ai réservé mon billet pour Antsirabe en 2
+            "Service impeccable ! J'ai réservé mon billet en 2
             minutes. Le bus était à l'heure et très confortable."
           </p>
           <div className="flex gap-0.5 mt-3">

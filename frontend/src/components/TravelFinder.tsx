@@ -22,7 +22,7 @@ export const TravelFinder = () => {
                 type="text"
                 name="departure"
                 id="departure"
-                placeholder="Antananarivo"
+                placeholder="Sélectionnez un lieu de départ"
                 className="w-full rounded bg-gray-200 py-2 px-8 focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />
@@ -43,7 +43,7 @@ export const TravelFinder = () => {
                 type="text"
                 name="destination"
                 id="destination"
-                placeholder="Antsirabe"
+                placeholder="Sélectionnez une destination"
                 className="w-full rounded bg-gray-200 py-2 px-8 focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />
@@ -65,7 +65,7 @@ export const TravelFinder = () => {
                 min={today}
                 defaultValue={today}
                 id="destination"
-                placeholder="Antsirabe"
+                placeholder="Sélectionnez une date"
                 className="w-full rounded bg-gray-200 py-2 px-8 focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />

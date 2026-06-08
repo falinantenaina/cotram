@@ -22,8 +22,8 @@ export const getSchedules = async (
 
     if (departure || destination) {
       const routeWhere: any = {};
-      if (departure) routeWhere.departure = departure;
-      if (destination) routeWhere.destination = destination;
+      if (departure) routeWhere.departure = { name: departure };
+      if (destination) routeWhere.destination = { name: destination };
       where.route = routeWhere;
     }
 
@@ -37,7 +37,15 @@ export const getSchedules = async (
 
     let schedules = await prisma.schedule.findMany({
       where,
-      include: { route: true, occupiedSeats: true },
+      include: {
+        route: {
+          include: {
+            departure: true,
+            destination: true,
+          },
+        },
+        occupiedSeats: true,
+      },
       orderBy: [{ date: "asc" }, { time: "asc" }],
     });
 
@@ -66,7 +74,15 @@ export const getSchedule = async (
   try {
     const schedule = await prisma.schedule.findUnique({
       where: { id: String(req.params.id) },
-      include: { route: true, occupiedSeats: true },
+      include: {
+        route: {
+          include: {
+            departure: true,
+            destination: true,
+          },
+        },
+        occupiedSeats: true,
+      },
     });
     if (!schedule) {
       res.status(404).json({ success: false, message: "Horaire non trouvé" });
@@ -103,7 +119,15 @@ export const createSchedule = async (
 
     const populatedSchedule = await prisma.schedule.findUnique({
       where: { id: schedule.id },
-      include: { route: true, occupiedSeats: true },
+      include: {
+        route: {
+          include: {
+            departure: true,
+            destination: true,
+          },
+        },
+        occupiedSeats: true,
+      },
     });
     res.status(201).json({
       success: true,
@@ -137,7 +161,15 @@ export const updateSchedule = async (
 
     const populated = await prisma.schedule.findUnique({
       where: { id: schedule.id },
-      include: { route: true, occupiedSeats: true },
+      include: {
+        route: {
+          include: {
+            departure: true,
+            destination: true,
+          },
+        },
+        occupiedSeats: true,
+      },
     });
     res.json({ success: true, schedule: withOccupiedSeats(populated) });
   } catch (error: any) {
@@ -203,7 +235,13 @@ export const getSheduleHistory = async (req: Request, res: Response) => {
       prisma.schedule.findMany({
         where,
         include: {
-          route: { select: { departure: true, destination: true, duration: true } },
+          route: {
+            include: {
+              departure: true,
+              destination: true,
+            },
+            select: { duration: true },
+          },
           driver: { select: { firstName: true, lastName: true, phone: true, vehicleNumber: true } },
           occupiedSeats: true,
         },

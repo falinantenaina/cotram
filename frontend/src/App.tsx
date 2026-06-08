@@ -4,6 +4,7 @@ import MainLayout from "./components/layout/MainLayout";
 
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
+import AdminCities from "./pages/admin/Cities";
 import AdminDrivers from "./pages/admin/Drivers";
 import AdminReservations from "./pages/admin/Reservations";
 import AdminRoutes from "./pages/admin/Routes";
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
           { path: "", element: <Dashboard /> },
           { path: "reservations", element: <AdminReservations /> },
           { path: "routes", element: <AdminRoutes /> },
+          { path: "cities", element: <AdminCities /> },
           { path: "schedules", element: <AdminSchedules /> },
           { path: "schedules/generate", element: <GenerateSchedules /> },
           { path: "seattemplate", element: <SeatTemplates /> },

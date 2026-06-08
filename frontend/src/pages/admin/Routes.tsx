@@ -8,22 +8,22 @@ import {
   LoadingSpinner,
   PageHeader,
 } from "../../components/common";
+import { useCities } from "../../hooks/useCities";
 import api from "../../lib/axios";
 
 interface Route {
   id: string;
-  departure: string;
-  destination: string;
+  departure: { id: string; name: string };
+  destination: { id: string; name: string };
   duration: string;
   distance: number;
   price: number;
   isActive: boolean;
 }
 
-const CITIES = ["Antananarivo", "Antsirabe", "Ambatolampy"];
 const EMPTY_FORM = {
-  departure: "",
-  destination: "",
+  departureId: "",
+  destinationId: "",
   duration: "",
   distance: 0,
   price: 0,
@@ -38,11 +38,12 @@ function RouteModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const { cities } = useCities();
   const [form, setForm] = useState(
     route
       ? {
-          departure: route.departure,
-          destination: route.destination,
+          departureId: route.departure.id,
+          destinationId: route.destination.id,
           duration: route.duration,
           distance: route.distance,
           price: route.price,
@@ -77,7 +78,7 @@ function RouteModal({
               </p>
               <h2 className="text-lg font-black">
                 {route
-                  ? `${route.departure} → ${route.destination}`
+                  ? `${route.departure.name} → ${route.destination.name}`
                   : "Créer une route"}
               </h2>
             </div>
@@ -103,16 +104,16 @@ function RouteModal({
                 Départ
               </label>
               <select
-                value={form.departure}
+                value={form.departureId}
                 onChange={(e) =>
-                  setForm({ ...form, departure: e.target.value })
+                  setForm({ ...form, departureId: e.target.value })
                 }
                 className={inp}
               >
                 <option value="">Sélectionner</option>
-                {CITIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {cities.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -122,16 +123,16 @@ function RouteModal({
                 Destination
               </label>
               <select
-                value={form.destination}
+                value={form.destinationId}
                 onChange={(e) =>
-                  setForm({ ...form, destination: e.target.value })
+                  setForm({ ...form, destinationId: e.target.value })
                 }
                 className={inp}
               >
                 <option value="">Sélectionner</option>
-                {CITIES.filter((c) => c !== form.departure).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {cities.filter((c) => c.id !== form.departureId).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -196,8 +197,8 @@ function RouteModal({
           <button
             onClick={() => mutation.mutate()}
             disabled={
-              !form.departure ||
-              !form.destination ||
+              !form.departureId ||
+              !form.destinationId ||
               !form.duration ||
               mutation.isPending
             }
@@ -295,11 +296,11 @@ export default function AdminRoutes() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-gray-900">
-                            {route.departure}
+                            {route.departure.name}
                           </span>
                           <ArrowRight size={14} className="text-gray-400" />
                           <span className="font-bold text-gray-900">
-                            {route.destination}
+                            {route.destination.name}
                           </span>
                         </div>
                       </td>
@@ -349,7 +350,7 @@ export default function AdminRoutes() {
                       </div>
                       <div>
                         <p className="font-black text-gray-900 text-sm">
-                          {route.departure} → {route.destination}
+                          {route.departure.name} → {route.destination.name}
                         </p>
                         <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                           <Clock size={10} />

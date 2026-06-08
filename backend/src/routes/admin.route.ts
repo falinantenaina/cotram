@@ -285,7 +285,7 @@ router.post(
       const reservation = await prisma.$transaction(async (tx: any) => {
         const lockedScheduleResults = await tx.$queryRaw`
           SELECT id, "totalSeats", "availableSeats", price
-          FROM "Schedule"
+          FROM "schedules"
           WHERE id = ${scheduleId}
           FOR UPDATE
         `;
@@ -364,8 +364,8 @@ router.post(
             user.name,
             reservation.bookingReference,
             {
-              departure: route.departure,
-              destination: route.destination,
+              departure: route.departure.name,
+              destination: route.destination.name,
               date: new Date(
                 populatedReservation!.schedule.date,
               ).toLocaleDateString("fr-FR"),
@@ -459,7 +459,12 @@ router.get("/schedules", protect, authorize("admin"), async (req, res) => {
     const schedules = await prisma.schedule.findMany({
       where,
       include: {
-        route: { select: { departure: true, destination: true, duration: true, price: true } },
+        route: {
+          include: {
+            departure: true,
+            destination: true,
+          },
+        },
         driver: {
           select: {
             firstName: true,
@@ -525,7 +530,13 @@ router.get(
         prisma.schedule.findMany({
           where,
           include: {
-            route: { select: { departure: true, destination: true, duration: true, price: true } },
+            route: {
+              include: {
+                departure: true,
+                destination: true,
+              },
+              select: { duration: true, price: true },
+            },
             driver: { select: { firstName: true, lastName: true, phone: true, vehicleNumber: true } },
             occupiedSeats: true,
           },
@@ -600,6 +611,10 @@ router.post(
 
       const route = await prisma.route.findUnique({
         where: { id: routeId },
+        include: {
+          departure: true,
+          destination: true,
+        },
       });
       if (!route) {
         res.status(404).json({ success: false, message: "Route non trouvée" });
@@ -699,8 +714,8 @@ router.post(
         success: true,
         route: {
           id: route.id,
-          departure: route.departure,
-          destination: route.destination,
+          departure: route.departure.name,
+          destination: route.destination.name,
         },
         preview,
         summary,

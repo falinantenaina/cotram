@@ -20,8 +20,10 @@ export interface IUser {
 
 export interface IRoute {
   id: string;
-  departure: string;
-  destination: string;
+  departureId: string;
+  destinationId: string;
+  departure: { id: string; name: string; region?: string | null };
+  destination: { id: string; name: string; region?: string | null };
   duration: string;
   distance: number;
   price: number;

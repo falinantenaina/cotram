@@ -74,8 +74,8 @@ export function RecentReservations() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 truncate">
-                    {r.schedule.route.departure} →{" "}
-                    {r.schedule.route.destination} ·{" "}
+                    {r.schedule.route.departure?.name} →{" "}
+                    {r.schedule.route.destination?.name} ·{" "}
                     {new Date(r.schedule.date).toLocaleDateString("fr-FR", {
                       day: "numeric",
                       month: "short",

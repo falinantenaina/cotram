@@ -92,7 +92,7 @@ export const Footer = () => {
             © {new Date().getFullYear()} Cotram Plus — Coopérative de Transport
           </p>
           <p className="text-white/20 text-xs">
-            Antananarivo · Antsirabe · Ambatolampy
+            Transport interurbain — Madagascar
           </p>
         </div>
       </div>
