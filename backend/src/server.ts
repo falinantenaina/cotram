@@ -13,6 +13,7 @@ import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
 import cityRoutes from "./routes/city.route.js";
+import contactRoutes from "./routes/contact.route.js";
 import reservationRoutes from "./routes/reservation.route.js";
 import routeRoutes from "./routes/route.route.js";
 import scheduleRoutes from "./routes/schedule.route.js";
@@ -60,6 +61,7 @@ app.use("/api/routes", routeRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/contact", contactRoutes);
 app.use("/api/vehicle-templates", vehicleTemplateRoutes);
 app.use("/api/seat-templates", seatTemplateRoutes);
 app.use("/api/drivers", driverRouter);
@@ -88,6 +90,16 @@ app.use((err: any, req: any, res: any, next: any) => {
 
 app.get("/", (req, res) => {
   res.json({ message: "API OK" });
+});
+
+app.post("/api/cron/auto-status", (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+    return;
+  }
+  startScheduleAutoStatusJob();
+  res.json({ success: true, message: "Auto-status job triggered" });
 });
 
 if (process.env.NODE_ENV === "development") {
