@@ -2,8 +2,10 @@ import { lazy, Suspense, useEffect } from "react";
 import { createBrowserRouter, RouterProvider, useLocation } from "react-router-dom";
 import { LoadingSpinner } from "./components/common";
 import AdminLayout from "./components/admin/AdminLayout";
+import DriverLayout from "./components/driver/DriverLayout";
 import MainLayout from "./components/layout/MainLayout";
 import { AdminRoute } from "./components/routes/AdminRoute";
+import { DriverRoute } from "./components/routes/DriverRoute";
 import { ProtectedRoute } from "./components/routes/ProtectedRoute";
 
 // Lazy-loaded Admin pages
@@ -17,6 +19,12 @@ const SeatTemplates = lazy(() => import("./pages/admin/SeatTemplates"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const GenerateSchedules = lazy(() => import("./pages/admin/GenerateSchedules"));
 const TripHistory = lazy(() => import("./pages/admin/TripHistory"));
+
+// Lazy-loaded Driver pages
+const DriverDashboard = lazy(() => import("./pages/driver/Dashboard"));
+const DriverMyTrips = lazy(() => import("./pages/driver/MyTrips"));
+const DriverHistory = lazy(() => import("./pages/driver/History"));
+const DriverProfile = lazy(() => import("./pages/driver/Profile"));
 
 // Lazy-loaded Public pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -58,8 +66,16 @@ const adminPrefetch = [
   () => import("./pages/admin/TripHistory"),
 ];
 
+const driverPrefetch = [
+  () => import("./pages/driver/Dashboard"),
+  () => import("./pages/driver/MyTrips"),
+  () => import("./pages/driver/History"),
+  () => import("./pages/driver/Profile"),
+];
+
 let clientPrefetched = false;
 let adminPrefetched = false;
+let driverPrefetched = false;
 
 function RoutePrefetcher() {
   const { pathname } = useLocation();
@@ -69,6 +85,11 @@ function RoutePrefetcher() {
       if (!adminPrefetched) {
         adminPrefetched = true;
         adminPrefetch.forEach((fn) => fn());
+      }
+    } else if (pathname.startsWith("/driver")) {
+      if (!driverPrefetched) {
+        driverPrefetched = true;
+        driverPrefetch.forEach((fn) => fn());
       }
     } else {
       if (!clientPrefetched) {
@@ -278,6 +299,50 @@ const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <AdminUsers />
+              </LazyPage>
+            ),
+          },
+        ],
+      },
+      {
+        path: "/driver",
+        element: (
+          <LazyPage>
+            <DriverRoute>
+              <DriverLayout />
+            </DriverRoute>
+          </LazyPage>
+        ),
+        children: [
+          {
+            path: "",
+            element: (
+              <LazyPage>
+                <DriverDashboard />
+              </LazyPage>
+            ),
+          },
+          {
+            path: "trips",
+            element: (
+              <LazyPage>
+                <DriverMyTrips />
+              </LazyPage>
+            ),
+          },
+          {
+            path: "history",
+            element: (
+              <LazyPage>
+                <DriverHistory />
+              </LazyPage>
+            ),
+          },
+          {
+            path: "profile",
+            element: (
+              <LazyPage>
+                <DriverProfile />
               </LazyPage>
             ),
           },

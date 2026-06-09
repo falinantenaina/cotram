@@ -1,10 +1,101 @@
 import express from "express";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
+import type { AuthRequest } from "../types/index.js";
 
 const router = express.Router();
 
-// ─── GET all drivers ──────────────────────────────────────────────────────────
+// ─── Driver self-service endpoints (must be before /:id routes) ──────────────
+
+// GET /api/drivers/me/profile - Driver gets own profile
+router.get("/me/profile", protect, authorize("driver"), async (req, res) => {
+  try {
+    const { user } = req as AuthRequest;
+    const driver = await prisma.driver.findUnique({
+      where: { userId: user.id },
+      include: { user: { select: { id: true, name: true, email: true, phone: true, avatar: true } } },
+    });
+    if (!driver) {
+      res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
+      return;
+    }
+    res.json({ success: true, driver });
+  } catch (err) {
+    res.status(500).json({ success: false, message: (err as Error).message });
+  }
+});
+
+// GET /api/drivers/me/trips - Driver gets assigned trips
+router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
+  try {
+    const { user } = req as AuthRequest;
+    const driver = await prisma.driver.findUnique({ where: { userId: user.id } });
+    if (!driver) {
+      res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
+      return;
+    }
+
+    const { filter } = req.query;
+    const now = new Date();
+
+    let where: any = { driverId: driver.id };
+    if (filter === "upcoming") {
+      where = { ...where, status: "scheduled", date: { gte: now } };
+    } else if (filter === "completed") {
+      where = { ...where, status: "completed" };
+    } else if (filter === "cancelled") {
+      where = { ...where, status: "cancelled" };
+    }
+
+    const schedules = await prisma.schedule.findMany({
+      where,
+      include: {
+        route: {
+          include: { departure: true, destination: true },
+        },
+        _count: {
+          select: {
+            reservations: { where: { status: { not: "cancelled" } } },
+          },
+        },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    res.json({ success: true, schedules });
+  } catch (err) {
+    res.status(500).json({ success: false, message: (err as Error).message });
+  }
+});
+
+// GET /api/drivers/me/stats - Driver gets own stats
+router.get("/me/stats", protect, authorize("driver"), async (req, res) => {
+  try {
+    const { user } = req as AuthRequest;
+    const driver = await prisma.driver.findUnique({ where: { userId: user.id } });
+    if (!driver) {
+      res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
+      return;
+    }
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [total, completed, cancelled, upcoming, thisMonth] = await Promise.all([
+      prisma.schedule.count({ where: { driverId: driver.id } }),
+      prisma.schedule.count({ where: { driverId: driver.id, status: "completed" } }),
+      prisma.schedule.count({ where: { driverId: driver.id, status: "cancelled" } }),
+      prisma.schedule.count({ where: { driverId: driver.id, status: "scheduled", date: { gte: now } } }),
+      prisma.schedule.count({ where: { driverId: driver.id, status: "completed", date: { gte: startOfMonth } } }),
+    ]);
+
+    res.json({ success: true, stats: { total, completed, cancelled, upcoming, thisMonth } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: (err as Error).message });
+  }
+});
+
+// ─── GET all drivers (admin) ─────────────────────────────────────────────────
 router.get("/", protect, authorize("admin"), async (req, res) => {
   try {
     const { status, search } = req.query;
