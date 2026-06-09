@@ -358,7 +358,7 @@ router.post(
 
       if (user.email && !user.email.includes("@cotram.local")) {
         try {
-          const route = populatedReservation!.schedule.route;
+          const route = populatedReservation!.schedule.route as any;
           await sendReservationConfirmation(
             user.email,
             user.name,

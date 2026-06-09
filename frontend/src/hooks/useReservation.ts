@@ -41,18 +41,10 @@ export const useCreateReservation = () => {
   const mutation = useMutation({
     mutationFn: reservationApi.createReservation,
     onSuccess: (data) => {
-      // Invalider les caches
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
-
-      // Clear le store temporaire
       clearReservation();
-
-      // Afficher un message de succès (vous pouvez utiliser toast)
-      alert(`Réservation créée ! Référence: ${data.bookingReference}`);
-
-      // Rediriger vers mes réservations
-      navigate("/my-reservations");
+      navigate(`/reservation/${data.id}/boarding-pass`);
     },
   });
 

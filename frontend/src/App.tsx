@@ -20,6 +20,7 @@ const TripHistory = lazy(() => import("./pages/admin/TripHistory"));
 
 // Lazy-loaded Public pages
 const Auth = lazy(() => import("./pages/Auth"));
+const BoardingPass = lazy(() => import("./pages/BoardingPass"));
 const Contact = lazy(() => import("./pages/Contact"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const GoogleAuthCallback = lazy(() => import("./pages/GoogleAuthCallback"));
@@ -32,6 +33,7 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 
 const clientPrefetch = [
   () => import("./pages/Auth"),
+  () => import("./pages/BoardingPass"),
   () => import("./pages/Contact"),
   () => import("./pages/ForgotPassword"),
   () => import("./pages/GoogleAuthCallback"),
@@ -167,6 +169,16 @@ const router = createBrowserRouter([
           <LazyPage>
             <ProtectedRoute>
               <MyReservations />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: "reservation/:id/boarding-pass",
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <BoardingPass />
             </ProtectedRoute>
           </LazyPage>
         ),

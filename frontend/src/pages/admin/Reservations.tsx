@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, Eye, Loader, Plus, Search, XCircle } from "lucide-react";
+import { CheckCircle, Eye, Loader, Plus, Printer, Search, XCircle } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { LoadingSpinner, PageHeader } from "../../components/common";
 import { WalkInModal } from "../../components/reservations/WalkInModal";
@@ -15,6 +16,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 
 export default function AdminReservations() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showWalkIn, setShowWalkIn] = useState(false);
@@ -228,6 +230,15 @@ export default function AdminReservations() {
                               >
                                 <Eye size={18} />
                               </button>
+                              {(res.status === "confirmed" || res.status === "pending") && (
+                                <button
+                                  onClick={() => navigate(`/reservation/${res.id}/boarding-pass`)}
+                                  className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg"
+                                  title="Voir le billet"
+                                >
+                                  <Printer size={18} />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -302,6 +313,14 @@ export default function AdminReservations() {
                             <XCircle size={14} /> Annuler
                           </button>
                         </div>
+                      )}
+                      {(res.status === "confirmed" || res.status === "pending") && (
+                        <button
+                          onClick={() => navigate(`/reservation/${res.id}/boarding-pass`)}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200"
+                        >
+                          <Printer size={14} /> Voir le billet
+                        </button>
                       )}
                     </div>
                   );

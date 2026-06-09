@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Calendar,
   Clock,
+  ExternalLink,
   MapPin,
   Ticket,
   X,
@@ -204,17 +205,41 @@ const MyReservations = () => {
                     </div>
 
                     {/* Footer */}
-                    {isPending && (
-                      <div className="px-6 py-3 bg-amber-50/50 border-t border-amber-100/50 flex items-center justify-between">
-                        <p className="text-xs text-amber-600">
-                          ⏱ En attente de confirmation par nos équipes
-                        </p>
-                        <button
-                          onClick={() => setCancelId(reservation.id)}
-                          className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors"
+                    {(isPending ||
+                      reservation.status === "confirmed") && (
+                      <div
+                        className={`px-6 py-3 border-t flex items-center justify-between ${
+                          isPending
+                            ? "bg-amber-50/50 border-amber-100/50"
+                            : "bg-emerald-50/50 border-emerald-100/50"
+                        }`}
+                      >
+                        <p
+                          className={`text-xs ${
+                            isPending ? "text-amber-600" : "text-emerald-600"
+                          }`}
                         >
-                          Annuler
-                        </button>
+                          {isPending
+                            ? "⏱ En attente de confirmation par nos équipes"
+                            : "✓ Billet de voyage disponible"}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          {isPending && (
+                            <button
+                              onClick={() => setCancelId(reservation.id)}
+                              className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors"
+                            >
+                              Annuler
+                            </button>
+                          )}
+                          <Link
+                            to={`/reservation/${reservation.id}/boarding-pass`}
+                            className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                          >
+                            <ExternalLink size={12} />
+                            Voir le billet
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>

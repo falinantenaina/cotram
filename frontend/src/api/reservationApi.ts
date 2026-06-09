@@ -12,8 +12,8 @@ export interface Reservation {
     date: string;
     time: string;
     route: {
-      departure: string;
-      destination: string;
+      departure: { id: string; name: string } | string;
+      destination: { id: string; name: string } | string;
       price: number;
     };
   };

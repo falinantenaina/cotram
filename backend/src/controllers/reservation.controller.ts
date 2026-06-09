@@ -29,7 +29,12 @@ export const getReservations = async (
       where: { userId: user.id },
       include: {
         schedule: {
-          include: { route: true, occupiedSeats: true },
+          include: {
+            route: {
+              include: { departure: true, destination: true },
+            },
+            occupiedSeats: true,
+          },
         },
         seats: true,
       },
@@ -55,8 +60,14 @@ export const getReservation = async (
       },
       include: {
         schedule: {
-          include: { route: true, occupiedSeats: true },
+          include: {
+            route: {
+              include: { departure: true, destination: true },
+            },
+            occupiedSeats: true,
+          },
         },
+        user: true,
         seats: true,
       },
     });

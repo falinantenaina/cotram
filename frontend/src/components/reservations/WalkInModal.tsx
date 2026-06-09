@@ -1,8 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, CheckCircle, Loader, User, X, XCircle } from "lucide-react";
+import {
+  Check,
+  CheckCircle,
+  Loader,
+  Printer,
+  User,
+  X,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { buildFallbackConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
+
+type PaperSize = "80" | "53";
 
 // ─── Mini SeatMap ─────────────────────────────────────────────────────────────
 function SeatMap({
@@ -141,6 +151,8 @@ export function WalkInModal({ onClose }: Props) {
   const [phone, setPhone] = useState("");
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
   const [successMsg, setSuccessMsg] = useState("");
+  const [reservationData, setReservationData] = useState<any>(null);
+  const [paperSize, setPaperSize] = useState<PaperSize>("80");
 
   const todayStr = new Date().toISOString().split("T")[0]!;
   const currentIdx = STEPS.indexOf(step);
@@ -205,6 +217,7 @@ export function WalkInModal({ onClose }: Props) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-reservations"] });
       queryClient.invalidateQueries({ queryKey: ["admin-schedules-walkin"] });
+      setReservationData(data.reservation);
       setSuccessMsg(data.message || "Réservation créée !");
     },
   });
@@ -216,22 +229,130 @@ export function WalkInModal({ onClose }: Props) {
   ];
 
   if (successMsg) {
+    const r = reservationData;
+    const depName =
+      r?.schedule?.route?.departure?.name ?? r?.schedule?.route?.departure ?? "—";
+    const destName =
+      r?.schedule?.route?.destination?.name ?? r?.schedule?.route?.destination ?? "—";
+    const depDate = r?.schedule?.date
+      ? new Date(r.schedule.date)
+      : new Date();
+    const seatNumbers = r?.seats?.map((s: any) => s.seatNumber ?? s) ?? [];
+    const sep = "=".repeat(paperSize === "80" ? 32 : 20);
+    const thinSep = "-".repeat(paperSize === "80" ? 32 : 20);
+
+    const handlePrint = () => window.print();
+
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center">
-          <div className="size-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle size={32} className="text-emerald-600" />
+        <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[92vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 print:hidden">
+            <div className="flex items-center gap-3">
+              <div className="size-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                <CheckCircle size={20} className="text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900">Réservation créée</h3>
+                <p className="text-xs text-gray-400">
+                  Référence {r?.bookingReference}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <h3 className="text-xl font-black text-gray-900 mb-2">
-            Réservation créée !
-          </h3>
-          <p className="text-gray-500 text-sm mb-6">{successMsg}</p>
-          <button
-            onClick={onClose}
-            className="w-full bg-primary text-black font-bold py-3 rounded-xl hover:bg-primary/90"
-          >
-            Fermer
-          </button>
+
+          {/* Boarding pass */}
+          <div className="overflow-y-auto flex-1 p-4 print:p-0">
+            <div className="mx-auto print:mx-0" style={{ maxWidth: paperSize === "80" ? "300px" : "200px" }}>
+              <pre className="font-mono text-[11px] leading-tight bg-white border border-gray-200 rounded-xl p-3 print:border-black print:rounded-none print:p-2 overflow-x-auto whitespace-pre-wrap break-words">
+{`╔${sep}╗
+║           COTRAM - BILLET DE VOYAGE           ║
+║       Transport Interurbain - Madagascar       ║
+╚${sep}╝
+
+${thinSep}
+  ${depName.toUpperCase().substring(0, 12)}  →  ${destName.toUpperCase().substring(0, 12)}
+${thinSep}
+
+  DATE      : ${depDate.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+  HEURE     : ${r?.schedule?.time ?? "—"}
+  PASSAGER  : ${r?.user?.name?.substring(0, 20) ?? name.substring(0, 20)}
+  SIEGES    : ${seatNumbers.join(", ")}
+  STATUT    : CONFIRMEE
+
+${thinSep}
+  REFERENCE : ${r?.bookingReference ?? "—"}
+  TOTAL     : ${(r?.totalPrice ?? 0).toLocaleString()} Ar
+${thinSep}
+
+  ⚠ Présentez-vous 15 min avant le départ
+  ⚠ Munissez-vous d'un pièce d'identité
+
+╔${sep}╗
+║          COTRAM — Antananarivo • Antsirabe     ║
+╚${sep}╝`}
+              </pre>
+            </div>
+
+            {/* Actions - hidden on print */}
+            <div className="flex gap-3 mt-4 print:hidden">
+              <select
+                value={paperSize}
+                onChange={(e) => setPaperSize(e.target.value as PaperSize)}
+                className="text-xs border border-gray-200 rounded-lg px-2 py-2 bg-white font-medium text-gray-700"
+              >
+                <option value="80">80mm</option>
+                <option value="53">53mm</option>
+              </select>
+              <button
+                onClick={handlePrint}
+                className="flex-1 flex items-center justify-center gap-2 bg-primary text-black font-bold py-2.5 rounded-xl text-sm hover:bg-primary/90"
+              >
+                <Printer size={14} />
+                Imprimer le billet
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+
+          {/* Print styles */}
+          <style>{`
+            @media print {
+              @page {
+                margin: 2mm;
+                width: ${paperSize === "80" ? "80mm" : "53mm"};
+              }
+              * { box-shadow: none !important; text-shadow: none !important; }
+              body { margin: 0; padding: 0; background: white !important; }
+              nav, footer, header, .print\\:hidden { display: none !important; }
+              pre {
+                font-family: "Courier New", "Consolas", monospace !important;
+                font-size: ${paperSize === "80" ? "11px" : "9px"} !important;
+                line-height: 1.3 !important;
+                white-space: pre-wrap !important;
+                word-break: break-word !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: ${paperSize === "80" ? "80mm" : "53mm"} !important;
+                background: white !important;
+                color: black !important;
+              }
+            }
+          `}</style>
         </div>
       </div>
     );
