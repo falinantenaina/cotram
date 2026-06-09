@@ -4,6 +4,7 @@ import {
   authApi,
   type LoginCredentials,
   type RegisterData,
+  type UpdateProfileData,
 } from "../api/authApi";
 import { useAuthStore } from "../stores/useAuthStore";
 
@@ -50,6 +51,16 @@ export const useAuth = () => {
     },
   });
 
+  // Mutation pour la mise à jour du profil
+  const updateProfileMutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: UpdateProfileData }) =>
+      authApi.updateProfile(userId, data),
+    onSuccess: (updatedUser) => {
+      setUser(updatedUser);
+      queryClient.setQueryData(["me"], updatedUser);
+    },
+  });
+
   // Fonction pour récupérer les infos utilisateur
   const getMe = async () => {
     if (!token) return;
@@ -70,10 +81,14 @@ export const useAuth = () => {
       loginMutation.mutateAsync(credentials),
     register: (data: RegisterData) => registerMutation.mutateAsync(data),
     logout: () => logoutMutation.mutate(),
+    updateProfile: (userId: string, data: UpdateProfileData) =>
+      updateProfileMutation.mutateAsync({ userId, data }),
     getMe,
     loginError: loginMutation.error,
     registerError: registerMutation.error,
     isLoginLoading: loginMutation.isPending,
     isRegisterLoading: registerMutation.isPending,
+    isUpdateLoading: updateProfileMutation.isPending,
+    updateError: updateProfileMutation.error,
   };
 };

@@ -19,6 +19,12 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface UpdateProfileData {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const { data } = await api.post("/auth/login", credentials);
@@ -32,6 +38,11 @@ export const authApi = {
 
   getMe: async (): Promise<User> => {
     const { data } = await api.get("/auth/me");
+    return data.user;
+  },
+
+  updateProfile: async (userId: string, userData: UpdateProfileData): Promise<User> => {
+    const { data } = await api.put(`/users/${userId}`, userData);
     return data.user;
   },
 
