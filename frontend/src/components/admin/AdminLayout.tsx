@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const AdminLayout = () => {
@@ -36,9 +36,7 @@ const AdminLayout = () => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
+  if (!user) return null;
 
   const menuItems = [
     {
