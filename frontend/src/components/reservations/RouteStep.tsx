@@ -1,5 +1,5 @@
 import { ArrowRight, Calendar, Clock, MapPin, RotateCcw } from "lucide-react";
-import { useCities } from "../../hooks/useCities";
+import { useAvailableRoutes } from "../../hooks/useAvailableRoutes";
 import type { Step } from "../../type";
 
 type Props = {
@@ -19,7 +19,8 @@ const quickDates = [
 ];
 
 export const RouteStep = (props: Props) => {
-  const { cities } = useCities();
+  const { availableDepartures, getAvailableDestinations } =
+    useAvailableRoutes();
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   const isToday = props.selectedDate === todayStr;
@@ -68,9 +69,9 @@ export const RouteStep = (props: Props) => {
                   className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-gray-900 bg-white appearance-none"
                 >
                   <option value="">Sélectionnez un lieu de départ</option>
-                  {cities.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
+                  {availableDepartures.map((dep) => (
+                    <option key={dep} value={dep}>
+                      {dep}
                     </option>
                   ))}
                 </select>
@@ -103,13 +104,11 @@ export const RouteStep = (props: Props) => {
                   className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-gray-900 bg-white appearance-none"
                 >
                   <option value="">Sélectionnez une destination</option>
-                  {cities
-                    .filter((c) => c.name !== props.departure)
-                    .map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
+                  {getAvailableDestinations(props.departure).map((dest) => (
+                    <option key={dest} value={dest}>
+                      {dest}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

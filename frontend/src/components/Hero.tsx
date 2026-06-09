@@ -10,13 +10,14 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import hero from "../assets/hero.webp";
-import { useCities } from "../hooks/useCities";
+import { useAvailableRoutes } from "../hooks/useAvailableRoutes";
 import { useReservationTempStore } from "../stores/reservationStore";
 
 export const Hero = () => {
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
-  const { cities } = useCities();
+  const { availableDepartures, getAvailableDestinations } =
+    useAvailableRoutes();
   const { setTripDetails } = useReservationTempStore();
   const [departure, setDeparture] = useState("");
   const [destination, setDestination] = useState("");
@@ -155,9 +156,9 @@ export const Hero = () => {
                   <option value="" className="bg-gray-900">
                     Sélectionnez
                   </option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.name} className="bg-gray-900">
-                      {city.name}
+                  {availableDepartures.map((dep) => (
+                    <option key={dep} value={dep} className="bg-gray-900">
+                      {dep}
                     </option>
                   ))}
                 </select>
@@ -180,13 +181,11 @@ export const Hero = () => {
                   <option value="" className="bg-gray-900">
                     Sélectionnez
                   </option>
-                  {cities
-                    .filter((c) => c.name !== departure)
-                    .map((city) => (
-                      <option key={city.id} value={city.name} className="bg-gray-900">
-                        {city.name}
-                      </option>
-                    ))}
+                  {getAvailableDestinations(departure).map((dest) => (
+                    <option key={dest} value={dest} className="bg-gray-900">
+                      {dest}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
