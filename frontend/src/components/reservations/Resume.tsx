@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Loader, X } from "lucide-react";
+import { AlertCircle, CreditCard, X } from "lucide-react";
 
 import type { Schedule } from "../../api/scheduleApi";
 import type { Step } from "../../type";
@@ -11,8 +11,7 @@ type Props = {
   setCurrentStep: React.Dispatch<React.SetStateAction<Step>>;
   selectedSeats: number[];
   handleSeatClick: (seatId: number) => void;
-  onConfirm: () => void;
-  isLoading: boolean;
+  onOpenPayment: () => void;
 };
 
 export const Resume = (props: Props) => {
@@ -134,25 +133,16 @@ export const Resume = (props: Props) => {
           </div>
 
           <button
-            onClick={props.onConfirm}
-            disabled={!hasSeats || props.isLoading}
+            onClick={props.onOpenPayment}
+            disabled={!hasSeats}
             className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${
-              hasSeats && !props.isLoading
+              hasSeats
                 ? "bg-primary text-black hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.99]"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {props.isLoading ? (
-              <>
-                <Loader size={18} className="animate-spin" />
-                Réservation en cours...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={18} />
-                Confirmer la réservation
-              </>
-            )}
+            <CreditCard size={18} />
+            Procéder au paiement
           </button>
 
           {hasSeats && (

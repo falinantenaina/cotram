@@ -167,12 +167,14 @@ export const createReservation = async (
 ): Promise<void> => {
   try {
     const { user } = req as AuthRequest;
-    const { scheduleId, seats } = req.body;
+    const { scheduleId, seats, paymentMethod } = req.body;
 
     if (!scheduleId || !seats || seats.length === 0) {
       res.status(400).json({ success: false, message: "scheduleId et seats sont requis" });
       return;
     }
+
+    const isMobilePayment = paymentMethod === "mvola" || paymentMethod === "orange_money";
 
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -218,7 +220,10 @@ export const createReservation = async (
           scheduleId,
           totalPrice,
           bookingReference,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+          paymentMethod: paymentMethod || null,
+          status: isMobilePayment ? "confirmed" : "pending",
+          paymentStatus: isMobilePayment ? "paid" : "pending",
+          expiresAt: isMobilePayment ? null : new Date(Date.now() + 10 * 60 * 1000),
         },
       });
 

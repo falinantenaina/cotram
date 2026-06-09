@@ -1,9 +1,11 @@
 import {
   AlertTriangle,
+  Banknote,
   Calendar,
   Clock,
   ExternalLink,
   MapPin,
+  Smartphone,
   Ticket,
   X,
 } from "lucide-react";
@@ -130,11 +132,27 @@ const MyReservations = () => {
                           </p>
                         </div>
                       </div>
-                      <span
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-full ${status.className}`}
-                      >
-                        {status.label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-full ${status.className}`}
+                        >
+                          {status.label}
+                        </span>
+                        {reservation.paymentMethod && (
+                          <span className="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1">
+                            {reservation.paymentMethod === "cash" ? (
+                              <Banknote size={11} />
+                            ) : (
+                              <Smartphone size={11} />
+                            )}
+                            {reservation.paymentMethod === "mvola"
+                              ? "MVola"
+                              : reservation.paymentMethod === "orange_money"
+                                ? "Orange Money"
+                                : "Espèce"}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Content */}

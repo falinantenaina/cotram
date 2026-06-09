@@ -88,6 +88,7 @@ export interface IReservation {
   totalPrice: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   paymentStatus: "pending" | "paid" | "refunded";
+  paymentMethod?: string | null;
   bookingReference: string;
   createdAt: Date;
   updatedAt: Date;

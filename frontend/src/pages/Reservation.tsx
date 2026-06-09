@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/reservations/Header";
+import { PaymentModal } from "../components/reservations/PaymentModal";
 import { Resume } from "../components/reservations/Resume";
 import { RouteStep } from "../components/reservations/RouteStep";
 import { SeatsStep } from "../components/reservations/SeatsStep";
@@ -10,7 +11,6 @@ import { useAuth } from "../hooks/useAuth";
 
 import type { Schedule } from "../api/scheduleApi";
 import { buildFallbackConfig, type SeatConfig } from "../config/seatLayouts";
-import { useCreateReservation } from "../hooks/useReservation";
 import { useSchedules } from "../hooks/useSchedules";
 import { useReservationTempStore } from "../stores/reservationStore";
 import type { Seat, Step } from "../type";
@@ -43,6 +43,7 @@ const Reservation = () => {
   );
   const [seats, setSeats] = useState<Seat[]>([]);
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
 
   const { schedules, isLoading: isLoadingSchedules } = useSchedules(
     currentStep === "time"
@@ -53,8 +54,6 @@ const Reservation = () => {
         }
       : undefined,
   );
-
-  const { createReservation, isLoading: isCreating } = useCreateReservation();
 
   useEffect(() => {
     if (!user && currentStep === "seats") navigate("/auth");
@@ -137,15 +136,6 @@ const Reservation = () => {
     });
   };
 
-  const handleConfirm = async () => {
-    if (!scheduleId || selectedSeats.length === 0) return;
-    try {
-      await createReservation({ scheduleId, seats: selectedSeats });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const displayConfig =
     seatConfig ?? buildFallbackConfig(selectedSchedule?.totalSeats ?? 16);
 
@@ -194,12 +184,22 @@ const Reservation = () => {
               setCurrentStep={setCurrentStep}
               selectedSeats={selectedSeats}
               handleSeatClick={handleSeatClick}
-              onConfirm={handleConfirm}
-              isLoading={isCreating}
+              onOpenPayment={() => setShowPayment(true)}
             />
           </div>
         )}
       </div>
+
+      {showPayment && scheduleId && (
+        <PaymentModal
+          scheduleId={scheduleId}
+          seats={selectedSeats}
+          totalPrice={
+            selectedSeats.length * (selectedSchedule?.price || 0)
+          }
+          onClose={() => setShowPayment(false)}
+        />
+      )}
     </div>
   );
 };

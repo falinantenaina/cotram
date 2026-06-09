@@ -185,6 +185,7 @@ model Reservation {
   totalPrice        Float
   status            ReservationStatus @default(pending)
   paymentStatus     PaymentStatus     @default(pending)
+  paymentMethod     String?
   bookingReference  String          @unique
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt

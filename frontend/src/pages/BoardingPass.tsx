@@ -73,6 +73,15 @@ const BoardingPass = () => {
           ? "ANNULEE"
           : "TERMINEE";
 
+  const paymentLabel =
+    reservation.paymentMethod === "mvola"
+      ? "MVola"
+      : reservation.paymentMethod === "orange_money"
+        ? "Orange Money"
+        : reservation.paymentMethod === "cash"
+          ? "ESPECE"
+          : null;
+
   const isPrintable =
     reservation.status === "confirmed" || reservation.status === "pending";
 
@@ -142,7 +151,8 @@ ${thinSep}
   HEURE     : ${reservation.schedule.time}
   PASSAGER  : ${passengerName.substring(0, 20)}
   SIEGES    : ${reservation.seats.join(", ")}
-  STATUT    : ${statusLabel}
+  STATUT    : ${statusLabel}${paymentLabel ? `
+  PAIEMENT  : ${paymentLabel}` : ""}
 
 ${thinSep}
   REFERENCE : ${reservation.bookingReference}

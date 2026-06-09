@@ -21,6 +21,7 @@ export interface Reservation {
   totalPrice: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   paymentStatus: "pending" | "paid" | "refunded";
+  paymentMethod?: string | null;
   bookingReference: string;
   createdAt: string;
   expiresAt: string;
@@ -29,6 +30,7 @@ export interface Reservation {
 export interface CreateReservationData {
   scheduleId: string;
   seats: number[];
+  paymentMethod?: "mvola" | "orange_money" | "cash";
 }
 
 export const reservationApi = {
