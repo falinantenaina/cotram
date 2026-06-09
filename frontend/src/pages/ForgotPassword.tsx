@@ -2,6 +2,7 @@ import { AlertCircle, ArrowLeft, CheckCircle, Mail } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Container } from "../components/ui/Container";
+import api from "../lib/axios";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -15,16 +16,7 @@ const ForgotPassword = () => {
     setStatus("loading");
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        },
-      );
-
-      const data = await response.json();
+      const { data } = await api.post("/auth/forgot-password", { email });
 
       if (data.success) {
         setStatus("success");

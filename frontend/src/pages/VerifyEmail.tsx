@@ -2,6 +2,7 @@ import { CheckCircle, Loader, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Container } from "../components/ui/Container";
+import api from "../lib/axios";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -19,9 +20,8 @@ const VerifyEmail = () => {
       return;
     }
 
-    fetch(`http://localhost:5000/api/auth/verify-email/${token}`)
-      .then((res) => res.json())
-      .then((data) => {
+    api.get(`/auth/verify-email/${token}`)
+      .then(({ data }) => {
         if (data.success) {
           setStatus("success");
           setMessage(data.message);

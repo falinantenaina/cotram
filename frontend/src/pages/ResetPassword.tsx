@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle, Lock } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Container } from "../components/ui/Container";
+import api from "../lib/axios";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -33,16 +34,7 @@ const ResetPassword = () => {
     setStatus("loading");
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/auth/reset-password/${token}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
-        },
-      );
-
-      const data = await response.json();
+      const { data } = await api.post(`/auth/reset-password/${token}`, { password });
 
       if (data.success) {
         setStatus("success");
