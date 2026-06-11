@@ -3,7 +3,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL:
     import.meta.env.MODE === "production"
-      ? "https://cotram.vercel.app/api"
+      ? "/api"
       : "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",

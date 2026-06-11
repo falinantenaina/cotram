@@ -1,5 +1,7 @@
 import "dotenv/config";
 
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import express from "express";
 import session from "express-session";
@@ -8,6 +10,9 @@ import cookieParser from "cookie-parser";
 import passport from "passport";
 import compression from "compression";
 import * as helmetPkg from "helmet";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
@@ -30,11 +35,15 @@ const helmet = (helmetPkg as any).default ?? helmetPkg;
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 app.use(express.json({ limit: "5mb" }));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.NODE_ENV === "production"
+      ? process.env.FRONTEND_URL
+      : process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   }),
 );
@@ -70,7 +79,32 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date() });
 });
 
-// 404 handler
+app.get("/", (req, res) => {
+  res.json({ message: "API OK" });
+});
+
+app.post("/api/cron/auto-status", (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+    return;
+  }
+  startScheduleAutoStatusJob();
+  res.json({ success: true, message: "Auto-status job triggered" });
+});
+
+// Production: servir les fichiers statiques du frontend
+if (process.env.NODE_ENV === "production") {
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
+  app.use(express.static(frontendPath));
+
+  // SPA fallback: toutes les routes non-API servent index.html
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+}
+
+// 404 handler (dev uniquement)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -86,20 +120,6 @@ app.use((err: any, req: any, res: any, next: any) => {
     message: err.message || "Erreur serveur",
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
-});
-
-app.get("/", (req, res) => {
-  res.json({ message: "API OK" });
-});
-
-app.post("/api/cron/auto-status", (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    res.status(401).json({ success: false, message: "Unauthorized" });
-    return;
-  }
-  startScheduleAutoStatusJob();
-  res.json({ success: true, message: "Auto-status job triggered" });
 });
 
 if (process.env.NODE_ENV === "development") {
