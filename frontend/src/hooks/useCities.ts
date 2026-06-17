@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { cityApi, type City } from "../api/cityApi";
+import { cityApi } from "../api/cityApi";
 
 export const useCities = () => {
   const { data, isLoading, error, refetch } = useQuery({

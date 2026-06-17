@@ -19,7 +19,7 @@ export interface TodaySchedule {
   availableSeats: number;
   price: number;
   vehicle: string;
-  route: { departure: string; destination: string };
+  route: { departure: { id: string; name: string }; destination: { id: string; name: string } };
   passengerCount: number;
 }
 

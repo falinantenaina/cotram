@@ -22,8 +22,8 @@ import {
 interface Schedule {
   id: string;
   route: {
-    departure: string;
-    destination: string;
+    departure: { id: string; name: string };
+    destination: { id: string; name: string };
     duration: string;
     price: number;
   };

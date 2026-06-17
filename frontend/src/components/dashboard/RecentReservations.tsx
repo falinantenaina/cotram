@@ -12,7 +12,7 @@ interface RecentReservation {
   schedule: {
     time: string;
     date: string;
-    route: { departure: string; destination: string };
+    route: { departure: { id: string; name: string }; destination: { id: string; name: string } };
   };
 }
 

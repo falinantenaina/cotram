@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Route,
   User,
   X,
 } from "lucide-react";

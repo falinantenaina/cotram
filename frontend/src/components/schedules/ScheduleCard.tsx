@@ -27,8 +27,8 @@ export interface Schedule {
   id: string;
   route: {
     id: string;
-    departure: string;
-    destination: string;
+    departure: { id: string; name: string };
+    destination: { id: string; name: string };
     duration: string;
     price: number;
     phone: string;

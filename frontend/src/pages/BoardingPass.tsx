@@ -1,8 +1,5 @@
 import {
   ArrowLeft,
-  Bus,
-  CheckCircle,
-  Clock,
   Printer,
   Ticket,
 } from "lucide-react";

@@ -30,8 +30,8 @@ interface PastSchedule {
   id: string;
   route: {
     id: string;
-    departure: string;
-    destination: string;
+    departure: { id: string; name: string };
+    destination: { id: string; name: string };
     duration: string;
     price: number;
   };
@@ -344,8 +344,8 @@ export default function TripHistory() {
     ? schedules.filter((s) => {
         const q = search.toLowerCase();
         return (
-          s.route.departure.toLowerCase().includes(q) ||
-          s.route.destination.toLowerCase().includes(q) ||
+          s.route.departure.name.toLowerCase().includes(q) ||
+          s.route.destination.name.toLowerCase().includes(q) ||
           s.time.includes(q) ||
           (s.driver?.firstName.toLowerCase().includes(q) ?? false) ||
           (s.driver?.lastName.toLowerCase().includes(q) ?? false) ||

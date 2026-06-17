@@ -38,8 +38,8 @@ import api from "../../lib/axios";
 
 interface Route {
   id: string;
-  departure: string;
-  destination: string;
+  departure: { id: string; name: string };
+  destination: { id: string; name: string };
   price: number;
   duration: string;
 }

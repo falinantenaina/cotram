@@ -37,7 +37,7 @@ const METHOD_CONFIG: Record<
 };
 
 export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) {
-  const { createReservation, isLoading } = useCreateReservation();
+  const { createReservation } = useCreateReservation();
   const [step, setStep] = useState<PaymentStep>("method");
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [phone, setPhone] = useState("");

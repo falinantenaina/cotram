@@ -18,8 +18,8 @@ import type { Schedule } from "./ScheduleCard";
 
 interface Route {
   id: string;
-  departure: string;
-  destination: string;
+  departure: { id: string; name: string };
+  destination: { id: string; name: string };
   price: number;
   duration: string;
 }
@@ -86,7 +86,6 @@ export function ScheduleModal({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const selectedTpl = templates.find((t) => t.id === selectedTemplateId);
       const payload: any = {
         route: form.route,
         date: form.date,

@@ -32,7 +32,7 @@ interface ScheduleInfo {
   date: string;
   totalSeats: number;
   availableSeats: number;
-  route: { departure: string; destination: string };
+  route: { departure: { id: string; name: string }; destination: { id: string; name: string } };
   passengerCount?: number;
 }
 

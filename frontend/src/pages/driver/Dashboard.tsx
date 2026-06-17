@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Bus,
   Calendar,
-  CheckCircle,
   Clock,
   MapPin,
   TrendingUp,
