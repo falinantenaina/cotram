@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Schedule } from "../api/scheduleApi";
 
 interface ReservationTempState {
   scheduleId: string | null;
@@ -8,6 +9,7 @@ interface ReservationTempState {
   date: string;
   time: string;
   price: number;
+  selectedSchedule: Schedule | null;
 
   setScheduleId: (id: string) => void;
   setSelectedSeats: (seats: number[]) => void;
@@ -19,6 +21,7 @@ interface ReservationTempState {
     time: string;
     price: number;
   }) => void;
+  setSelectedSchedule: (schedule: Schedule | null) => void;
   clearReservation: () => void;
 }
 
@@ -30,6 +33,7 @@ export const useReservationTempStore = create<ReservationTempState>((set) => ({
   date: new Date().toISOString().split("T")[0],
   time: "",
   price: 0,
+  selectedSchedule: null,
 
   setScheduleId: (id) => set({ scheduleId: id }),
 
@@ -47,6 +51,8 @@ export const useReservationTempStore = create<ReservationTempState>((set) => ({
 
   setTripDetails: (details) => set(details),
 
+  setSelectedSchedule: (schedule) => set({ selectedSchedule: schedule }),
+
   clearReservation: () =>
     set({
       scheduleId: null,
@@ -56,5 +62,6 @@ export const useReservationTempStore = create<ReservationTempState>((set) => ({
       date: new Date().toISOString().split("T")[0],
       time: "",
       price: 0,
+      selectedSchedule: null,
     }),
 }));

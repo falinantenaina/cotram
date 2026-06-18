@@ -8,13 +8,16 @@ import {
   Loader,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import cars from "../assets/car.webp";
 import { useAuth } from "../hooks/useAuth";
 
 const Auth = () => {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const returnTo = searchParams.get("returnTo") || "/";
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -33,7 +36,7 @@ const Auth = () => {
     registerError,
   } = useAuth();
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={returnTo} replace />;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -55,6 +58,7 @@ const Auth = () => {
           password: formData.password,
         });
       }
+      navigate(returnTo);
     } catch (error) {
       console.error(error);
     }

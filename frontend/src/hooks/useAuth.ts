@@ -27,7 +27,6 @@ export const useAuth = () => {
     onSuccess: (data) => {
       setAuth(data.user, data.token);
       queryClient.setQueryData(["me"], data.user);
-      navigate("/");
     },
   });
 
@@ -37,7 +36,6 @@ export const useAuth = () => {
     onSuccess: (data) => {
       setAuth(data.user, data.token);
       queryClient.setQueryData(["me"], data.user);
-      navigate("/");
     },
   });
 

@@ -20,13 +20,15 @@ const Reservation = () => {
     departure,
     destination,
     date,
+    selectedSchedule: storeSchedule,
     setScheduleId,
     setTripDetails,
     toggleSeat,
+    setSelectedSchedule: setStoreSchedule,
   } = useReservationTempStore();
 
   const [currentStep, setCurrentStep] = useState<Step>(
-    departure && destination ? "time" : "route",
+    departure && destination && storeSchedule ? "seats" : departure && destination ? "time" : "route",
   );
   const [localDeparture, setLocalDeparture] = useState(departure);
   const [localDestination, setLocalDestination] = useState(destination);
@@ -34,7 +36,7 @@ const Reservation = () => {
     date || new Date().toISOString().split("T")[0],
   );
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
-    null,
+    storeSchedule,
   );
   const [seats, setSeats] = useState<Seat[]>([]);
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
@@ -86,7 +88,11 @@ const Reservation = () => {
           id: s.id,
           row: s.row,
           position: s.position,
-          status: occupied.includes(s.id) ? "occupied" : "available",
+          status: occupied.includes(s.id)
+            ? "occupied"
+            : selectedSeats.includes(s.id)
+              ? "selected"
+              : "available",
         });
       });
     });
@@ -117,6 +123,7 @@ const Reservation = () => {
       (schedule as any).seatConfig,
     );
     setSelectedSchedule(schedule);
+    setStoreSchedule(schedule);
     setScheduleId(schedule.id);
     setTripDetails({
       departure: localDeparture,

@@ -139,7 +139,7 @@ export const Resume = (props: Props) => {
           <button
             onClick={() => {
               if (!user) {
-                navigate("/auth");
+                navigate("/auth?returnTo=/reservation");
               } else {
                 props.onOpenPayment();
               }
