@@ -1,8 +1,8 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    "module": "nodenext",
-    "target": "esnext",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "target": "es2020",
     "types": [],
     "rootDir": "src",
     "outDir": "dist",
@@ -11,16 +11,12 @@
     "declaration": true,
     "declarationMap": true,
 
-    // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
     "strict": true,
     "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
     "skipLibCheck": true,
 
     "esModuleInterop": true,

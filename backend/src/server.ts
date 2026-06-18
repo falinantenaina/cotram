@@ -1,7 +1,6 @@
 import "dotenv/config";
 
 import path from "path";
-import { fileURLToPath } from "url";
 import cors from "cors";
 import express from "express";
 import session from "express-session";
@@ -10,9 +9,6 @@ import cookieParser from "cookie-parser";
 import passport from "passport";
 import compression from "compression";
 import * as helmetPkg from "helmet";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
@@ -27,8 +23,6 @@ import userRoutes from "./routes/user.route.js";
 import vehicleTemplateRoutes from "./routes/vehicleTemplate.routes.js";
 import driverRouter from "./routes/driver.route.js";
 import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
-
-if (process.env.NODE_ENV === "production") await connectDB();
 
 const PORT = process.env.PORT || 5000;
 const helmet = (helmetPkg as any).default ?? helmetPkg;
