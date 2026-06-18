@@ -136,9 +136,7 @@ const router = createBrowserRouter([
         path: "reservation",
         element: (
           <LazyPage>
-            <ProtectedRoute>
-              <Reservation />
-            </ProtectedRoute>
+            <Reservation />
           </LazyPage>
         ),
       },

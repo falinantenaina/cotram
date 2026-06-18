@@ -1,13 +1,11 @@
 // frontend/src/pages/Reservation.tsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Header } from "../components/reservations/Header";
 import { PaymentModal } from "../components/reservations/PaymentModal";
 import { Resume } from "../components/reservations/Resume";
 import { RouteStep } from "../components/reservations/RouteStep";
 import { SeatsStep } from "../components/reservations/SeatsStep";
 import { TimeStep } from "../components/reservations/TimeStep";
-import { useAuth } from "../hooks/useAuth";
 
 import type { Schedule } from "../api/scheduleApi";
 import { buildFallbackConfig, type SeatConfig } from "../config/seatLayouts";
@@ -16,9 +14,6 @@ import { useReservationTempStore } from "../stores/reservationStore";
 import type { Seat, Step } from "../type";
 
 const Reservation = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
   const {
     scheduleId,
     selectedSeats,
@@ -54,10 +49,6 @@ const Reservation = () => {
         }
       : undefined,
   );
-
-  useEffect(() => {
-    if (!user && currentStep === "seats") navigate("/auth");
-  }, [user, currentStep, navigate]);
 
   useEffect(() => {
     if (!selectedSchedule) return;

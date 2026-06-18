@@ -1,4 +1,6 @@
 import { AlertCircle, CreditCard, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 import type { Schedule } from "../../api/scheduleApi";
 import type { Step } from "../../type";
@@ -15,6 +17,8 @@ type Props = {
 };
 
 export const Resume = (props: Props) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const totalPrice =
     props.selectedSeats.length * (props.selectedSchedule?.price || 0);
   const hasSeats = props.selectedSeats.length > 0;
@@ -133,7 +137,13 @@ export const Resume = (props: Props) => {
           </div>
 
           <button
-            onClick={props.onOpenPayment}
+            onClick={() => {
+              if (!user) {
+                navigate("/auth");
+              } else {
+                props.onOpenPayment();
+              }
+            }}
             disabled={!hasSeats}
             className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${
               hasSeats
@@ -142,7 +152,7 @@ export const Resume = (props: Props) => {
             }`}
           >
             <CreditCard size={18} />
-            Procéder au paiement
+            {!user ? "Connectez-vous pour réserver" : "Procéder au paiement"}
           </button>
 
           {hasSeats && (
