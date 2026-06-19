@@ -89,7 +89,7 @@ app.post("/api/cron/auto-status", (req, res) => {
 
 // Production: servir les fichiers statiques du frontend
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
+  const frontendPath = path.resolve(__dirname, "../frontend/dist");
   app.use(express.static(frontendPath));
 
   // SPA fallback: toutes les routes non-API servent index.html
