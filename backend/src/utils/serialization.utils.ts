@@ -2,9 +2,10 @@ import type { Schedule, Reservation } from "@prisma/client";
 
 type ScheduleWithOccupied = Schedule & {
   occupiedSeats?: { seatNumber: number }[];
-};
+} | null;
 
 export function withOccupiedSeats(schedule: ScheduleWithOccupied) {
+  if (!schedule) return null;
   return {
     ...schedule,
     occupiedSeats: (schedule.occupiedSeats ?? []).map(

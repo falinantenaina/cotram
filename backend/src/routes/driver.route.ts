@@ -1,5 +1,6 @@
 import express from "express";
 import { authorize, protect } from "../middleware/auth.middleware.js";
+import prisma from "../lib/prisma.js";
 import * as driverService from "../services/driver.service.js";
 import type { AuthRequest } from "../types/index.js";
 
@@ -24,7 +25,7 @@ router.get("/me/profile", protect, authorize("driver"), async (req, res) => {
 router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
   try {
     const { user } = req as AuthRequest;
-    const driver = await (await import("../lib/prisma.js")).default.driver.findUnique({
+    const driver = await prisma.driver.findUnique({
       where: { userId: user.id },
     });
     if (!driver) {
@@ -42,7 +43,6 @@ router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
 router.get("/me/stats", protect, authorize("driver"), async (req, res) => {
   try {
     const { user } = req as AuthRequest;
-    const prisma = (await import("../lib/prisma.js")).default;
     const driver = await prisma.driver.findUnique({ where: { userId: user.id } });
     if (!driver) {
       res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });

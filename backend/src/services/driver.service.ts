@@ -60,7 +60,7 @@ export async function listDrivers(filters: { status?: string; search?: string })
   const where: Prisma.DriverWhereInput = {};
 
   if (filters.status && filters.status !== "all") {
-    where.status = filters.status as Prisma.EnumDriverStatusFilter["equals"];
+    where.status = filters.status as any;
   }
   if (filters.search) {
     const q = filters.search;
@@ -116,7 +116,7 @@ export async function createDriver(data: {
       lastName: data.lastName,
       phone: data.phone,
       licenseNumber: data.licenseNumber,
-      vehicleNumber: data.vehicleNumber || null,
+      vehicleNumber: data.vehicleNumber ?? "",
       vehicleType: (data.vehicleType as any) || "Crafter",
       status: (data.status as any) || "available",
     },

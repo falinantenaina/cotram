@@ -214,10 +214,10 @@ router.post(
 router.get("/reservations", protect, authorize("admin"), async (req, res) => {
   try {
     const { status } = req.query;
-    const where: Prisma.ReservationWhereInput = {};
-    if (status && status !== "all") {
-      where.status = status as Prisma.EnumReservationStatusFilter["equals"];
-    }
+      const where: Prisma.ReservationWhereInput = {};
+      if (status && status !== "all") {
+        where.status = status as any;
+      }
 
     const reservations = await prisma.reservation.findMany({
       where,
@@ -253,7 +253,7 @@ router.get("/schedules", protect, authorize("admin"), async (req, res) => {
 
     if (routeId) where.routeId = String(routeId);
     if (status && status !== "all") {
-      where.status = status as Prisma.EnumScheduleStatusFilter["equals"];
+      where.status = status as any;
     }
 
     const schedules = await prisma.schedule.findMany({
@@ -313,7 +313,7 @@ router.get(
       };
 
       if (status && status !== "all") {
-        where = { ...where, status: status as Prisma.EnumScheduleStatusFilter["equals"] };
+        where = { ...where, status: status as any };
       }
       if (routeId) where.routeId = String(routeId);
       if (driverId) where.driverId = String(driverId);
@@ -637,8 +637,8 @@ router.post(
           availableSeats: totalSeats,
           price: item.price || route.price,
           status: "scheduled",
-          seatConfig: item.seatConfig ?? undefined,
-          seatTemplateId: item.seatTemplateId ?? undefined,
+          seatConfig: item.seatConfig ?? Prisma.JsonNull,
+          seatTemplateId: item.seatTemplateId ?? null,
         });
       }
 
