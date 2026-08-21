@@ -91,7 +91,8 @@ const seedData = async () => {
       where: { email: "admin@cotram.mg" },
     });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash("admin123", 12);
+      const adminPassword = process.env.ADMIN_SEED_PASSWORD || crypto.randomUUID().slice(0, 12);
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
       await prisma.user.create({
         data: {
           name: "Admin Cotram",
@@ -102,7 +103,7 @@ const seedData = async () => {
           isEmailVerified: true,
         },
       });
-      console.log("✅ Admin créé: admin@cotram.mg / admin123");
+      console.log(`✅ Admin créé: admin@cotram.mg / ${adminPassword}`);
     }
 
     await prisma.seatTemplate.deleteMany({});

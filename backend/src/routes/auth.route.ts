@@ -54,12 +54,14 @@ router.get("/me", protect, authController.getMe);
 // Password reset
 router.post(
   "/forgot-password",
+  authLimiter,
   [body("email").isEmail().withMessage("Email invalide")],
   authController.forgotPassword,
 );
 
 router.post(
   "/reset-password/:token",
+  authLimiter,
   [
     body("password")
       .isLength({ min: 6 })

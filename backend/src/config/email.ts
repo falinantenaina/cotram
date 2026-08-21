@@ -1,4 +1,14 @@
 import nodemailer from "nodemailer";
+
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
@@ -50,7 +60,7 @@ export const sendVerificationEmail = async (
             <h1 style="color: #000; margin: 0;">Cotram</h1>
           </div>
           <div class="content">
-            <h2>Bonjour ${name},</h2>
+            <h2>Bonjour ${escapeHtml(name)},</h2>
             <p>Merci de vous être inscrit sur Cotram !</p>
             <p>Pour activer votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :</p>
             <div style="text-align: center;">
@@ -72,7 +82,7 @@ export const sendVerificationEmail = async (
 
   await sendEmail({
     to: email,
-    subject: "Vérification de votre addresse email - Cotram",
+    subject: "Vérification de votre adresse email - Cotram",
     html,
   });
 };
@@ -103,7 +113,7 @@ export const sendPasswordResetEmail = async (
             <h1 style="color: #000; margin: 0;">Cotram</h1>
           </div>
           <div class="content">
-            <h2>Bonjour ${name},</h2>
+            <h2>Bonjour ${escapeHtml(name)},</h2>
             <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
             <p>Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :</p>
             <div style="text-align: center;">
@@ -163,17 +173,17 @@ export const sendReservationConfirmation = async (
             <p style="color: #000; margin: 5px 0;">Confirmation de réservation</p>
           </div>
           <div class="content">
-            <h2>Bonjour ${name},</h2>
+            <h2>Bonjour ${escapeHtml(name)},</h2>
             <p>Votre réservation a été confirmée avec succès !</p>
             <div class="booking-details">
-              <h3>Référence : <strong>${bookingReference}</strong></h3>
+              <h3>Référence : <strong>${escapeHtml(bookingReference)}</strong></h3>
               <div class="detail-row">
                 <span>Départ :</span>
-                <strong>${details.departure}</strong>
+                <strong>${escapeHtml(details.departure)}</strong>
               </div>
               <div class="detail-row">
                 <span>Destination :</span>
-                <strong>${details.destination}</strong>
+                <strong>${escapeHtml(details.destination)}</strong>
               </div>
               <div class="detail-row">
                 <span>Date :</span>

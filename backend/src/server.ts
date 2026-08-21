@@ -24,6 +24,8 @@ import vehicleTemplateRoutes from "./routes/vehicleTemplate.routes.js";
 import driverRouter from "./routes/driver.route.js";
 import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
 
+import { limiter, sanitizeInput } from "./middleware/security.middleware.js";
+
 const PORT = process.env.PORT || 5000;
 const helmet = (helmetPkg as any).default ?? helmetPkg;
 
@@ -32,6 +34,8 @@ const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
+app.use(limiter);
+app.use(sanitizeInput);
 app.use(express.json({ limit: "5mb" }));
 app.use(
   cors({

@@ -2,6 +2,7 @@ import express from "express";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
 import type { AuthRequest } from "../types/index.js";
+import type { Prisma } from "@prisma/client";
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
     const { filter } = req.query;
     const now = new Date();
 
-    let where: any = { driverId: driver.id };
+    let where: Prisma.ScheduleWhereInput = { driverId: driver.id };
     if (filter === "upcoming") {
       where = { ...where, status: "scheduled", date: { gte: now } };
     } else if (filter === "completed") {
@@ -99,7 +100,7 @@ router.get("/me/stats", protect, authorize("driver"), async (req, res) => {
 router.get("/", protect, authorize("admin"), async (req, res) => {
   try {
     const { status, search } = req.query;
-    const where: any = {};
+    const where: Prisma.DriverWhereInput = {};
 
     if (status && status !== "all") where.status = status;
     if (search) {
@@ -158,8 +159,23 @@ router.get("/:id", protect, authorize("admin"), async (req, res) => {
 // ─── CREATE driver ────────────────────────────────────────────────────────────
 router.post("/", protect, authorize("admin"), async (req, res) => {
   try {
+    const { firstName, lastName, phone, licenseNumber, vehicleNumber, vehicleType, status } = req.body;
+
+    if (!firstName || !lastName || !phone || !licenseNumber) {
+      res.status(400).json({ success: false, message: "firstName, lastName, phone et licenseNumber sont requis" });
+      return;
+    }
+
     const driver = await prisma.driver.create({
-      data: req.body,
+      data: {
+        firstName,
+        lastName,
+        phone,
+        licenseNumber,
+        vehicleNumber: vehicleNumber || null,
+        vehicleType: vehicleType || "Crafter",
+        status: status || "available",
+      },
     });
     res.status(201).json({ success: true, driver });
   } catch (err: any) {
@@ -174,9 +190,20 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
 // ─── UPDATE driver ────────────────────────────────────────────────────────────
 router.put("/:id", protect, authorize("admin"), async (req, res) => {
   try {
+    const { firstName, lastName, phone, licenseNumber, vehicleNumber, vehicleType, status } = req.body;
+
+    const data: Record<string, unknown> = {};
+    if (firstName !== undefined) data.firstName = firstName;
+    if (lastName !== undefined) data.lastName = lastName;
+    if (phone !== undefined) data.phone = phone;
+    if (licenseNumber !== undefined) data.licenseNumber = licenseNumber;
+    if (vehicleNumber !== undefined) data.vehicleNumber = vehicleNumber;
+    if (vehicleType !== undefined) data.vehicleType = vehicleType;
+    if (status !== undefined) data.status = status;
+
     const driver = await prisma.driver.update({
       where: { id: String(req.params.id) },
-      data: req.body,
+      data,
     });
     res.json({ success: true, driver });
   } catch (err: any) {
