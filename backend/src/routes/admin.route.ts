@@ -1,9 +1,12 @@
 import express from "express";
 import { Prisma } from "@prisma/client";
 import rateLimit from "express-rate-limit";
-import { sendReservationConfirmation } from "../config/email.js";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
+import { withOccupiedSeats, flattenReservationSeats } from "../utils/serialization.utils.js";
+import { getDashboardStats } from "../services/adminStats.service.js";
+import { getTodaySchedulesWithPassengers } from "../services/scheduleManifest.service.js";
+import { createWalkinReservation, WalkinError } from "../services/reservationWalkin.service.js";
 import {
   endOfLocalDay,
   parseLocalDate,
@@ -12,66 +15,11 @@ import {
 
 const router = express.Router();
 
-function withOccupiedSeats(schedule: any) {
-  return {
-    ...schedule,
-    occupiedSeats: (schedule.occupiedSeats ?? []).map(
-      (s: { seatNumber: number }) => s.seatNumber,
-    ),
-  };
-}
-
-function flattenReservationSeats(reservation: any) {
-  return {
-    ...reservation,
-    seats: (reservation.seats ?? []).map((s: { seatNumber: number }) => s.seatNumber),
-  };
-}
-
 // ─── Stats ────────────────────────────────────────────────────────────────────
 router.get("/stats", protect, authorize("admin"), async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    const [
-      todayReservations,
-      totalUsers,
-      activeRoutes,
-      monthlyReservations,
-      pendingCount,
-    ] = await Promise.all([
-      prisma.reservation.count({
-        where: { createdAt: { gte: today, lt: tomorrow } },
-      }),
-      prisma.user.count({ where: { role: "user" } }),
-      prisma.route.count({ where: { isActive: true } }),
-      prisma.reservation.findMany({
-        where: {
-          createdAt: { gte: firstDayOfMonth },
-          paymentStatus: "paid",
-        },
-        select: { totalPrice: true },
-      }),
-      prisma.reservation.count({ where: { status: "pending" } }),
-    ]);
-
-    const monthlyRevenue = monthlyReservations.reduce(
-      (sum: number, r: { totalPrice: number }) => sum + r.totalPrice,
-      0,
-    );
-
-    res.json({
-      success: true,
-      todayReservations,
-      totalUsers,
-      activeRoutes,
-      monthlyRevenue,
-      pendingCount,
-    });
+    const stats = await getDashboardStats();
+    res.json({ success: true, ...stats });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
@@ -84,45 +32,8 @@ router.get(
   authorize("admin"),
   async (req, res) => {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const schedules = await prisma.schedule.findMany({
-        where: {
-          date: { gte: today, lt: tomorrow },
-          status: { not: "cancelled" },
-        },
-        include: { route: true, occupiedSeats: true },
-        orderBy: { time: "asc" },
-      });
-
-      const schedulesWithStats = await Promise.all(
-        schedules.map(async (schedule: any) => {
-          const reservations = await prisma.reservation.findMany({
-            where: {
-              scheduleId: schedule.id,
-              status: { in: ["confirmed", "pending"] },
-            },
-            include: {
-              user: { select: { name: true, email: true, phone: true } },
-              seats: true,
-            },
-          });
-
-          return {
-            ...withOccupiedSeats(schedule),
-            reservations: reservations.map(flattenReservationSeats),
-            passengerCount: reservations.reduce(
-              (sum: number, r: any) => sum + r.seats.length,
-              0,
-            ),
-          };
-        }),
-      );
-
-      res.json({ success: true, schedules: schedulesWithStats });
+      const schedules = await getTodaySchedulesWithPassengers();
+      res.json({ success: true, schedules });
     } catch (error) {
       res
         .status(500)
@@ -160,22 +71,22 @@ router.get(
       });
 
       const totalPassengers = reservations.reduce(
-        (sum: number, r: any) => sum + r.seats.length,
+        (sum, r) => sum + r.seats.length,
         0,
       );
       const revenue = reservations
-        .filter((r: any) => r.paymentStatus === "paid")
-        .reduce((sum: number, r: any) => sum + r.totalPrice, 0);
+        .filter((r) => r.paymentStatus === "paid")
+        .reduce((sum, r) => sum + r.totalPrice, 0);
 
       res.json({
         success: true,
         schedule,
-        passengers: reservations.map((r: any) => ({
+        passengers: reservations.map((r) => ({
           reservationId: r.id,
           bookingReference: r.bookingReference,
           status: r.status,
           paymentStatus: r.paymentStatus,
-          seats: r.seats.map((s: any) => s.seatNumber),
+          seats: r.seats.map((s) => s.seatNumber),
           totalPrice: r.totalPrice,
           user: r.user,
           createdAt: r.createdAt,
@@ -183,13 +94,12 @@ router.get(
         summary: {
           totalPassengers,
           totalReservations: reservations.length,
-          confirmed: reservations.filter((r) => r.status === "confirmed")
-            .length,
+          confirmed: reservations.filter((r) => r.status === "confirmed").length,
           pending: reservations.filter((r) => r.status === "pending").length,
           revenue,
-          occupancyRate: Math.round(
-            (totalPassengers / schedule.totalSeats) * 100,
-          ),
+          occupancyRate: schedule.totalSeats > 0
+            ? Math.round((totalPassengers / schedule.totalSeats) * 100)
+            : 0,
         },
       });
     } catch (error) {
@@ -249,7 +159,7 @@ router.post(
     try {
       const { name, phone, scheduleId, seats } = req.body;
 
-      if (!name || !scheduleId || !seats || seats.length === 0) {
+      if (!name || !scheduleId || !seats || !Array.isArray(seats) || seats.length === 0) {
         res.status(400).json({
           success: false,
           message: "Nom, horaire et sièges sont requis",
@@ -257,148 +167,34 @@ router.post(
         return;
       }
 
-      let user = phone
-        ? await prisma.user.findFirst({ where: { phone } })
-        : null;
-      if (!user) {
-        const tempEmail = phone
-          ? `walkin_${phone.replace(/\s/g, "")}@cotram.local`
-          : `walkin_${Date.now()}@cotram.local`;
-        user = await prisma.user.create({
-          data: {
-            name,
-            email: tempEmail,
-            phone: phone || null,
-            role: "user",
-            isEmailVerified: false,
-          },
+      if (seats.length > 30) {
+        res.status(400).json({
+          success: false,
+          message: "Maximum 30 sièges par réservation",
         });
-      } else if (user.name !== name) {
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: { name },
-        });
+        return;
       }
 
-      const bookingReference = `CTR${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-
-      const reservation = await prisma.$transaction(async (tx: any) => {
-        const lockedScheduleResults = await tx.$queryRaw`
-          SELECT id, "totalSeats", "availableSeats", price
-          FROM "schedules"
-          WHERE id = ${scheduleId}
-          FOR UPDATE
-        `;
-        const lockedSchedule = (lockedScheduleResults as any[])[0];
-
-        if (!lockedSchedule) {
-          throw new Error("SCHEDULE_NOT_FOUND");
-        }
-
-        const occupiedSeats = await tx.occupiedSeat.findMany({
-          where: {
-            scheduleId,
-            seatNumber: { in: seats },
-          },
-        });
-
-        const unavailableSeats = occupiedSeats.map((s: any) => s.seatNumber);
-        if (unavailableSeats.length > 0) {
-          throw new Error(`SEATS_UNAVAILABLE:${JSON.stringify(unavailableSeats)}`);
-        }
-
-        const totalPrice = seats.length * (lockedSchedule as any).price;
-
-        const res = await tx.reservation.create({
-          data: {
-            userId: user!.id,
-            scheduleId,
-            totalPrice,
-            status: "confirmed",
-            paymentStatus: "paid",
-            bookingReference,
-            expiresAt: null,
-          },
-        });
-
-        await tx.reservationSeat.createMany({
-          data: seats.map((seatNumber: number) => ({
-            reservationId: res.id,
-            seatNumber,
-          })),
-        });
-
-        await tx.occupiedSeat.createMany({
-          data: seats.map((seatNumber: number) => ({
-            scheduleId,
-            seatNumber,
-          })),
-        });
-
-        await tx.schedule.update({
-          where: { id: scheduleId },
-          data: {
-            availableSeats: { decrement: seats.length },
-          },
-        });
-
-        return res;
+      const populatedReservation = await createWalkinReservation({
+        name,
+        phone,
+        scheduleId,
+        seats,
       });
-
-      const populatedReservation = await prisma.reservation.findUnique({
-        where: { id: reservation.id },
-        include: {
-          schedule: {
-            include: { route: true },
-          },
-          user: true,
-          seats: true,
-        },
-      });
-
-      if (user.email && !user.email.includes("@cotram.local")) {
-        try {
-          const route = populatedReservation!.schedule.route as any;
-          await sendReservationConfirmation(
-            user.email,
-            user.name,
-            reservation.bookingReference,
-            {
-              departure: route.departure.name,
-              destination: route.destination.name,
-              date: new Date(
-                populatedReservation!.schedule.date,
-              ).toLocaleDateString("fr-FR"),
-              time: populatedReservation!.schedule.time,
-              seats: seats,
-              totalPrice: reservation.totalPrice,
-            },
-          );
-        } catch (e) {
-          console.error("Email error:", e);
-        }
-      }
 
       res.status(201).json({
         success: true,
-        reservation: flattenReservationSeats(populatedReservation),
-        message: `Réservation créée avec succès — Référence: ${reservation.bookingReference}`,
+        reservation: flattenReservationSeats(populatedReservation as any),
+        message: `Réservation créée avec succès — Référence: ${(populatedReservation as any).bookingReference}`,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === "SCHEDULE_NOT_FOUND") {
-          res.status(404).json({ success: false, message: "Horaire non trouvé" });
-          return;
-        }
-        if (error.message.startsWith("SEATS_UNAVAILABLE:")) {
-          const unavailableSeats = JSON.parse(error.message.substring("SEATS_UNAVAILABLE:".length));
-          res.status(400).json({
-            success: false,
-            message: "Certains sièges sont déjà occupés",
-            unavailableSeats,
-          });
-          return;
-        }
+      if (error instanceof WalkinError) {
+        res.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+          ...(error.unavailableSeats && { unavailableSeats: error.unavailableSeats }),
+        });
+        return;
       }
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         res.status(409).json({
@@ -418,8 +214,10 @@ router.post(
 router.get("/reservations", protect, authorize("admin"), async (req, res) => {
   try {
     const { status } = req.query;
-    const where: any = {};
-    if (status && status !== "all") where.status = status;
+    const where: Prisma.ReservationWhereInput = {};
+    if (status && status !== "all") {
+      where.status = status as Prisma.EnumReservationStatusFilter["equals"];
+    }
 
     const reservations = await prisma.reservation.findMany({
       where,
@@ -439,12 +237,12 @@ router.get("/reservations", protect, authorize("admin"), async (req, res) => {
   }
 });
 
-// ─── GET all schedules (main list — avec option historique) ──────────────────
+// ─── GET all schedules (main list) ───────────────────────────────────────────
 router.get("/schedules", protect, authorize("admin"), async (req, res) => {
   try {
     const { includeHistory, routeId, status } = req.query;
 
-    const where: any = {};
+    const where: Prisma.ScheduleWhereInput = {};
 
     if (!(includeHistory === "true")) {
       const sevenDaysAgo = new Date();
@@ -453,8 +251,10 @@ router.get("/schedules", protect, authorize("admin"), async (req, res) => {
       where.date = { gte: sevenDaysAgo };
     }
 
-    if (routeId) where.routeId = routeId;
-    if (status && status !== "all") where.status = status;
+    if (routeId) where.routeId = String(routeId);
+    if (status && status !== "all") {
+      where.status = status as Prisma.EnumScheduleStatusFilter["equals"];
+    }
 
     const schedules = await prisma.schedule.findMany({
       where,
@@ -505,7 +305,7 @@ router.get(
 
       const now = new Date();
 
-      let where: any = {
+      let where: Prisma.ScheduleWhereInput = {
         OR: [
           { status: { in: ["completed", "cancelled"] } },
           { status: { in: ["scheduled", "in_progress"] }, date: { lt: now } },
@@ -513,18 +313,18 @@ router.get(
       };
 
       if (status && status !== "all") {
-        where = { status };
+        where = { ...where, status: status as Prisma.EnumScheduleStatusFilter["equals"] };
       }
-      if (routeId) where.routeId = routeId;
-      if (driverId) where.driverId = driverId;
+      if (routeId) where.routeId = String(routeId);
+      if (driverId) where.driverId = String(driverId);
       if (from || to) {
         where.date = {};
-        if (from) where.date.gte = parseLocalDate(String(from));
-        if (to) where.date.lte = endOfLocalDay(parseLocalDate(String(to)));
+        if (from) (where.date as any).gte = parseLocalDate(String(from));
+        if (to) (where.date as any).lte = endOfLocalDay(parseLocalDate(String(to)));
       }
 
-      const pageNum = Number(page);
-      const limitNum = Number(limit);
+      const pageNum = Math.max(1, Number(page) || 1);
+      const limitNum = Math.min(Math.max(1, Number(limit) || 25), 100);
 
       const [schedules, total] = await Promise.all([
         prisma.schedule.findMany({
@@ -535,7 +335,6 @@ router.get(
                 departure: true,
                 destination: true,
               },
-              select: { duration: true, price: true },
             },
             driver: { select: { firstName: true, lastName: true, phone: true, vehicleNumber: true } },
             occupiedSeats: true,
@@ -554,20 +353,23 @@ router.get(
         where: { ...where, status: "cancelled" },
       });
 
-      const globalWhere = { ...where };
-
-      const aggResult = await prisma.schedule.aggregate({
-        where: globalWhere,
-        _sum: {
-          totalSeats: true,
-          availableSeats: true,
-        },
+      const totalPassengersResult = await prisma.schedule.aggregate({
+        where,
+        _sum: { totalSeats: true, availableSeats: true },
       });
 
       const totalPassengers =
-        (aggResult._sum.totalSeats ?? 0) -
-        (aggResult._sum.availableSeats ?? 0);
-      const totalRevenue = totalPassengers * (schedules[0]?.price ?? 0);
+        (totalPassengersResult._sum.totalSeats ?? 0) -
+        (totalPassengersResult._sum.availableSeats ?? 0);
+
+      const totalRevenueResult = await prisma.schedule.findMany({
+        where,
+        select: { price: true, totalSeats: true, availableSeats: true },
+      });
+      const totalRevenue = totalRevenueResult.reduce((sum, s) => {
+        const passengers = s.totalSeats - s.availableSeats;
+        return sum + passengers * s.price;
+      }, 0);
 
       res.json({
         success: true,
@@ -605,6 +407,14 @@ router.post(
         res.status(400).json({
           success: false,
           message: "routeId, startDate, endDate et times sont requis",
+        });
+        return;
+      }
+
+      if (!Array.isArray(times) || times.length > 10) {
+        res.status(400).json({
+          success: false,
+          message: "Maximum 10 créneaux horaires par requête",
         });
         return;
       }
@@ -657,6 +467,7 @@ router.post(
       ];
 
       const current = new Date(start);
+      const dateTimesToCheck: { date: Date; time: string; dayStart: Date; dayEnd: Date }[] = [];
 
       while (current <= end) {
         for (const time of times) {
@@ -664,25 +475,12 @@ router.post(
           const departure = new Date(current);
           departure.setHours(hours!, minutes!, 0, 0);
 
-          let status: "new" | "exists" | "past" = "new";
+          const dayStart = new Date(current);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(current);
+          dayEnd.setHours(23, 59, 59, 999);
 
-          if (departure <= now) {
-            status = "past";
-          } else {
-            const dayStart = new Date(current);
-            dayStart.setHours(0, 0, 0, 0);
-            const dayEnd = new Date(current);
-            dayEnd.setHours(23, 59, 59, 999);
-
-            const existing = await prisma.schedule.findFirst({
-              where: {
-                routeId,
-                date: { gte: dayStart, lt: dayEnd },
-                time,
-              },
-            });
-            if (existing) status = "exists";
-          }
+          dateTimesToCheck.push({ date: new Date(current), time, dayStart, dayEnd });
 
           preview.push({
             id: `${toLocalDateString(current)}-${time}`,
@@ -696,11 +494,36 @@ router.post(
             time,
             price: price || route.price,
             vehicle: vehicle || "Crafter",
-            status,
+            status: departure <= now ? "past" : "new",
           });
         }
-
         current.setDate(current.getDate() + 1);
+      }
+
+      if (dateTimesToCheck.length > 0) {
+        const existingSchedules = await prisma.schedule.findMany({
+          where: {
+            routeId,
+            OR: dateTimesToCheck.map(({ dayStart, dayEnd, time }) => ({
+              date: { gte: dayStart, lt: dayEnd },
+              time,
+            })),
+          },
+          select: { date: true, time: true },
+        });
+
+        const existingSet = new Set(
+          existingSchedules.map((s) => {
+            const dateStr = toLocalDateString(new Date(s.date));
+            return `${dateStr}-${s.time}`;
+          }),
+        );
+
+        for (const item of preview) {
+          if (item.status !== "past" && existingSet.has(item.id)) {
+            item.status = "exists";
+          }
+        }
       }
 
       const summary = {
@@ -743,7 +566,7 @@ router.post(
           time: string;
           price: number;
           vehicle: string;
-          seatConfig?: any | null;
+          seatConfig?: { totalSeats?: number } | null;
           seatTemplateId?: string | null;
         }[];
       };
@@ -756,8 +579,16 @@ router.post(
         return;
       }
 
+      if (items.length > 500) {
+        res.status(400).json({
+          success: false,
+          message: "Maximum 500 horaires par requête",
+        });
+        return;
+      }
+
       const now = new Date();
-      const schedulesToCreate: any[] = [];
+      const schedulesToCreate: Prisma.ScheduleCreateManyInput[] = [];
       const skipped: { date: string; time: string; reason: string }[] = [];
 
       for (const item of items) {
@@ -766,11 +597,7 @@ router.post(
         departure.setHours(hours!, minutes!, 0, 0);
 
         if (departure <= now) {
-          skipped.push({
-            date: item.date,
-            time: item.time,
-            reason: "Départ dans le passé",
-          });
+          skipped.push({ date: item.date, time: item.time, reason: "Départ dans le passé" });
           continue;
         }
 
@@ -788,11 +615,7 @@ router.post(
         });
 
         if (existing) {
-          skipped.push({
-            date: item.date,
-            time: item.time,
-            reason: "Déjà existant",
-          });
+          skipped.push({ date: item.date, time: item.time, reason: "Déjà existant" });
           continue;
         }
 
@@ -800,11 +623,7 @@ router.post(
           where: { id: item.routeId },
         });
         if (!route) {
-          skipped.push({
-            date: item.date,
-            time: item.time,
-            reason: "Route introuvable",
-          });
+          skipped.push({ date: item.date, time: item.time, reason: "Route introuvable" });
           continue;
         }
 
@@ -813,10 +632,10 @@ router.post(
           routeId: item.routeId,
           date: new Date(item.date),
           time: item.time,
-          vehicle: item.vehicle || "Crafter",
+          vehicle: (item.vehicle as any) || "Crafter",
           totalSeats,
           availableSeats: totalSeats,
-          price: item.price,
+          price: item.price || route.price,
           status: "scheduled",
           seatConfig: item.seatConfig ?? undefined,
           seatTemplateId: item.seatTemplateId ?? undefined,

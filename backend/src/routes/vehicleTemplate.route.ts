@@ -1,4 +1,4 @@
-// backend/src/routes/vehicleTemplate.routes.ts
+// backend/src/routes/vehicleTemplate.route.ts
 import { Router } from "express";
 import {
   getTemplate,

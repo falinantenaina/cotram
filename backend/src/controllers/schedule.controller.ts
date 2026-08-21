@@ -1,15 +1,7 @@
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
-
-function withOccupiedSeats(schedule: any) {
-  return {
-    ...schedule,
-    occupiedSeats: (schedule.occupiedSeats ?? []).map(
-      (s: { seatNumber: number }) => s.seatNumber,
-    ),
-  };
-}
+import { withOccupiedSeats } from "../utils/serialization.utils.js";
 
 export const getSchedules = async (
   req: Request,
@@ -201,7 +193,7 @@ export const deleteSchedule = async (
   }
 };
 
-export const getSheduleHistory = async (req: Request, res: Response) => {
+export const getScheduleHistory = async (req: Request, res: Response) => {
   try {
     const {
       page = 1,

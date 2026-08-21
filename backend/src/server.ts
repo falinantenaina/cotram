@@ -18,9 +18,9 @@ import contactRoutes from "./routes/contact.route.js";
 import reservationRoutes from "./routes/reservation.route.js";
 import routeRoutes from "./routes/route.route.js";
 import scheduleRoutes from "./routes/schedule.route.js";
-import seatTemplateRoutes from "./routes/seatTemplate.routes.js";
+import seatTemplateRoutes from "./routes/seatTemplate.route.js";
 import userRoutes from "./routes/user.route.js";
-import vehicleTemplateRoutes from "./routes/vehicleTemplate.routes.js";
+import vehicleTemplateRoutes from "./routes/vehicleTemplate.route.js";
 import driverRouter from "./routes/driver.route.js";
 import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
 

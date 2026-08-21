@@ -84,7 +84,7 @@ export interface IReservation {
   id: string;
   userId: string;
   scheduleId: string;
-  seats: number[];
+  seats: Array<{ seatNumber: number }> | number[];
   totalPrice: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   paymentStatus: "pending" | "paid" | "refunded";

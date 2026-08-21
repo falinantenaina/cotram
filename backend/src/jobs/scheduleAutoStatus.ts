@@ -1,6 +1,8 @@
 import prisma from "../lib/prisma.js";
 import { parseDurationToMinutes } from "../utils/date.utils.js";
 
+let isRunning = false;
+
 /**
  * Démarre le job automatique de mise à jour des statuts.
  * - "scheduled" → "in_progress" quand l'heure de départ est arrivée
@@ -11,11 +13,18 @@ export function startScheduleAutoStatusJob() {
   console.log("⏰ [AutoStatus] Job de statut automatique démarré");
 
   const run = async () => {
+    if (isRunning) {
+      console.log("⏳ [AutoStatus] Job déjà en cours, skip");
+      return;
+    }
+    isRunning = true;
+
     try {
       const now = new Date();
 
       const scheduled = await prisma.schedule.findMany({
         where: { status: "scheduled" },
+        take: 500,
       });
 
       for (const trip of scheduled) {
@@ -37,6 +46,7 @@ export function startScheduleAutoStatusJob() {
       const inProgress = await prisma.schedule.findMany({
         where: { status: "in_progress" },
         include: { route: { select: { duration: true } } },
+        take: 500,
       });
 
       for (const trip of inProgress) {
@@ -66,12 +76,13 @@ export function startScheduleAutoStatusJob() {
           expiresAt: { lt: now },
         },
         include: { seats: true },
+        take: 500,
       });
 
       for (const reservation of expiredReservations) {
         try {
           await prisma.$transaction(async (tx) => {
-            const seatNumbers = reservation.seats.map((s: { seatNumber: number }) => s.seatNumber);
+            const seatNumbers = reservation.seats.map((s) => s.seatNumber);
 
             await tx.occupiedSeat.deleteMany({
               where: {
@@ -104,6 +115,8 @@ export function startScheduleAutoStatusJob() {
       }
     } catch (err) {
       console.error("❌ [AutoStatus] Erreur:", err);
+    } finally {
+      isRunning = false;
     }
   };
 
