@@ -1,20 +1,17 @@
 import axios from "axios";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.MODE === "production"
-      ? "/api"
-      : "http://localhost:5000/api",
+  baseURL: "/api",
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Interceptor add token
-
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,13 +20,11 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Error interceptor
-
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
+      useAuthStore.getState().clearAuth();
       window.location.href = "/auth";
     }
     return Promise.reject(error);
