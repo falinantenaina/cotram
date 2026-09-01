@@ -119,14 +119,12 @@ app.use((err: any, req: any, res: any, next: any) => {
   });
 });
 
-if (process.env.NODE_ENV === "development") {
-  (async () => {
-    await connectDB();
-    app.listen(PORT, () => {
-      console.log(`The server is running on http://localhost:${PORT}`);
-      startScheduleAutoStatusJob();
-    });
-  })();
-}
+(async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    startScheduleAutoStatusJob();
+  });
+})();
 
 export default app;
