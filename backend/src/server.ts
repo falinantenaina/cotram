@@ -1,6 +1,5 @@
 import "dotenv/config";
 
-import path from "path";
 import cors from "cors";
 import express from "express";
 import session from "express-session";
@@ -103,18 +102,6 @@ app.post("/api/cron/auto-status", (req, res) => {
   res.json({ success: true, message: "Auto-status job triggered" });
 });
 
-// Production: servir les fichiers statiques du frontend
-if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../frontend/dist");
-  app.use(express.static(frontendPath));
-
-  // SPA fallback: toutes les routes non-API servent index.html
-  app.get("/{*splat}", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
-  });
-}
-
-// 404 handler (dev uniquement)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
