@@ -1,0 +1,1164 @@
+{
+  "info": {
+    "name": "Cotram API",
+    "description": "Collection complète de l'API Cotram - Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "driverToken",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health & Root",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "description": "Health check"
+          }
+        },
+        {
+          "name": "GET /",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/",
+            "description": "Root endpoint"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/auth/register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "description": "Inscription d'un nouvel utilisateur"
+          }
+        },
+        {
+          "name": "POST /api/auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token sauvegardé');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "description": "Connexion - sauvegarde le token automatiquement"
+          }
+        },
+        {
+          "name": "POST /api/auth/login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('adminToken', jsonData.token);",
+                  "    console.log('Admin token sauvegardé');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "description": "Connexion admin - sauvegarde adminToken"
+          }
+        },
+        {
+          "name": "POST /api/auth/login (driver)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('driverToken', jsonData.token);",
+                  "    console.log('Driver token sauvegardé');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"driver@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "description": "Connexion driver - sauvegarde driverToken"
+          }
+        },
+        {
+          "name": "GET /api/auth/me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Profil utilisateur connecté"
+          }
+        },
+        {
+          "name": "POST /api/auth/forgot-password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/forgot-password",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "description": "Demander un reset de mot de passe"
+          }
+        },
+        {
+          "name": "POST /api/auth/reset-password/:token",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password/REPLACE_TOKEN",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password", "REPLACE_TOKEN"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\"\n}"
+            },
+            "description": "Réinitialiser le mot de passe avec le token"
+          }
+        },
+        {
+          "name": "POST /api/auth/logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "Déconnexion"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "GET /api/users/ (admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Liste tous les utilisateurs (admin)"
+          }
+        },
+        {
+          "name": "GET /api/users/:id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "REPLACE_ID"]
+            },
+            "description": "Détail d'un utilisateur"
+          }
+        },
+        {
+          "name": "PUT /api/users/:id",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "REPLACE_ID"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "description": "Modifier un utilisateur"
+          }
+        },
+        {
+          "name": "DELETE /api/users/:id (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Supprimer un utilisateur (admin)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cities",
+      "item": [
+        {
+          "name": "GET /api/cities/",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cities/",
+            "description": "Liste des villes (public)"
+          }
+        },
+        {
+          "name": "GET /api/cities/all (admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cities/all",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Toutes les villes (admin)"
+          }
+        },
+        {
+          "name": "GET /api/cities/:id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/cities/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cities", "REPLACE_ID"]
+            },
+            "description": "Détail d'une ville"
+          }
+        },
+        {
+          "name": "POST /api/cities/ (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cities/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Antananarivo\",\n  \"region\": \"Analamanga\"\n}"
+            },
+            "description": "Créer une ville"
+          }
+        },
+        {
+          "name": "PUT /api/cities/:id (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/cities/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cities", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Antananarivo Updated\"\n}"
+            },
+            "description": "Modifier une ville"
+          }
+        },
+        {
+          "name": "DELETE /api/cities/:id (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/cities/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cities", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Supprimer une ville"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Routes (Travel)",
+      "item": [
+        {
+          "name": "GET /api/routes/",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/routes/",
+            "description": "Liste des itinéraires (public)"
+          }
+        },
+        {
+          "name": "GET /api/routes/:id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/routes/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "routes", "REPLACE_ID"]
+            },
+            "description": "Détail d'un itinéraire"
+          }
+        },
+        {
+          "name": "POST /api/routes/ (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/routes/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departureId\": \"REPLACE_CITY_ID\",\n  \"destinationId\": \"REPLACE_CITY_ID\",\n  \"duration\": \"3h\",\n  \"distance\": 150,\n  \"price\": 25000\n}"
+            },
+            "description": "Créer un itinéraire"
+          }
+        },
+        {
+          "name": "PUT /api/routes/:id (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/routes/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "routes", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 30000\n}"
+            },
+            "description": "Modifier un itinéraire"
+          }
+        },
+        {
+          "name": "DELETE /api/routes/:id (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/routes/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "routes", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Supprimer un itinéraire"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedules",
+      "item": [
+        {
+          "name": "GET /api/schedules/",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/schedules/",
+            "description": "Liste des départs (public)"
+          }
+        },
+        {
+          "name": "GET /api/schedules/:id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schedules", "REPLACE_ID"]
+            },
+            "description": "Détail d'un départ"
+          }
+        },
+        {
+          "name": "GET /api/schedules/history (admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/schedules/history",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Historique des départs"
+          }
+        },
+        {
+          "name": "POST /api/schedules/ (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/schedules/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"routeId\": \"REPLACE_ROUTE_ID\",\n  \"date\": \"2026-09-15T00:00:00.000Z\",\n  \"time\": \"08:00\",\n  \"vehicle\": \"Crafter\",\n  \"totalSeats\": 16,\n  \"price\": 25000\n}"
+            },
+            "description": "Créer un départ"
+          }
+        },
+        {
+          "name": "PUT /api/schedules/:id (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schedules", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 28000\n}"
+            },
+            "description": "Modifier un départ"
+          }
+        },
+        {
+          "name": "PUT /api/schedules/:id/assign-driver (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/REPLACE_ID/assign-driver",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schedules", "REPLACE_ID", "assign-driver"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"driverId\": \"REPLACE_DRIVER_ID\"\n}"
+            },
+            "description": "Assigner un chauffeur"
+          }
+        },
+        {
+          "name": "DELETE /api/schedules/:id (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schedules", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Supprimer un départ"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "GET /api/reservations/",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/reservations/",
+            "description": "Mes réservations"
+          }
+        },
+        {
+          "name": "GET /api/reservations/:id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "REPLACE_ID"]
+            },
+            "description": "Détail d'une réservation"
+          }
+        },
+        {
+          "name": "POST /api/reservations/",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/reservations/",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduleId\": \"REPLACE_SCHEDULE_ID\",\n  \"seats\": [1, 2],\n  \"paymentMethod\": \"cash\"\n}"
+            },
+            "description": "Créer une réservation"
+          }
+        },
+        {
+          "name": "PUT /api/reservations/:id/confirm",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/REPLACE_ID/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "REPLACE_ID", "confirm"]
+            },
+            "description": "Confirmer une réservation"
+          }
+        },
+        {
+          "name": "PUT /api/reservations/:id/cancel",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/REPLACE_ID/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "REPLACE_ID", "cancel"]
+            },
+            "description": "Annuler une réservation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "GET /api/admin/stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/stats",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Statistiques du dashboard"
+          }
+        },
+        {
+          "name": "GET /api/admin/today-schedules",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/today-schedules",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Départs du jour"
+          }
+        },
+        {
+          "name": "GET /api/admin/schedules/:scheduleId/passengers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/schedules/REPLACE_SCHEDULE_ID/passengers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "schedules", "REPLACE_SCHEDULE_ID", "passengers"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Liste des passagers d'un départ"
+          }
+        },
+        {
+          "name": "GET /api/admin/recent-reservations",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/recent-reservations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Réservations récentes"
+          }
+        },
+        {
+          "name": "GET /api/admin/reservations",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/reservations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Toutes les réservations (filtrable ?status=)"
+          }
+        },
+        {
+          "name": "POST /api/admin/reservations/walk-in",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/reservations/walk-in",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduleId\": \"REPLACE_SCHEDULE_ID\",\n  \"seats\": [1],\n  \"customerName\": \"Client Walk-in\",\n  \"customerPhone\": \"0340000000\"\n}"
+            },
+            "description": "Réservation walk-in (téléphone)"
+          }
+        },
+        {
+          "name": "GET /api/admin/schedules",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/schedules",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Tous les départs admin (filtres: ?routeId=, ?status=, ?includeHistory=)"
+          }
+        },
+        {
+          "name": "GET /api/admin/schedules/history",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/schedules/history",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Historique des départs (paginé)"
+          }
+        },
+        {
+          "name": "POST /api/admin/schedules/preview",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/schedules/preview",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"routeId\": \"REPLACE_ROUTE_ID\",\n  \"startDate\": \"2026-09-15\",\n  \"endDate\": \"2026-09-30\",\n  \"time\": \"08:00\",\n  \"vehicle\": \"Crafter\"\n}"
+            },
+            "description": "Aperçu génération départs (dry run)"
+          }
+        },
+        {
+          "name": "POST /api/admin/schedules/generate",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/schedules/generate",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"routeId\": \"REPLACE_ROUTE_ID\",\n  \"startDate\": \"2026-09-15\",\n  \"endDate\": \"2026-09-30\",\n  \"time\": \"08:00\",\n  \"vehicle\": \"Crafter\"\n}"
+            },
+            "description": "Générer des départs en bulk (max 500)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact",
+      "item": [
+        {
+          "name": "POST /api/contact/",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/contact/",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jean\",\n  \"email\": \"jean@example.com\",\n  \"subject\": \"Question\",\n  \"message\": \"Bonjour, j'ai une question.\"\n}"
+            },
+            "description": "Envoyer un message de contact (public)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicle Templates",
+      "item": [
+        {
+          "name": "GET /api/vehicle-templates/",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/vehicle-templates/",
+            "description": "Modèles de véhicules (public)"
+          }
+        },
+        {
+          "name": "GET /api/vehicle-templates/:vehicleType",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicle-templates/Crafter",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicle-templates", "Crafter"]
+            },
+            "description": "Modèle par type (Crafter/Sprinter/Transit)"
+          }
+        },
+        {
+          "name": "PUT /api/vehicle-templates/:vehicleType (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicle-templates/Crafter",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicle-templates", "Crafter"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatConfig\": {\n    \"rows\": 4,\n    \"seatsPerRow\": 4,\n    \"layout\": \"2-2\"\n  }\n}"
+            },
+            "description": "Créer/Modifier un modèle véhicule (upsert)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seat Templates",
+      "item": [
+        {
+          "name": "GET /api/seat-templates/",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/seat-templates/",
+            "description": "Modèles de sièges (public)"
+          }
+        },
+        {
+          "name": "POST /api/seat-templates/ (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/seat-templates/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Standard Crafter\",\n  \"seatConfig\": {\n    \"rows\": 4,\n    \"seatsPerRow\": 4,\n    \"layout\": \"2-2\"\n  },\n  \"isPreset\": true\n}"
+            },
+            "description": "Créer un modèle de sièges"
+          }
+        },
+        {
+          "name": "PUT /api/seat-templates/:id (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/seat-templates/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seat-templates", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Standard Crafter V2\"\n}"
+            },
+            "description": "Modifier un modèle de sièges"
+          }
+        },
+        {
+          "name": "DELETE /api/seat-templates/:id (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/seat-templates/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seat-templates", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Supprimer un modèle de sièges"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Drivers",
+      "item": [
+        {
+          "name": "GET /api/drivers/ (admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/drivers/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Liste des chauffeurs (filtres: ?status=, ?search=)"
+          }
+        },
+        {
+          "name": "GET /api/drivers/:id (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Détail chauffeur + historique"
+          }
+        },
+        {
+          "name": "GET /api/drivers/:id/stats (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/REPLACE_ID/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "REPLACE_ID", "stats"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Stats d'un chauffeur"
+          }
+        },
+        {
+          "name": "POST /api/drivers/ (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/drivers/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rija\",\n  \"lastName\": \"Andria\",\n  \"phone\": \"0340000000\",\n  \"licenseNumber\": \"LIC-001\",\n  \"vehicleNumber\": \"T-1234\",\n  \"vehicleType\": \"Crafter\"\n}"
+            },
+            "description": "Créer un chauffeur"
+          }
+        },
+        {
+          "name": "PUT /api/drivers/:id (admin)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"available\"\n}"
+            },
+            "description": "Modifier un chauffeur"
+          }
+        },
+        {
+          "name": "DELETE /api/drivers/:id (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/REPLACE_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "REPLACE_ID"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{adminToken}}", "type": "string" }
+              ]
+            },
+            "description": "Supprimer un chauffeur"
+          }
+        },
+        {
+          "name": "GET /api/drivers/me/profile (driver)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/drivers/me/profile",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{driverToken}}", "type": "string" }
+              ]
+            },
+            "description": "Profil du chauffeur connecté"
+          }
+        },
+        {
+          "name": "GET /api/drivers/me/trips (driver)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/drivers/me/trips",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{driverToken}}", "type": "string" }
+              ]
+            },
+            "description": "Trajets du chauffeur (?filter=upcoming|past)"
+          }
+        },
+        {
+          "name": "GET /api/drivers/me/stats (driver)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/drivers/me/stats",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{driverToken}}", "type": "string" }
+              ]
+            },
+            "description": "Stats personnelles du chauffeur"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cron",
+      "item": [
+        {
+          "name": "POST /api/cron/auto-status",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cron/auto-status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "REPLACE_CRON_SECRET", "type": "string" }
+              ]
+            },
+            "description": "Déclencher le job auto-status (CRON_SECRET)"
+          }
+        }
+      ]
+    }
+  ]
+}
