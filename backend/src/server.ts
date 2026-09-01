@@ -4,6 +4,8 @@ import path from "path";
 import cors from "cors";
 import express from "express";
 import session from "express-session";
+import PgSession from "connect-pg-simple";
+import pg from "pg";
 import { connectDB } from "./config/database.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
@@ -48,11 +50,21 @@ app.use(
 
 app.use(compression());
 
+const sessionStore =
+  process.env.NODE_ENV === "production"
+    ? new (PgSession(session))({
+        pool: new pg.Pool({ connectionString: process.env.DATABASE_URL }),
+        tableName: "user_sessions",
+        createTableIfMissing: true,
+      })
+    : undefined;
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
+    ...(sessionStore && { store: sessionStore }),
   }),
 );
 
