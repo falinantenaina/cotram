@@ -21,7 +21,8 @@ router.get("/stats", protect, authorize("admin"), async (req, res) => {
     const stats = await getDashboardStats();
     res.json({ success: true, ...stats });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -35,9 +36,10 @@ router.get(
       const schedules = await getTodaySchedulesWithPassengers();
       res.json({ success: true, schedules });
     } catch (error) {
+      console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );
@@ -103,9 +105,10 @@ router.get(
         },
       });
     } catch (error) {
+      console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );
@@ -131,9 +134,10 @@ router.get(
 
       res.json({ success: true, reservations: reservations.map(flattenReservationSeats) });
     } catch (error) {
+      console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );
@@ -203,9 +207,10 @@ router.post(
         });
         return;
       }
+      console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );
@@ -233,7 +238,8 @@ router.get("/reservations", protect, authorize("admin"), async (req, res) => {
 
     res.json({ success: true, reservations: reservations.map(flattenReservationSeats) });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -282,7 +288,8 @@ router.get("/schedules", protect, authorize("admin"), async (req, res) => {
 
     res.json({ success: true, schedules: schedules.map(withOccupiedSeats) });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -389,7 +396,7 @@ router.get(
       console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );
@@ -547,7 +554,7 @@ router.post(
       console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );
@@ -666,7 +673,7 @@ router.post(
       console.error(error);
       res
         .status(500)
-        .json({ success: false, message: (error as Error).message });
+        .json({ success: false, message: "Erreur serveur" });
     }
   },
 );

@@ -8,7 +8,8 @@ export const getTemplates = async (_req: Request, res: Response) => {
     });
     res.json({ success: true, templates });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -28,7 +29,8 @@ export const createTemplate = async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: "Ce nom existe déjà" });
       return;
     }
-    res.status(400).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(400).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -67,7 +69,8 @@ export const updateTemplate = async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: "Ce nom existe déjà" });
       return;
     }
-    res.status(400).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(400).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -85,6 +88,7 @@ export const deleteTemplate = async (req: Request, res: Response) => {
     });
     res.json({ success: true, message: "Template supprimé" });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

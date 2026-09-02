@@ -37,6 +37,7 @@ export const sanitizeInput = (
       if (typeof req.body[key] === "string") {
         req.body[key] = req.body[key]
           .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+          .replace(/\bon\w+\s*=/gi, "")
           .trim();
       }
     }
@@ -46,6 +47,7 @@ export const sanitizeInput = (
       if (typeof req.query[key] === "string") {
         req.query[key] = (req.query[key] as string)
           .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+          .replace(/\bon\w+\s*=/gi, "")
           .trim();
       }
     }

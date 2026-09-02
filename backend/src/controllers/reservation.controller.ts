@@ -43,7 +43,8 @@ export const getReservations = async (
 
     res.json({ success: true, reservations: reservations.map(flattenSeats) });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -81,7 +82,8 @@ export const getReservation = async (
 
     res.json({ success: true, reservation: flattenSeats(reservation) });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -157,7 +159,8 @@ export const cancelReservation = async (
       reservation: { ...flattenSeats(reservation), status: "cancelled" },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -285,7 +288,8 @@ export const createReservation = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -350,6 +354,7 @@ export const confirmReservation = async (
 
     res.json({ success: true, reservation: flattenSeats(reservation) });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

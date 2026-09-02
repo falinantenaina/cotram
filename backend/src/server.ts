@@ -5,6 +5,7 @@ import express from "express";
 import session from "express-session";
 import PgSession from "connect-pg-simple";
 import pg from "pg";
+import prisma from "./lib/prisma.js";
 import { connectDB } from "./config/database.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
@@ -30,20 +31,31 @@ import { limiter, sanitizeInput } from "./middleware/security.middleware.js";
 const PORT = process.env.PORT || 5000;
 const helmet = (helmetPkg as any).default ?? helmetPkg;
 
+if (process.env.NODE_ENV === "production") {
+  const required = ["DATABASE_URL", "JWT_SECRET", "SESSION_SECRET", "FRONTEND_URL"];
+  for (const key of required) {
+    if (!process.env[key]) {
+      console.error(`FATAL: Variable d'environnement ${key} manquante en production`);
+      process.exit(1);
+    }
+  }
+}
+
 const app = express();
+
+app.set("trust proxy", 1);
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
 app.use(limiter);
 app.use(sanitizeInput);
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "1mb" }));
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production"
-      ? process.env.FRONTEND_URL
-      : process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
+    maxAge: 86400,
   }),
 );
 
@@ -64,6 +76,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     ...(sessionStore && { store: sessionStore }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
   }),
 );
 
@@ -84,8 +102,13 @@ app.use("/api/vehicle-templates", vehicleTemplateRoutes);
 app.use("/api/seat-templates", seatTemplateRoutes);
 app.use("/api/drivers", driverRouter);
 
-app.get("/health", (req, res) => {
-  res.json({ status: "OK", timestamp: new Date() });
+app.get("/health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "OK", timestamp: new Date() });
+  } catch {
+    res.status(503).json({ status: "ERROR", message: "Database indisponible" });
+  }
 });
 
 app.get("/", (req, res) => {
@@ -114,16 +137,32 @@ app.use((err: any, req: any, res: any, next: any) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Erreur serveur",
+    message: process.env.NODE_ENV === "production" ? "Erreur serveur" : (err.message || "Erreur serveur"),
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
+});
+
+let cronInterval: NodeJS.Timeout | undefined;
+
+process.on("SIGTERM", () => {
+  console.log("SIGTERM reçu, arrêt propre...");
+  if (cronInterval) clearInterval(cronInterval);
+  prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log("SIGINT reçu, arrêt propre...");
+  if (cronInterval) clearInterval(cronInterval);
+  prisma.$disconnect();
+  process.exit(0);
 });
 
 (async () => {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    startScheduleAutoStatusJob();
+    cronInterval = startScheduleAutoStatusJob();
   });
 })();
 

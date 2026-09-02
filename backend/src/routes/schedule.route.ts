@@ -66,7 +66,8 @@ router.put(
         res.json({ success: true, schedule: result.schedule });
       }
     } catch (err) {
-      res.status(500).json({ success: false, message: (err as Error).message });
+      console.error(err);
+      res.status(500).json({ success: false, message: "Erreur serveur" });
     }
   },
 );

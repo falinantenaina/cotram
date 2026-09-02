@@ -54,8 +54,8 @@ export const getSchedules = async (
       schedules: schedules.map(withOccupiedSeats),
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -82,7 +82,8 @@ export const getSchedule = async (
     }
     res.json({ success: true, schedule: withOccupiedSeats(schedule) });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -127,8 +128,8 @@ export const createSchedule = async (
       schedule: withOccupiedSeats(populatedSchedule),
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -170,7 +171,8 @@ export const updateSchedule = async (
       res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -188,8 +190,8 @@ export const deleteSchedule = async (
       res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
-    console.log(error);
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -253,6 +255,7 @@ export const getScheduleHistory = async (req: Request, res: Response) => {
       pages: Math.ceil(total / limitNum),
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

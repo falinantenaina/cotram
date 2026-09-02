@@ -19,7 +19,8 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
     });
     res.json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -62,7 +63,8 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -110,7 +112,8 @@ export const updateUser = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -132,6 +135,7 @@ export const deleteUser = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

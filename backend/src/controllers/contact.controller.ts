@@ -1,6 +1,15 @@
 import type { Request, Response } from "express";
 import { sendEmail } from "../config/email.js";
 
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export const sendContactMessage = async (
   req: Request,
   res: Response,
@@ -49,21 +58,21 @@ export const sendContactMessage = async (
             <div class="content">
               <div class="field">
                 <div class="label">Nom</div>
-                <div class="value">${name}</div>
+                <div class="value">${escapeHtml(name)}</div>
               </div>
               <div class="field">
                 <div class="label">Email</div>
-                <div class="value">${email}</div>
+                <div class="value">${escapeHtml(email)}</div>
               </div>
               ${subject ? `
               <div class="field">
                 <div class="label">Sujet</div>
-                <div class="value">${subject}</div>
+                <div class="value">${escapeHtml(subject)}</div>
               </div>
               ` : ""}
               <div class="field">
                 <div class="label">Message</div>
-                <div class="value">${message.replace(/\n/g, "<br>")}</div>
+                <div class="value">${escapeHtml(message).replace(/\n/g, "<br>")}</div>
               </div>
             </div>
             <div class="footer">

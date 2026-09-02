@@ -9,7 +9,8 @@ export const getCities = async (req: Request, res: Response): Promise<void> => {
     });
     res.json({ success: true, cities });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -20,7 +21,8 @@ export const getAllCities = async (req: Request, res: Response): Promise<void> =
     });
     res.json({ success: true, cities });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -40,7 +42,8 @@ export const getCity = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ success: true, city });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -80,7 +83,8 @@ export const createCity = async (
 
     res.status(201).json({ success: true, city });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -127,7 +131,8 @@ export const updateCity = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -168,6 +173,7 @@ export const deleteCity = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

@@ -18,7 +18,8 @@ router.get("/me/profile", protect, authorize("driver"), async (req, res) => {
     }
     res.json({ success: true, driver });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -36,7 +37,8 @@ router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
     const schedules = await driverService.getDriverTrips(driver.id, filter as string);
     res.json({ success: true, schedules });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -51,7 +53,8 @@ router.get("/me/stats", protect, authorize("driver"), async (req, res) => {
     const stats = await driverService.getDriverSelfStats(driver.id);
     res.json({ success: true, stats });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -65,7 +68,8 @@ router.get("/", protect, authorize("admin"), async (req, res) => {
     });
     res.json({ success: true, drivers });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -79,7 +83,8 @@ router.get("/:id", protect, authorize("admin"), async (req, res) => {
     }
     res.json({ success: true, driver: result.driver, schedules: result.schedules });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -103,7 +108,8 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
       res.status(400).json({ success: false, message: "Numéro de permis déjà utilisé" });
       return;
     }
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(400).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -116,7 +122,8 @@ router.put("/:id", protect, authorize("admin"), async (req, res) => {
     if (err.code === "P2025") {
       return res.status(404).json({ success: false, message: "Chauffeur introuvable" });
     }
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(400).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -126,7 +133,8 @@ router.delete("/:id", protect, authorize("admin"), async (req, res) => {
     await driverService.deleteDriver(String(req.params.id));
     res.json({ success: true, message: "Chauffeur supprimé" });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 
@@ -136,7 +144,8 @@ router.get("/:id/stats", protect, authorize("admin"), async (req, res) => {
     const stats = await driverService.getDriverAdminStats(String(req.params.id));
     res.json({ success: true, stats });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
 

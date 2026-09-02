@@ -28,6 +28,8 @@ const sendTokenResponse = (
     ),
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
   };
 
   res
@@ -53,7 +55,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({
-        success: true,
+        success: false,
         errors: errors.array(),
       });
       return;
@@ -110,11 +112,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     sendTokenResponse(user, 201, res);
-  } catch (error: any) {
-    console.log(error);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
-      message: (error as Error).message,
+      message: "Erreur serveur",
     });
   }
 };
@@ -148,9 +150,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     sendTokenResponse(user, 200, res);
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
-      message: (error as Error).message,
+      message: "Erreur serveur",
     });
   }
 };
@@ -208,7 +211,8 @@ export const verifyEmail = async (
       message: "Email vérifié avec succès",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -250,21 +254,12 @@ export const forgotPassword = async (
         message: "Email de réinitialisation envoyé",
       });
     } catch (error) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          passwordResetToken: null,
-          passwordResetExpires: null,
-        },
-      });
-
-      res.status(500).json({
-        success: false,
-        message: "Erreur lors de l'envoi de l'email",
-      });
+      console.error(error);
+      res.status(500).json({ success: false, message: "Erreur serveur" });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -309,7 +304,8 @@ export const resetPassword = async (
 
     sendTokenResponse(user, 200, res);
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -317,6 +313,9 @@ export const logout = (req: Request, res: Response): void => {
   res.cookie("token", "none", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: '/',
   });
 
   res.json({ success: true, message: "Déconnexion réussie" });

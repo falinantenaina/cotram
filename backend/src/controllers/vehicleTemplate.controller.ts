@@ -9,7 +9,8 @@ export const getTemplates = async (_req: Request, res: Response) => {
     const templates = await prisma.vehicleTemplate.findMany();
     res.json({ success: true, templates });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -28,7 +29,8 @@ export const getTemplate = async (req: Request, res: Response) => {
     }
     res.json({ success: true, template });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -51,6 +53,7 @@ export const upsertTemplate = async (req: Request, res: Response) => {
 
     res.json({ success: true, template });
   } catch (err) {
-    res.status(500).json({ success: false, message: (err as Error).message });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

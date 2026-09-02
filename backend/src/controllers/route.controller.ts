@@ -12,7 +12,8 @@ export const getRoutes = async (req: Request, res: Response): Promise<void> => {
     });
     res.json({ success: true, routes });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -36,7 +37,8 @@ export const getRoute = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ success: true, route });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -95,7 +97,8 @@ export const createRoute = async (
 
     res.status(201).json({ success: true, route });
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -158,7 +161,8 @@ export const updateRoute = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
 
@@ -180,6 +184,7 @@ export const deleteRoute = async (
       });
       return;
     }
-    res.status(500).json({ success: false, message: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
