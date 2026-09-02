@@ -59,17 +59,14 @@ const Auth = () => {
         });
       }
       navigate(returnTo);
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // Error handled by useAuth hook
     }
   };
 
   const handleGoogleLogin = () => {
-    const CALLBACK_URL =
-      import.meta.env.MODE === "production"
-        ? "https://cotram.vercel.app"
-        : "http://localhost:5000";
-    window.location.href = `${CALLBACK_URL}/api/auth/google`;
+    const API_URL = import.meta.env.VITE_API_URL || "";
+    window.location.href = `${API_URL}/api/auth/google`;
   };
 
   const error = tab === "login" ? loginError : registerError;

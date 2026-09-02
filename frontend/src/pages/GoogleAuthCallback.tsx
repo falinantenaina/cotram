@@ -1,11 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
-
-const CALLBACK_URL =
-  import.meta.env.MODE === "production"
-    ? "https://cotram.vercel.app"
-    : "http://localhost:5000";
+import api from "../lib/axios";
 
 const GoogleAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -21,22 +17,20 @@ const GoogleAuthCallback = () => {
       return;
     }
 
-    // Appeler /api/auth/me pour récupérer les infos user avec ce token
-    fetch(`${CALLBACK_URL}/api/auth/me`, {
-      // ou votre endpoint getMe
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          setAuth(data.user, token);
+    api
+      .get("/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        if (res.data.success) {
+          setAuth(res.data.user, token);
           navigate("/");
         } else {
           navigate("/auth?error=google");
         }
       })
       .catch(() => navigate("/auth?error=google"));
-  }, []);
+  }, [searchParams, navigate, setAuth]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

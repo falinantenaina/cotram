@@ -61,8 +61,6 @@ const Reservation = () => {
     // Il vient directement de l'API, pas besoin de le chercher ailleurs
     const rawConfig = (selectedSchedule as any).seatConfig;
 
-    console.log("[Reservation] seatConfig depuis API:", rawConfig);
-
     let config: SeatConfig;
 
     if (rawConfig && rawConfig.rows && rawConfig.rows.length > 0) {
@@ -70,11 +68,6 @@ const Reservation = () => {
       config = rawConfig as SeatConfig;
     } else {
       // ⚠️ Pas de seatConfig → fallback générique selon totalSeats
-      console.warn(
-        "[Reservation] Pas de seatConfig — fallback sur",
-        selectedSchedule.totalSeats,
-        "places",
-      );
       config = buildFallbackConfig(selectedSchedule.totalSeats);
     }
 
@@ -97,7 +90,6 @@ const Reservation = () => {
       });
     });
 
-    console.log("[Reservation] seats construits:", allSeats.length, "sièges");
     setSeats(allSeats);
   }, [selectedSchedule]);
 
@@ -116,12 +108,6 @@ const Reservation = () => {
   };
 
   const handleSelectSchedule = (schedule: Schedule) => {
-    console.log(
-      "[Reservation] horaire sélectionné:",
-      schedule.id,
-      "seatConfig:",
-      (schedule as any).seatConfig,
-    );
     setSelectedSchedule(schedule);
     setStoreSchedule(schedule);
     setScheduleId(schedule.id);

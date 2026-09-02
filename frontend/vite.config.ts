@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   build: {
+    target: "es2020",
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -23,5 +25,8 @@ export default defineConfig({
         },
       },
     },
+  },
+  esbuild: {
+    drop: process.env.NODE_ENV === "production" ? ["console"] : [],
   },
 });
