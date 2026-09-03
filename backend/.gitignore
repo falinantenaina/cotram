@@ -39,3 +39,4 @@ Thumbs.db
 
 # O2switch specific
 *.htaccess
+!.htaccess

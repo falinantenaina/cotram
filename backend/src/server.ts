@@ -56,6 +56,8 @@ app.use(
     origin: process.env.FRONTEND_URL,
     credentials: true,
     maxAge: 86400,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
