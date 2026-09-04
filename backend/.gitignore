@@ -21,6 +21,7 @@ build/
 out/
 .next/
 .nuxt/
+public/
 
 # Debug and IDE settings
 .vscode/
