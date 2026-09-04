@@ -53,7 +53,7 @@ app.use(sanitizeInput);
 app.use(express.json({ limit: "1mb" }));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || "https://cotram.nragency.tech",
     credentials: true,
     maxAge: 86400,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
