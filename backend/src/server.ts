@@ -45,6 +45,21 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+const allowedOrigin = process.env.FRONTEND_URL || "https://cotram.nragency.tech";
+
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
@@ -53,11 +68,8 @@ app.use(sanitizeInput);
 app.use(express.json({ limit: "1mb" }));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://cotram.nragency.tech",
+    origin: allowedOrigin,
     credentials: true,
-    maxAge: 86400,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
