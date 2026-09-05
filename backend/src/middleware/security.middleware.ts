@@ -4,10 +4,14 @@ const rateLimit = (rateLimitPkg as any).default ?? rateLimitPkg;
 
 export const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: "Trop de requêtes, veuillez réessayer plus tard.",
+  skip: (req: { path: string }) => {
+    const ext = req.path.split(".").pop();
+    return ["css", "js", "png", "jpg", "jpeg", "webp", "svg", "ico", "woff", "woff2"].includes(ext ?? "");
+  },
 });
 
 export const authLimiter = rateLimit({

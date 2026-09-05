@@ -7,11 +7,30 @@ import {
   Star,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import hero from "../assets/hero.webp";
 import { useAvailableRoutes } from "../hooks/useAvailableRoutes";
 import { useReservationTempStore } from "../stores/reservationStore";
+
+function useCountUp(target: number, duration = 2000) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target, duration]);
+  return count;
+}
 
 export const Hero = () => {
   const navigate = useNavigate();
@@ -22,6 +41,7 @@ export const Hero = () => {
   const [departure, setDeparture] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState(today);
+  const ticketsSold = useCountUp(2847);
 
   const handleSearch = () => {
     if (!departure || !destination || departure === destination) return;
@@ -113,11 +133,12 @@ export const Hero = () => {
         </div>
 
         {/* Stats row */}
-        <div className="mt-auto pt-16 grid grid-cols-3 gap-4 max-w-md">
+        <div className="mt-auto pt-16 grid grid-cols-4 gap-4 max-w-lg">
           {[
             { value: "3", label: "Villes desservies" },
             { value: "6+", label: "Départs/jour" },
             { value: "16", label: "Places par bus" },
+            { value: ticketsSold.toLocaleString(), label: "Billets vendus" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="text-2xl md:text-3xl font-black text-primary">

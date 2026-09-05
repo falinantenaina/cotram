@@ -11,6 +11,24 @@
     />
     <meta name="robots" content="index, follow" />
     <title>Cotram Plus</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BusCompany",
+      "name": "Cotram Plus",
+      "description": "Coopérative de transport reliant Antananarivo, Antsirabe, Ambatolampy. Réservez vos billets en ligne.",
+      "url": "https://api.nragency.tech",
+      "areaServed": ["Antananarivo", "Ambatolampy", "Antsirabe"],
+      "priceRange": "10000-50000 MGA",
+      "potentialAction": {
+        "@type": "ReserveAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://api.nragency.tech/reservation"
+        }
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

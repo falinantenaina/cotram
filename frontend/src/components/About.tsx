@@ -1,4 +1,4 @@
-import { Armchair, Clock4, ShieldCheck } from "lucide-react";
+import { Armchair, Clock4, Headphones, ShieldCheck } from "lucide-react";
 
 const infos = [
   {
@@ -22,6 +22,13 @@ const infos = [
     stat: "6+",
     statLabel: "départs par jour",
   },
+  {
+    icon: <Headphones size={24} />,
+    title: "Service Client 24h/24",
+    desc: "Une équipe dédiée pour répondre à vos questions et vous accompagner à tout moment.",
+    stat: "24/7",
+    statLabel: "support disponible",
+  },
 ];
 
 export const About = () => {
@@ -44,7 +51,7 @@ export const About = () => {
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {infos.map((info) => (
             <div
               key={info.title}

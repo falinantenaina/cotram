@@ -136,16 +136,22 @@ app.post("/api/cron/auto-status", (req, res) => {
   res.json({ success: true, message: "Auto-status job triggered" });
 });
 
-const publicPath = path.join(process.cwd(), "public");
-app.use(express.static(publicPath));
+if (process.env.NODE_ENV === "production") {
+  const publicPath = path.join(process.cwd(), "public");
+  app.use(express.static(publicPath));
 
-app.use((req, res) => {
-  if (req.path.startsWith("/api")) {
+  app.use((req, res) => {
+    if (req.path.startsWith("/api")) {
+      res.status(404).json({ success: false, message: "Route non trouvée" });
+      return;
+    }
+    res.sendFile(path.join(publicPath, "index.html"));
+  });
+} else {
+  app.use((req, res) => {
     res.status(404).json({ success: false, message: "Route non trouvée" });
-    return;
-  }
-  res.sendFile(path.join(publicPath, "index.html"));
-});
+  });
+}
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {
