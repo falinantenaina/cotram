@@ -8,6 +8,7 @@ import {
   sendVerificationEmail,
 } from "../config/email.js";
 import prisma from "../lib/prisma.js";
+import { logError } from "../lib/logger.js";
 
 const signToken = (id: string): string => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
@@ -113,7 +114,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     sendTokenResponse(user, 201, res);
   } catch (error) {
-    console.error(error);
+    logError("REGISTER", error);
     res.status(500).json({
       success: false,
       message: "Erreur serveur",
@@ -150,7 +151,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     sendTokenResponse(user, 200, res);
   } catch (error) {
-    console.error(error);
+    logError("LOGIN", error);
     res.status(500).json({
       success: false,
       message: "Erreur serveur",

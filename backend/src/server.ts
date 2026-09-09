@@ -12,6 +12,7 @@ import passport from "passport";
 import compression from "compression";
 import * as helmetPkg from "helmet";
 import path from "path";
+import { logError, logInfo } from "./lib/logger.js";
 
 import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
@@ -154,8 +155,8 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Global error handler
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error(err.stack);
+app.use((err: any, req: any, res: any, _next: any) => {
+  logError("GLOBAL", err);
   res.status(err.status || 500).json({
     success: false,
     message: process.env.NODE_ENV === "production" ? "Erreur serveur" : (err.message || "Erreur serveur"),
@@ -182,7 +183,7 @@ process.on("SIGINT", () => {
 (async () => {
   await connectDB();
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logInfo(`Server running on port ${PORT}`);
     cronInterval = startScheduleAutoStatusJob();
   });
 })();
