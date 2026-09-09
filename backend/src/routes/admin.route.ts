@@ -1,6 +1,5 @@
 import express from "express";
 import { Prisma } from "@prisma/client";
-import rateLimit from "express-rate-limit";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
 import { withOccupiedSeats, flattenReservationSeats } from "../utils/serialization.utils.js";
@@ -142,23 +141,11 @@ router.get(
   },
 );
 
-const walkInLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: {
-    success: false,
-    message: "Trop de tentatives de réservation. Veuillez réessayer dans 15 minutes.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // ─── Walk-in reservation ───────────────────────────────────────────────────────
 router.post(
   "/reservations/walk-in",
   protect,
   authorize("admin"),
-  walkInLimiter,
   async (req, res) => {
     try {
       const { name, phone, scheduleId, seats } = req.body;
