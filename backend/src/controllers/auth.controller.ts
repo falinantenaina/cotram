@@ -74,6 +74,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (userExists) {
+      if (userExists.email.includes("@cotram.local")) {
+        const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
+        const updatedUser = await prisma.user.update({
+          where: { id: userExists.id },
+          data: {
+            name,
+            email,
+            phone: phone || userExists.phone,
+            password: hashedPassword,
+          },
+        });
+        sendTokenResponse(updatedUser, 200, res);
+        return;
+      }
       res.status(400).json({
         success: false,
         message: "Email ou téléphone déjà utilisé",
