@@ -109,8 +109,8 @@ app.use(passport.session());
 app.use(cookieParser());
 
 app.use((req, _res, next) => {
-  if (req.url.length > 1 && req.url.endsWith("/")) {
-    req.url = req.url.slice(0, -1);
+  if (req.url.startsWith("/api/") && req.url.length > 1 && !req.url.endsWith("/")) {
+    req.url += "/";
   }
   next();
 });
