@@ -86,8 +86,14 @@ const BoardingPass = () => {
     window.print();
   };
 
-  const sep = "=".repeat(paperSize === "80" ? 32 : 20);
-  const thinSep = "-".repeat(paperSize === "80" ? 32 : 20);
+  const w = paperSize === "80" ? 32 : 20;
+  const sep = "═".repeat(w);
+  const thinSep = "─".repeat(w);
+
+  const pad = (text: string, len: number) => {
+    if (text.length >= len) return text.substring(0, len);
+    return text + " ".repeat(len - text.length);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -134,33 +140,37 @@ const BoardingPass = () => {
       <Container className="py-8 print:py-0 print:px-0">
         <div className="mx-auto print:mx-0" style={{ maxWidth: paperSize === "80" ? "320px" : "200px" }}>
           {/* Ticket */}
-          <pre className="font-mono text-[11px] leading-tight bg-white border border-gray-200 rounded-xl p-4 print:border-black print:rounded-none print:p-2 overflow-x-auto whitespace-pre-wrap break-words">
+          <pre className="font-mono text-[11px] leading-snug bg-white border border-gray-200 rounded-xl p-4 print:border-black print:rounded-none print:p-2 overflow-x-auto whitespace-pre break-all">
 {`╔${sep}╗
-║           COTRAM - BILLET DE VOYAGE           ║
-║       Transport Interurbain - Madagascar       ║
+║${pad(" COTRAM - BILLET DE VOYAGE", w)}║
+║${pad(" Transport Interurbain", w)}║
+║${pad(" - Madagascar", w)}║
 ╚${sep}╝
 
 ${thinSep}
-  ${depName.toUpperCase().substring(0, 12)}  →  ${destName.toUpperCase().substring(0, 12)}
+ ${depName.toUpperCase().substring(0, 14)}
+   → ${destName.toUpperCase().substring(0, 14)}
 ${thinSep}
 
-  DATE      : ${depDate.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
-  HEURE     : ${reservation.schedule.time}
-  PASSAGER  : ${passengerName.substring(0, 20)}
-  SIEGES    : ${reservation.seats.join(", ")}
-  STATUT    : ${statusLabel}${paymentLabel ? `
-  PAIEMENT  : ${paymentLabel}` : ""}
+ DATE      ${depDate.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+ HEURE     ${reservation.schedule.time}
+ PASSAGER  ${passengerName.substring(0, 18)}
+ SIEGES    ${reservation.seats.join(", ")}
+ STATUT    ${statusLabel}${paymentLabel ? `
+ PAIEMENT  ${paymentLabel}` : ""}
 
 ${thinSep}
-  REFERENCE : ${reservation.bookingReference}
-  TOTAL     : ${reservation.totalPrice.toLocaleString()} Ar
+ REFERENCE ${reservation.bookingReference}
+ TOTAL     ${reservation.totalPrice.toLocaleString()} Ar
 ${thinSep}
 
-  ⚠ Présentez-vous 15 min avant le départ
-  ⚠ Munissez-vous d'un pièce d'identité
+ ⚠  Présentez-vous 15 min
+    avant le départ
+ ⚠  Munissez-vous d'une
+    pièce d'identité
 
 ╔${sep}╗
-║          COTRAM — Antananarivo • Antsirabe     ║
+║${pad(" COTRAM — Cotram Plus", w)}║
 ╚${sep}╝`}
           </pre>
         </div>
@@ -218,7 +228,7 @@ ${thinSep}
           }
           * { box-shadow: none !important; text-shadow: none !important; }
           body { margin: 0; padding: 0; background: white !important; }
-          nav, footer, header, .print\\:hidden, main > div > div:last-child { display: none !important; }
+          nav, footer, header, .print\\:hidden { display: none !important; }
           main { padding: 0 !important; margin: 0 !important; width: 100% !important; }
           pre {
             font-family: "Courier New", "Consolas", monospace !important;
