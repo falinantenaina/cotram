@@ -108,6 +108,13 @@ app.use(passport.session());
 
 app.use(cookieParser());
 
+app.use((req, _res, next) => {
+  if (req.url.length > 1 && req.url.endsWith("/")) {
+    req.url = req.url.slice(0, -1);
+  }
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/cities", cityRoutes);
