@@ -1,5 +1,7 @@
 import { ArrowRight, Calendar, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import mvolaLogo from "../assets/mvola.svg";
+import orangeLogo from "../assets/orangemoney.svg";
 
 export const Ready = () => {
   const navigate = useNavigate();
@@ -18,10 +20,26 @@ export const Ready = () => {
             <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
               Prêt pour votre prochain voyage ?
             </h2>
-            <p className="text-white/50 text-lg max-w-md mx-auto mb-10 leading-relaxed">
+            <p className="text-white/50 text-lg max-w-md mx-auto mb-8 leading-relaxed">
               Réservez votre billet en ligne et évitez les files d'attente.
               Simple, rapide et sécurisé.
             </p>
+
+            {/* Payment logos */}
+            <div className="flex items-center justify-center gap-6 mb-10">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-5 py-3">
+                <img src={mvolaLogo} alt="MVola" className="h-6 w-auto" />
+                <span className="text-white/60 text-sm font-medium">MVola</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-5 py-3">
+                <img src={orangeLogo} alt="Orange Money" className="h-6 w-auto" />
+                <span className="text-white/60 text-sm font-medium">Orange Money</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-5 py-3">
+                <span className="text-lg">💵</span>
+                <span className="text-white/60 text-sm font-medium">Espèces</span>
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button

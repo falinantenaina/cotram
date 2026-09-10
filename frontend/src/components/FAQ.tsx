@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     q: "Quels sont les moyens de paiement acceptés ?",
-    a: "Nous acceptons le paiement mobile (MVola), ainsi que les virements bancaires. Le paiement est sécurisé et crypté.",
+    a: "Nous acceptons MVola, Orange Money et les paiements en espèces au comptoir. Le paiement mobile est sécurisé et crypté.",
   },
   {
     q: "Puis-je annuler ou modifier ma réservation ?",

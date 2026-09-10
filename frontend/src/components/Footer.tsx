@@ -1,5 +1,6 @@
-import { Bus, Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react";
+import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "../assets/logo.webp";
 
 export const Footer = () => {
   return (
@@ -9,10 +10,20 @@ export const Footer = () => {
           {/* Brand */}
           <div>
             <Link to="/" className="flex items-center gap-2.5 mb-5">
-              <div className="flex items-center justify-center bg-primary rounded-lg size-9">
-                <Bus size={18} className="text-black" />
+              <img src={logo} alt="Cotram Plus" className="size-9 rounded-lg object-cover ring-2 ring-primary/20" />
+              <div className="flex flex-col leading-none">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-white font-extrabold text-lg tracking-tight">
+                    Cotram
+                  </span>
+                  <span className="text-[9px] font-black text-black bg-primary px-1.5 py-0.5 rounded-md uppercase tracking-widest leading-none">
+                    Plus
+                  </span>
+                </div>
+                <span className="text-[9px] text-white/30 font-medium tracking-wider mt-0.5">
+                  Transport Premium
+                </span>
               </div>
-              <span className="font-bold text-white text-lg">Cotram Plus</span>
             </Link>
             <p className="text-white/40 text-sm leading-relaxed mb-6 max-w-xs">
               Votre partenaire de confiance pour tous vos déplacements entre

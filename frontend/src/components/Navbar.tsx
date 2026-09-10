@@ -1,5 +1,4 @@
 import {
-  Bus,
   Calendar,
   ChevronDown,
   Home,
@@ -14,6 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import logo from "../assets/logo.webp";
 
 const menus = [
   { title: "Accueil", to: "/", icon: <Home strokeWidth={1.5} size={18} /> },
@@ -70,15 +70,18 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex items-center justify-center bg-primary rounded-lg size-9 shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
-              <Bus size={18} className="text-black" />
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-bold text-white text-lg tracking-tight">
-                Cotram
-              </span>
-              <span className="text-[10px] font-semibold text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                Plus
+            <img src={logo} alt="Cotram Plus" className="size-9 rounded-lg object-cover ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all" />
+            <div className="flex flex-col leading-none">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-white font-extrabold text-lg tracking-tight">
+                  Cotram
+                </span>
+                <span className="text-[9px] font-black text-black bg-primary px-1.5 py-0.5 rounded-md uppercase tracking-widest leading-none">
+                  Plus
+                </span>
+              </div>
+              <span className="text-[9px] text-white/30 font-medium tracking-wider mt-0.5">
+                Transport Premium
               </span>
             </div>
           </Link>

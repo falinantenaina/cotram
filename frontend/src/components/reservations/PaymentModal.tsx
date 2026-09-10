@@ -1,6 +1,8 @@
 import { CheckCircle, Loader, Phone, X, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useCreateReservation } from "../../hooks/useReservation";
+import mvolaLogo from "../../assets/mvola.svg";
+import orangeLogo from "../../assets/orangemoney.svg";
 
 type PaymentMethod = "mvola" | "orange_money" | "cash";
 type PaymentStep = "method" | "phone" | "processing" | "success" | "error";
@@ -14,19 +16,19 @@ interface Props {
 
 const METHOD_CONFIG: Record<
   PaymentMethod,
-  { label: string; color: string; bg: string; icon: string }
+  { label: string; color: string; bg: string; icon: React.ReactNode }
 > = {
   mvola: {
     label: "MVola",
     color: "text-red-600",
     bg: "bg-red-50 border-red-200 hover:border-red-400",
-    icon: "📱",
+    icon: <img src={mvolaLogo} alt="MVola" className="h-8 w-auto" />,
   },
   orange_money: {
     label: "Orange Money",
     color: "text-orange-600",
     bg: "bg-orange-50 border-orange-200 hover:border-orange-400",
-    icon: "📱",
+    icon: <img src={orangeLogo} alt="Orange Money" className="h-8 w-auto" />,
   },
   cash: {
     label: "Espèce (au comptoir)",
@@ -127,7 +129,7 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
                       onClick={() => handleSelectMethod(m)}
                       className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${cfg.bg}`}
                     >
-                      <span className="text-2xl">{cfg.icon}</span>
+                      <span className="flex items-center justify-center size-12 shrink-0 rounded-lg bg-white border border-gray-100">{cfg.icon}</span>
                       <div className="flex-1">
                         <p className={`font-bold ${cfg.color}`}>{cfg.label}</p>
                         {m === "cash" && (
@@ -168,7 +170,7 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
               </button>
 
               <div className="text-center py-2">
-                <span className="text-3xl">{METHOD_CONFIG[method].icon}</span>
+                <div className="flex justify-center">{METHOD_CONFIG[method].icon}</div>
                 <h3 className="font-bold text-gray-900 mt-2">
                   Payer via {METHOD_CONFIG[method].label}
                 </h3>
