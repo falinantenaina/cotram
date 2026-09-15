@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
 import { withOccupiedSeats } from "../utils/serialization.utils.js";
+import { logError } from "../lib/logger.js";
 
 export const getSchedules = async (
   req: Request,
@@ -54,7 +55,8 @@ export const getSchedules = async (
       schedules: schedules.map(withOccupiedSeats),
     });
   } catch (error) {
-    console.error(error);
+    logError("GET /schedules", error);
+    console.error("Query params:", { departure: req.query.departure, destination: req.query.destination, date: req.query.date });
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -82,7 +84,7 @@ export const getSchedule = async (
     }
     res.json({ success: true, schedule: withOccupiedSeats(schedule) });
   } catch (error) {
-    console.error(error);
+    logError(`GET /schedules/${req.params.id}`, error);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -128,7 +130,7 @@ export const createSchedule = async (
       schedule: withOccupiedSeats(populatedSchedule),
     });
   } catch (error) {
-    console.error(error);
+    logError("POST /schedules", error);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -171,7 +173,7 @@ export const updateSchedule = async (
       res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
-    console.error(error);
+    logError(`PUT /schedules/${req.params.id}`, error);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -190,7 +192,7 @@ export const deleteSchedule = async (
       res.status(404).json({ success: false, message: "Horaire non trouvé" });
       return;
     }
-    console.error(error);
+    logError(`DELETE /schedules/${req.params.id}`, error);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -235,7 +237,6 @@ export const getScheduleHistory = async (req: Request, res: Response) => {
               departure: true,
               destination: true,
             },
-            select: { duration: true },
           },
           driver: { select: { firstName: true, lastName: true, phone: true, vehicleNumber: true } },
           occupiedSeats: true,
@@ -255,7 +256,7 @@ export const getScheduleHistory = async (req: Request, res: Response) => {
       pages: Math.ceil(total / limitNum),
     });
   } catch (err) {
-    console.error(err);
+    logError("GET /schedules/history", err);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

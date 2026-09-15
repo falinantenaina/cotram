@@ -110,7 +110,16 @@ app.use(cookieParser());
 
 app.use((req, _res, next) => {
   if (req.url.startsWith("/api/") && req.url.length > 1 && !req.url.endsWith("/")) {
-    req.url += "/";
+    const qIndex = req.url.indexOf("?");
+    if (qIndex === -1) {
+      req.url += "/";
+    } else {
+      const path = req.url.substring(0, qIndex);
+      const query = req.url.substring(qIndex);
+      if (!path.endsWith("/")) {
+        req.url = path + "/" + query;
+      }
+    }
   }
   next();
 });
