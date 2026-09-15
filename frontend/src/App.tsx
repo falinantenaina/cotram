@@ -102,6 +102,14 @@ function RoutePrefetcher() {
   return null;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 const LazyPage = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
 );
@@ -112,6 +120,7 @@ const router = createBrowserRouter([
     element: (
       <>
         <RoutePrefetcher />
+        <ScrollToTop />
         <MainLayout />
       </>
     ),
