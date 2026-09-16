@@ -1,0 +1,33 @@
+import { build } from "esbuild";
+
+await build({
+  entryPoints: ["src/server.ts"],
+  bundle: true,
+  platform: "node",
+  target: "node20",
+  format: "esm",
+  outdir: "dist",
+  sourcemap: false,
+  minify: false,
+  external: [
+    "@prisma/client",
+    "@prisma/adapter-pg",
+    "prisma",
+    "bcryptjs",
+    "compression",
+    "connect-pg-simple",
+    "cookie-parser",
+    "cors",
+    "dotenv",
+    "express",
+    "express-rate-limit",
+    "express-session",
+    "express-validator",
+    "helmet",
+    "jsonwebtoken",
+    "nodemailer",
+    "passport",
+    "passport-google-oauth20",
+    "pg",
+  ],
+});

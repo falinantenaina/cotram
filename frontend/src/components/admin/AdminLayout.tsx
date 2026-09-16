@@ -2,6 +2,7 @@ import {
   Bus,
   Calendar,
   Car,
+  DollarSign,
   History,
   LayoutDashboard,
   LogOut,
@@ -75,6 +76,11 @@ const AdminLayout = () => {
       path: "/admin/trips/history",
       label: "Historique voyages",
       icon: <History size={18} />,
+    },
+    {
+      path: "/admin/finance",
+      label: "Finance",
+      icon: <DollarSign size={18} />,
     },
   ];
 

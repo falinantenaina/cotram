@@ -25,6 +25,7 @@ const DriverDashboard = lazy(() => import("./pages/driver/Dashboard"));
 const DriverMyTrips = lazy(() => import("./pages/driver/MyTrips"));
 const DriverHistory = lazy(() => import("./pages/driver/History"));
 const DriverProfile = lazy(() => import("./pages/driver/Profile"));
+const Finance = lazy(() => import("./pages/admin/Finance"));
 
 // Lazy-loaded Public pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -298,6 +299,14 @@ const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <TripHistory />
+              </LazyPage>
+            ),
+          },
+          {
+            path: "finance",
+            element: (
+              <LazyPage>
+                <Finance />
               </LazyPage>
             ),
           },

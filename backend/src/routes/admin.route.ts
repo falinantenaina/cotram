@@ -6,11 +6,19 @@ import { withOccupiedSeats, flattenReservationSeats } from "../utils/serializati
 import { getDashboardStats } from "../services/adminStats.service.js";
 import { getTodaySchedulesWithPassengers } from "../services/scheduleManifest.service.js";
 import { createWalkinReservation, WalkinError } from "../services/reservationWalkin.service.js";
+import { logError } from "../lib/logger.js";
 import {
   endOfLocalDay,
   parseLocalDate,
   toLocalDateString,
 } from "../utils/date.utils.js";
+import {
+  getFinanceOverview,
+  getRevenueByPeriod,
+  getRevenueByRoute,
+  getDailyReport,
+  type FinancePeriod,
+} from "../services/financial.service.js";
 
 const router = express.Router();
 
@@ -664,5 +672,68 @@ router.post(
     }
   },
 );
+
+// ─── Finance: Overview ────────────────────────────────────────────────────────
+router.get("/finance/overview", protect, authorize("admin"), async (req, res) => {
+  try {
+    const { period = "month", from, to } = req.query;
+    const stats = await getFinanceOverview(
+      (period as FinancePeriod) || "month",
+      from as string | undefined,
+      to as string | undefined,
+    );
+    res.json({ success: true, ...stats });
+  } catch (error) {
+    logError("GET /admin/finance/overview", error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+});
+
+// ─── Finance: Revenue by period ──────────────────────────────────────────────
+router.get("/finance/revenue", protect, authorize("admin"), async (req, res) => {
+  try {
+    const { period = "month", from, to } = req.query;
+    const data = await getRevenueByPeriod(
+      (period as FinancePeriod) || "month",
+      from as string | undefined,
+      to as string | undefined,
+    );
+    res.json({ success: true, data });
+  } catch (error) {
+    logError("GET /admin/finance/revenue", error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+});
+
+// ─── Finance: Revenue by route ───────────────────────────────────────────────
+router.get("/finance/routes", protect, authorize("admin"), async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const data = await getRevenueByRoute(
+      from as string | undefined,
+      to as string | undefined,
+    );
+    res.json({ success: true, data });
+  } catch (error) {
+    logError("GET /admin/finance/routes", error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+});
+
+// ─── Finance: Daily report ──────────────────────────────────────────────────
+router.get("/finance/daily", protect, authorize("admin"), async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      res.status(400).json({ success: false, message: "Le paramètre 'date' est requis (YYYY-MM-DD)" });
+      return;
+    }
+    const report = await getDailyReport(date as string);
+    res.json({ success: true, ...report });
+  } catch (error) {
+    logError("GET /admin/finance/daily", error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+});
 
 export default router;
