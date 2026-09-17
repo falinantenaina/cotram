@@ -50,9 +50,9 @@ export const Hero = () => {
   };
 
   return (
-    <section className="relative bg-[#0a0a0a] overflow-hidden h-dvh flex flex-col">
+    <section className="relative bg-[#0a0a0a] min-h-dvh flex flex-col">
       {/* Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-hidden">
         <img
           src={hero}
           alt=""
