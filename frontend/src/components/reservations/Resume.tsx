@@ -3,14 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 import type { Schedule } from "../../api/scheduleApi";
-import type { Step } from "../../type";
 
 type Props = {
   departure: string;
   destination: string;
   selectedDate: string;
   selectedSchedule: Schedule;
-  setCurrentStep: React.Dispatch<React.SetStateAction<Step>>;
+  setCurrentStep: () => void;
   selectedSeats: number[];
   handleSeatClick: (seatId: number) => void;
   onOpenPayment: () => void;
@@ -56,7 +55,7 @@ export const Resume = (props: Props) => {
             </span>
           </div>
           <button
-            onClick={() => props.setCurrentStep("time")}
+            onClick={() => props.setCurrentStep()}
             className="text-xs text-primary hover:underline font-semibold"
           >
             Modifier l'horaire

@@ -1,4 +1,5 @@
 import { ArrowRight, Clock, Loader, Users } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { Schedule } from "../../api/scheduleApi";
 
 type Props = {
@@ -12,6 +13,23 @@ type Props = {
 };
 
 export const TimeStep = (props: Props) => {
+  const prevSelectedId = useRef(props.selectedSchedule?.id);
+
+  useEffect(() => {
+    if (
+      props.selectedSchedule &&
+      props.selectedSchedule.id !== prevSelectedId.current
+    ) {
+      const seatsEl = document.getElementById("seats-section");
+      if (seatsEl && window.innerWidth < 1024) {
+        setTimeout(() => {
+          seatsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+    prevSelectedId.current = props.selectedSchedule?.id;
+  }, [props.selectedSchedule?.id]);
+
   const displayDate = new Date(
     props.selectedDate + "T00:00:00",
   ).toLocaleDateString("fr-FR", {
@@ -67,7 +85,7 @@ export const TimeStep = (props: Props) => {
               {props.schedules.length > 1 ? "s" : ""} disponible
               {props.schedules.length > 1 ? "s" : ""}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {props.schedules.map((schedule) => {
                 const isSelected =
                   props.selectedSchedule?.id === schedule.id;
@@ -80,7 +98,7 @@ export const TimeStep = (props: Props) => {
                       !isFull && props.setSelectedSchedule(schedule)
                     }
                     disabled={isFull}
-                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                    className={`relative p-3 sm:p-4 rounded-xl border-2 text-left transition-all overflow-hidden ${
                       isSelected
                         ? "border-primary bg-primary/5 shadow-sm shadow-primary/10"
                         : isFull
@@ -89,45 +107,34 @@ export const TimeStep = (props: Props) => {
                     }`}
                   >
                     {isSelected && (
-                      <div className="absolute top-3 right-3 size-5 bg-primary rounded-full flex items-center justify-center">
-                        <svg
-                          width="10"
-                          height="8"
-                          viewBox="0 0 10 8"
-                          fill="none"
-                        >
-                          <path
-                            d="M1 4L3.5 6.5L9 1.5"
-                            stroke="black"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
+                      <div className="absolute top-2 right-2 size-5 bg-primary rounded-full flex items-center justify-center">
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1.5" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 mb-3">
-                      <Clock size={16} className="text-gray-400" />
-                      <span className="text-2xl font-black text-gray-900">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Clock size={14} className="text-gray-400 shrink-0" />
+                      <span className="text-xl sm:text-2xl font-black text-gray-900 truncate">
                         {schedule.time}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
-                        <Users size={13} />
-                        <span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 min-w-0">
+                        <Users size={12} className="shrink-0" />
+                        <span className="truncate">
                           {schedule.availableSeats} place
                           {schedule.availableSeats > 1 ? "s" : ""}
                         </span>
                       </div>
-                      <span className="text-sm font-bold text-primary">
+                      <span className="text-xs sm:text-sm font-bold text-primary whitespace-nowrap">
                         {schedule.price.toLocaleString()} Ar
                       </span>
                     </div>
 
-                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="mt-2.5 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           schedule.availableSeats > 8

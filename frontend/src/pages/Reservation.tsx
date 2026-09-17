@@ -1,5 +1,5 @@
 // frontend/src/pages/Reservation.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PaymentModal } from "../components/reservations/PaymentModal";
 import { Resume } from "../components/reservations/Resume";
 import { RouteStep } from "../components/reservations/RouteStep";
@@ -40,6 +40,20 @@ const Reservation = () => {
 
   const showSchedules =
     localDeparture && localDestination && localDeparture !== localDestination;
+
+  // Réinitialiser l'horaire et les sièges quand départ/destination/date changent
+  const prevRouteKey = useRef(`${localDeparture}-${localDestination}-${localDate}`);
+  useEffect(() => {
+    const key = `${localDeparture}-${localDestination}-${localDate}`;
+    if (key !== prevRouteKey.current) {
+      prevRouteKey.current = key;
+      setSelectedSchedule(null);
+      setStoreSchedule(null);
+      setScheduleId("");
+      setSeats([]);
+      setSeatConfig(null);
+    }
+  }, [localDeparture, localDestination, localDate]);
 
   const { schedules, isLoading: isLoadingSchedules } = useSchedules(
     showSchedules
@@ -100,6 +114,7 @@ const Reservation = () => {
   };
 
   const handleSelectSchedule = (schedule: Schedule) => {
+    setSeats([]);
     setSelectedSchedule(schedule);
     setStoreSchedule(schedule);
     setScheduleId(schedule.id);
@@ -124,18 +139,18 @@ const Reservation = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-4 md:space-y-5">
         {/* Header */}
-        <div className="mb-2">
-          <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-1">
-            Réservation de billet
+        <div>
+          <h1 className="text-xl md:text-2xl font-black text-gray-900">
+            Réservation
           </h1>
-          <p className="text-gray-400 text-sm">
-            Choisissez votre trajet, puis votre horaire et vos sièges
+          <p className="text-gray-400 text-xs md:text-sm mt-0.5">
+            Sélectionnez votre trajet, horaire et sièges
           </p>
         </div>
 
-        {/* 1. Formulaire trajet — toujours visible */}
+        {/* 1. Formulaire trajet — compact, toujours visible */}
         <RouteStep
           departure={localDeparture}
           setDeparture={setLocalDeparture}
@@ -145,38 +160,45 @@ const Reservation = () => {
           setSelectedDate={setLocalDate}
         />
 
-        {/* 2. Horaires — affichés sous le formulaire */}
+        {/* 2+3. Horaires + Sièges en 2 colonnes */}
         {showSchedules && (
-          <TimeStep
-            departure={localDeparture}
-            destination={localDestination}
-            selectedDate={localDate}
-            selectedSchedule={selectedSchedule as Schedule}
-            setSelectedSchedule={handleSelectSchedule}
-            schedules={schedules}
-            isLoading={isLoadingSchedules}
-          />
-        )}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-5">
+            {/* Colonne gauche: Horaires */}
+            <div className={`${selectedSchedule ? "lg:col-span-2" : "lg:col-span-5"}`}>
+              <TimeStep
+                departure={localDeparture}
+                destination={localDestination}
+                selectedDate={localDate}
+                selectedSchedule={selectedSchedule as Schedule}
+                setSelectedSchedule={handleSelectSchedule}
+                schedules={schedules}
+                isLoading={isLoadingSchedules}
+              />
+            </div>
 
-        {/* 3. Sièges — affichés sous les horaires */}
-        {selectedSchedule && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <SeatsStep
-              seats={seats}
-              seatConfig={displayConfig}
-              handleSeatClick={handleSeatClick}
-              onBack={handleDeselectSchedule}
-            />
-            <Resume
-              departure={localDeparture}
-              destination={localDestination}
-              selectedDate={localDate}
-              selectedSchedule={selectedSchedule}
-              setCurrentStep={() => handleDeselectSchedule()}
-              selectedSeats={selectedSeats}
-              handleSeatClick={handleSeatClick}
-              onOpenPayment={() => setShowPayment(true)}
-            />
+            {/* Colonne droite: Sièges + Récap (sticky) */}
+            {selectedSchedule && (
+              <div id="seats-section" className="lg:col-span-3">
+                <div className="lg:sticky lg:top-6 space-y-4 md:space-y-5">
+                  <SeatsStep
+                    seats={seats}
+                    seatConfig={displayConfig}
+                    handleSeatClick={handleSeatClick}
+                    onBack={handleDeselectSchedule}
+                  />
+                  <Resume
+                    departure={localDeparture}
+                    destination={localDestination}
+                    selectedDate={localDate}
+                    selectedSchedule={selectedSchedule}
+                    setCurrentStep={handleDeselectSchedule}
+                    selectedSeats={selectedSeats}
+                    handleSeatClick={handleSeatClick}
+                    onOpenPayment={() => setShowPayment(true)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
