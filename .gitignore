@@ -9,6 +9,7 @@ yarn.lock
 .env.local
 .env.*.local
 .env.o2switch
+.env.production
 
 # Logs
 *.log
