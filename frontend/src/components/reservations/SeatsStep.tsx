@@ -1,7 +1,7 @@
 // frontend/src/components/reservations/SeatsStep.tsx
 // Rendu DIRECT depuis seatConfig — même logique exacte que l'éditeur admin
 
-import { User } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import type { SeatConfig } from "../../config/seatLayouts";
 import type { Seat, SeatStatus } from "../../type";
 
@@ -9,6 +9,7 @@ type Props = {
   seats: Seat[];
   seatConfig: SeatConfig;
   handleSeatClick: (seatId: number) => void;
+  onBack?: () => void;
 };
 
 type CellKind = "driver" | "seat" | "aisle" | "empty";
@@ -25,7 +26,7 @@ const SEAT_STYLE: Record<SeatStatus, string> = {
   occupied: "bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed",
 };
 
-export const SeatsStep = ({ seats, seatConfig, handleSeatClick }: Props) => {
+export const SeatsStep = ({ seats, seatConfig, handleSeatClick, onBack }: Props) => {
   const statusMap = new Map<number, SeatStatus>(
     seats.map((s) => [s.id, s.status]),
   );
@@ -84,9 +85,20 @@ export const SeatsStep = ({ seats, seatConfig, handleSeatClick }: Props) => {
               </p>
             )}
           </div>
-          <span className="text-xs text-gray-400">
-            {seatConfig.totalSeats} places · {available} disponibles
-          </span>
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft size={13} />
+                Changer d'horaire
+              </button>
+            )}
+            <span className="text-xs text-gray-400">
+              {seatConfig.totalSeats} places · {available} dispos
+            </span>
+          </div>
         </div>
 
         {/* Légende */}

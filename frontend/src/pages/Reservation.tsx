@@ -1,6 +1,5 @@
 // frontend/src/pages/Reservation.tsx
 import { useEffect, useState } from "react";
-import { Header } from "../components/reservations/Header";
 import { PaymentModal } from "../components/reservations/PaymentModal";
 import { Resume } from "../components/reservations/Resume";
 import { RouteStep } from "../components/reservations/RouteStep";
@@ -11,7 +10,7 @@ import type { Schedule } from "../api/scheduleApi";
 import { buildFallbackConfig, type SeatConfig } from "../config/seatLayouts";
 import { useSchedules } from "../hooks/useSchedules";
 import { useReservationTempStore } from "../stores/reservationStore";
-import type { Seat, Step } from "../type";
+import type { Seat } from "../type";
 
 const Reservation = () => {
   const {
@@ -27,9 +26,6 @@ const Reservation = () => {
     setSelectedSchedule: setStoreSchedule,
   } = useReservationTempStore();
 
-  const [currentStep, setCurrentStep] = useState<Step>(
-    departure && destination && storeSchedule ? "seats" : departure && destination ? "time" : "route",
-  );
   const [localDeparture, setLocalDeparture] = useState(departure);
   const [localDestination, setLocalDestination] = useState(destination);
   const [localDate, setLocalDate] = useState(
@@ -42,8 +38,11 @@ const Reservation = () => {
   const [seatConfig, setSeatConfig] = useState<SeatConfig | null>(null);
   const [showPayment, setShowPayment] = useState(false);
 
+  const showSchedules =
+    localDeparture && localDestination && localDeparture !== localDestination;
+
   const { schedules, isLoading: isLoadingSchedules } = useSchedules(
-    currentStep === "time"
+    showSchedules
       ? {
           departure: localDeparture,
           destination: localDestination,
@@ -56,24 +55,17 @@ const Reservation = () => {
     if (!selectedSchedule) return;
 
     const occupied = selectedSchedule.occupiedSeats || [];
-
-    // ── Récupérer le seatConfig — TOUJOURS présent dans l'objet schedule ──────
-    // Il vient directement de l'API, pas besoin de le chercher ailleurs
     const rawConfig = (selectedSchedule as any).seatConfig;
 
     let config: SeatConfig;
-
     if (rawConfig && rawConfig.rows && rawConfig.rows.length > 0) {
-      // ✅ seatConfig configuré par l'admin — utiliser tel quel
       config = rawConfig as SeatConfig;
     } else {
-      // ⚠️ Pas de seatConfig → fallback générique selon totalSeats
       config = buildFallbackConfig(selectedSchedule.totalSeats);
     }
 
     setSeatConfig(config);
 
-    // Construire la liste Seat[] depuis config.rows[].seats[]
     const allSeats: Seat[] = [];
     config.rows.forEach((row) => {
       row.seats.forEach((s) => {
@@ -120,32 +112,45 @@ const Reservation = () => {
     });
   };
 
+  const handleDeselectSchedule = () => {
+    setSelectedSchedule(null);
+    setStoreSchedule(null);
+    setScheduleId("");
+    setSeats([]);
+  };
+
   const displayConfig =
     seatConfig ?? buildFallbackConfig(selectedSchedule?.totalSeats ?? 16);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        <Header currentStep={currentStep} setCurrentStep={setCurrentStep} />
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
+        {/* Header */}
+        <div className="mb-2">
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-1">
+            Réservation de billet
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Choisissez votre trajet, puis votre horaire et vos sièges
+          </p>
+        </div>
 
-        {currentStep === "route" && (
-          <RouteStep
-            departure={localDeparture}
-            setDeparture={setLocalDeparture}
-            destination={localDestination}
-            setDestination={setLocalDestination}
-            selectedDate={localDate}
-            setSelectedDate={setLocalDate}
-            setCurrentStep={setCurrentStep}
-          />
-        )}
+        {/* 1. Formulaire trajet — toujours visible */}
+        <RouteStep
+          departure={localDeparture}
+          setDeparture={setLocalDeparture}
+          destination={localDestination}
+          setDestination={setLocalDestination}
+          selectedDate={localDate}
+          setSelectedDate={setLocalDate}
+        />
 
-        {currentStep === "time" && (
+        {/* 2. Horaires — affichés sous le formulaire */}
+        {showSchedules && (
           <TimeStep
             departure={localDeparture}
             destination={localDestination}
             selectedDate={localDate}
-            setCurrentStep={setCurrentStep}
             selectedSchedule={selectedSchedule as Schedule}
             setSelectedSchedule={handleSelectSchedule}
             schedules={schedules}
@@ -153,19 +158,21 @@ const Reservation = () => {
           />
         )}
 
-        {currentStep === "seats" && (
+        {/* 3. Sièges — affichés sous les horaires */}
+        {selectedSchedule && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <SeatsStep
               seats={seats}
               seatConfig={displayConfig}
               handleSeatClick={handleSeatClick}
+              onBack={handleDeselectSchedule}
             />
             <Resume
               departure={localDeparture}
               destination={localDestination}
               selectedDate={localDate}
-              selectedSchedule={selectedSchedule as Schedule}
-              setCurrentStep={setCurrentStep}
+              selectedSchedule={selectedSchedule}
+              setCurrentStep={() => handleDeselectSchedule()}
               selectedSeats={selectedSeats}
               handleSeatClick={handleSeatClick}
               onOpenPayment={() => setShowPayment(true)}
