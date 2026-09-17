@@ -137,15 +137,24 @@ export default function AdminSchedules() {
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
 
+  const todayKey = toLocalDateKey(today);
+  const nextWeekKey = toLocalDateKey(nextWeek);
+
   const schedules = schedulesRaw.filter((s) => {
-    const d = new Date(toLocalDateKey(new Date(s.date)).replace(/-/g, "/"));
-    d.setHours(0, 0, 0, 0);
+    const dk = toLocalDateKey(new Date(s.date));
     if (statusFilter !== "all" && s.status !== statusFilter) return false;
     if (routeFilter !== "all" && s.route.id !== routeFilter) return false;
-    if (dateFilter === "today" && d.toDateString() !== today.toDateString())
+    if (dateFilter === "today" && dk !== todayKey) return false;
+    if (dateFilter === "week" && (dk < todayKey || dk >= nextWeekKey)) return false;
+    if (dateFilter === "past" && dk >= todayKey) return false;
+    // Exclure les anciens completed/cancelled de la vue par défaut
+    if (
+      dateFilter === "all" &&
+      statusFilter === "all" &&
+      (s.status === "completed" || s.status === "cancelled") &&
+      dk < todayKey
+    )
       return false;
-    if (dateFilter === "week" && (d < today || d >= nextWeek)) return false;
-    if (dateFilter === "past" && d >= today) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -164,9 +173,7 @@ export default function AdminSchedules() {
 
   // Stats
   const todaySchedules = schedulesRaw.filter(
-    (s) =>
-      new Date(s.date + "T00:00:00").toDateString() ===
-      new Date().toDateString(),
+    (s) => toLocalDateKey(new Date(s.date)) === todayKey,
   );
   const totalSeatsToday = todaySchedules.reduce(
     (sum, s) => sum + s.totalSeats,
@@ -177,14 +184,14 @@ export default function AdminSchedules() {
     0,
   );
   const weekCount = schedulesRaw.filter((s) => {
-    const d = new Date(s.date + "T00:00:00");
-    return d >= today && d < nextWeek;
+    const dk = toLocalDateKey(new Date(s.date));
+    return dk >= todayKey && dk < nextWeekKey;
   }).length;
   const unassigned = schedulesRaw.filter(
     (s) =>
       !getDriverObj(s.driver) &&
       s.status === "scheduled" &&
-      new Date(s.date + "T00:00:00") >= today,
+      toLocalDateKey(new Date(s.date)) >= todayKey,
   ).length;
 
   const toggleSelect = (id: string) =>
