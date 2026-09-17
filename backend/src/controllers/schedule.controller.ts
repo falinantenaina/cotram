@@ -43,11 +43,22 @@ export const getSchedules = async (
     });
 
     const now = new Date();
+    // Heure actuelle en UTC+3 (Madagascar)
+    const nowUTC3 = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+    const todayKey = `${nowUTC3.getUTCFullYear()}-${String(nowUTC3.getUTCMonth() + 1).padStart(2, "0")}-${String(nowUTC3.getUTCDate()).padStart(2, "0")}`;
+    const currentMinutes = nowUTC3.getUTCHours() * 60 + nowUTC3.getUTCMinutes();
+
     schedules = schedules.filter((schedule: any) => {
       const [hours, minutes] = schedule.time.split(":").map(Number);
-      const departure = new Date(schedule.date);
-      departure.setHours(hours!, minutes!, 0, 0);
-      return departure > now;
+      const scheduleDate = new Date(schedule.date);
+      const scheduleKey = `${scheduleDate.getUTCFullYear()}-${String(scheduleDate.getUTCMonth() + 1).padStart(2, "0")}-${String(scheduleDate.getUTCDate()).padStart(2, "0")}`;
+
+      // Dates futures : toujours afficher
+      if (scheduleKey > todayKey) return true;
+      // Dates passées : ne jamais afficher
+      if (scheduleKey < todayKey) return false;
+      // Aujourd'hui : afficher seulement si l'heure de départ n'est pas passée
+      return hours! * 60 + minutes! > currentMinutes;
     });
 
     res.json({
