@@ -29,5 +29,6 @@ await build({
     "passport",
     "passport-google-oauth20",
     "pg",
+    "socket.io",
   ],
 });
