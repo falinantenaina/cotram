@@ -22,14 +22,12 @@ export function ParcelPanel({
   onEdit,
   onReceipt,
   onPay,
-  onStatusChange,
 }: {
   parcel: Parcel;
   onClose: () => void;
   onEdit: () => void;
   onReceipt: (p: Parcel) => void;
   onPay: (p: Parcel) => void;
-  onStatusChange: (p: Parcel, s: any) => void;
 }) {
   const st = STATUS_CONFIG[parcel.status];
   const pay = PAYMENT_CONFIG[parcel.paymentStatus];
@@ -249,7 +247,7 @@ export function ParcelPanel({
             </button>
           )}
           <button
-            onClick={() => onEdit(parcel)}
+            onClick={onEdit}
             className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm hover:bg-gray-50"
           >
             <Edit size={14} /> Modifier

@@ -1,10 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertCircle,
   Banknote,
-  CheckCircle2,
   ChevronDown,
-  ClipboardList,
   DollarSign,
   Edit,
   Filter,
@@ -15,7 +12,6 @@ import {
   Printer,
   RefreshCw,
   Search,
-  SearchCheck,
   Trash2,
   Truck,
   X,
@@ -644,7 +640,6 @@ export default function AdminParcels() {
             setPayTarget(p);
             setDetailParcel(null);
           }}
-          onStatusChange={(p, s) => handleStatusChange(p, s)}
         />
       )}
       {receiptParcel && (
