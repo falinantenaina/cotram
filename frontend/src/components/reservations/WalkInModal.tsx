@@ -135,8 +135,8 @@ interface Props {
   onClose: () => void;
 }
 
-const STEPS = ["search", "client", "seats"] as const;
-const STEP_LABELS = ["Voyage", "Client", "Sièges"];
+const STEPS = ["search", "seats", "client"] as const;
+const STEP_LABELS = ["Voyage", "Sièges", "Client"];
 
 export function WalkInModal({ onClose }: Props) {
   const queryClient = useQueryClient();
@@ -566,7 +566,7 @@ ${thinSep}
                 )}
               </div>
               <button
-                onClick={() => setStep("client")}
+                onClick={() => setStep("seats")}
                 disabled={!selectedScheduleId}
                 className="w-full py-3 bg-primary text-black font-bold rounded-xl disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-primary/90"
               >
@@ -575,8 +575,8 @@ ${thinSep}
             </div>
           )}
 
-          {/* Step 2: Client */}
-          {step === "client" && (
+          {/* Step 2: Seats */}
+          {step === "seats" && (
             <div className="space-y-4">
               {selectedSchedule && (
                 <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
@@ -601,71 +601,6 @@ ${thinSep}
                   </button>
                 </div>
               )}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Nom du client <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Jean Rakoto"
-                  className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Téléphone{" "}
-                  <span className="text-gray-400 normal-case font-normal">
-                    (optionnel)
-                  </span>
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="034 00 000 00"
-                  className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setStep("search")}
-                  className="flex-1 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50"
-                >
-                  Retour
-                </button>
-                <button
-                  onClick={() => setStep("seats")}
-                  disabled={!name.trim()}
-                  className="flex-1 py-3 bg-primary text-black font-bold rounded-xl disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-primary/90"
-                >
-                  Continuer
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Seats */}
-          {step === "seats" && (
-            <div className="space-y-4">
-              <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100 space-y-1.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Client</span>
-                  <span className="font-semibold">
-                    {name}
-                    {phone ? ` · ${phone}` : ""}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Trajet</span>
-                  <span className="font-semibold">
-                    {selectedSchedule?.route?.departure?.name} →{" "}
-                    {selectedSchedule?.route?.destination?.name}
-                  </span>
-                </div>
-              </div>
               <SeatMap
                 schedule={selectedSchedule}
                 selected={selectedSeats}
@@ -697,6 +632,71 @@ ${thinSep}
                   </span>
                 </div>
               )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setStep("search")}
+                  className="flex-1 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                >
+                  Retour
+                </button>
+                <button
+                  onClick={() => setStep("client")}
+                  disabled={selectedSeats.length === 0}
+                  className="flex-1 py-3 bg-primary text-black font-bold rounded-xl disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-primary/90"
+                >
+                  Continuer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Client */}
+          {step === "client" && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100 space-y-1.5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Trajet</span>
+                  <span className="font-semibold">
+                    {selectedSchedule?.route?.departure?.name} →{" "}
+                    {selectedSchedule?.route?.destination?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Sièges</span>
+                  <span className="font-semibold">
+                    {selectedSeats.join(", ")} ·{" "}
+                    {totalPrice.toLocaleString()} Ar
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Nom du client <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jean Rakoto"
+                  className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Téléphone{" "}
+                  <span className="text-gray-400 normal-case font-normal">
+                    (optionnel)
+                  </span>
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="034 00 000 00"
+                  className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
               {mutation.isError && (
                 <div className="flex gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                   <XCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
@@ -708,14 +708,14 @@ ${thinSep}
               )}
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => setStep("client")}
+                  onClick={() => setStep("seats")}
                   className="flex-1 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50"
                 >
                   Retour
                 </button>
                 <button
                   onClick={() => mutation.mutate()}
-                  disabled={selectedSeats.length === 0 || mutation.isPending}
+                  disabled={!name.trim() || mutation.isPending}
                   className="flex-1 py-3 bg-primary text-black font-bold rounded-xl disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-primary/90 flex items-center justify-center gap-2"
                 >
                   {mutation.isPending ? (
