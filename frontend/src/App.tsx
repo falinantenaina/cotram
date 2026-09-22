@@ -19,6 +19,7 @@ const SeatTemplates = lazy(() => import("./pages/admin/SeatTemplates"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const GenerateSchedules = lazy(() => import("./pages/admin/GenerateSchedules"));
 const TripHistory = lazy(() => import("./pages/admin/TripHistory"));
+const AdminParcels = lazy(() => import("./pages/admin/Parcels"));
 
 // Lazy-loaded Driver pages
 const DriverDashboard = lazy(() => import("./pages/driver/Dashboard"));
@@ -38,6 +39,7 @@ const MyReservations = lazy(() => import("./pages/MyReservations"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Reservation = lazy(() => import("./pages/Reservation"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Track = lazy(() => import("./pages/Track"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 
 const clientPrefetch = [
@@ -51,6 +53,7 @@ const clientPrefetch = [
   () => import("./pages/Profile"),
   () => import("./pages/Reservation"),
   () => import("./pages/ResetPassword"),
+  () => import("./pages/Track"),
   () => import("./pages/VerifyEmail"),
 ];
 
@@ -65,6 +68,7 @@ const adminPrefetch = [
   () => import("./pages/admin/Users"),
   () => import("./pages/admin/GenerateSchedules"),
   () => import("./pages/admin/TripHistory"),
+  () => import("./pages/admin/Parcels"),
 ];
 
 const driverPrefetch = [
@@ -155,6 +159,14 @@ const router = createBrowserRouter([
         element: (
           <LazyPage>
             <Contact />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "track",
+        element: (
+          <LazyPage>
+            <Track />
           </LazyPage>
         ),
       },
@@ -315,6 +327,14 @@ const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <AdminUsers />
+              </LazyPage>
+            ),
+          },
+          {
+            path: "parcels",
+            element: (
+              <LazyPage>
+                <AdminParcels />
               </LazyPage>
             ),
           },

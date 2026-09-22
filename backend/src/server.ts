@@ -26,6 +26,7 @@ import seatTemplateRoutes from "./routes/seatTemplate.route.js";
 import userRoutes from "./routes/user.route.js";
 import vehicleTemplateRoutes from "./routes/vehicleTemplate.route.js";
 import driverRouter from "./routes/driver.route.js";
+import parcelRoutes from "./routes/parcel.route.js";
 import { startScheduleAutoStatusJob } from "./jobs/scheduleAutoStatus.js";
 
 import { limiter, sanitizeInput } from "./middleware/security.middleware.js";
@@ -135,6 +136,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/vehicle-templates", vehicleTemplateRoutes);
 app.use("/api/seat-templates", seatTemplateRoutes);
 app.use("/api/drivers", driverRouter);
+app.use("/api/parcels", parcelRoutes);
 
 app.get("/health", async (req, res) => {
   try {

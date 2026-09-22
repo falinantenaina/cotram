@@ -10,6 +10,7 @@ enum UserRole {
   user
   admin
   driver
+  agent
 }
 
 enum DriverStatus {
@@ -45,6 +46,21 @@ enum PaymentStatus {
   refunded
 }
 
+enum ParcelStatus {
+  registered
+  in_transit
+  arrived
+  ready_for_pickup
+  delivered
+  returned
+}
+
+enum ParcelPaymentStatus {
+  unpaid
+  partial
+  paid
+}
+
 model City {
   id        String   @id @default(cuid())
   name      String   @unique
@@ -55,6 +71,9 @@ model City {
 
   routesDeparture Route[] @relation("DepartureCity")
   routesArrival   Route[] @relation("ArrivalCity")
+
+  parcelsDeparture Parcel[] @relation("ParcelDeparture")
+  parcelsArrival   Parcel[] @relation("ParcelArrival")
 
   @@map("cities")
 }
@@ -79,6 +98,7 @@ model User {
   reservations              Reservation[]
 
   driver                    Driver?
+  parcelsCreated            Parcel[]       @relation("ParcelCreator")
 
   @@map("users")
 }
@@ -151,6 +171,7 @@ model Schedule {
   occupiedSeats       OccupiedSeat[]
   reservations        Reservation[]
   history             ScheduleHistory[]
+  parcels             Parcel[]
 
   @@index([routeId, date, time])
   @@index([date, status])
@@ -236,4 +257,65 @@ model VehicleTemplate {
   updatedAt   DateTime    @updatedAt
 
   @@map("vehicle_templates")
+}
+
+model Parcel {
+  id                String              @id @default(cuid())
+  trackingCode      String              @unique
+  retrievalCode     String              @unique
+
+  parcelType        String
+  description       String?
+  note              String?
+  weightKg          Float?
+
+  departureCityId   String
+  arrivalCityId     String
+  scheduleId        String?
+
+  senderName        String
+  senderPhone       String
+  recipientName     String
+  recipientPhone    String
+
+  transportFee      Float
+  totalAmount       Float
+  paidAmount        Float               @default(0)
+
+  status            ParcelStatus        @default(registered)
+  paymentStatus     ParcelPaymentStatus @default(unpaid)
+
+  departureDate     DateTime
+  arrivalDate       DateTime?
+  storageFeePerDay  Int                 @default(1000)
+
+  createdById       String
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  departure         City                @relation("ParcelDeparture", fields: [departureCityId], references: [id])
+  arrival           City                @relation("ParcelArrival", fields: [arrivalCityId], references: [id])
+  schedule          Schedule?           @relation(fields: [scheduleId], references: [id])
+  createdBy         User                @relation("ParcelCreator", fields: [createdById], references: [id])
+  history           ParcelHistory[]
+
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([scheduleId])
+  @@map("parcels")
+}
+
+model ParcelHistory {
+  id          String   @id @default(cuid())
+  parcelId    String
+  status      ParcelStatus
+  note        String?
+  performedBy String?
+  createdAt   DateTime @default(now())
+
+  parcel      Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@map("parcel_history")
 }
