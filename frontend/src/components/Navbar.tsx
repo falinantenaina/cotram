@@ -128,7 +128,13 @@ export const Navbar = () => {
                       {user.name.split(" ")[0]}
                     </span>
                     <span className="text-white/40 text-[11px] leading-none mt-0.5">
-                      {user.role === "admin" ? "Administrateur" : "Voyageur"}
+                      {user.role === "admin"
+                        ? "Administrateur"
+                        : user.role === "caissier"
+                          ? "Caissier"
+                          : user.role === "agent"
+                            ? "Agent"
+                            : "Voyageur"}
                     </span>
                   </div>
                   <ChevronDown
@@ -164,7 +170,7 @@ export const Navbar = () => {
                         <Ticket size={15} />
                         Mes réservations
                       </Link>
-                      {user.role === "admin" && (
+                      {(user.role === "admin" || user.role === "caissier" || user.role === "agent") && (
                         <Link
                           to="/admin"
                           onClick={() => setDropdownOpen(false)}
@@ -263,7 +269,7 @@ export const Navbar = () => {
                   <p className="text-white/40 text-xs">{user.email}</p>
                 </div>
               </div>
-              {user.role === "admin" && (
+              {(user.role === "admin" || user.role === "caissier" || user.role === "agent") && (
                 <Link
                   to="/admin"
                   className="flex items-center gap-3 px-4 py-3 text-primary/80 hover:bg-primary/10 rounded-xl text-sm transition-colors"

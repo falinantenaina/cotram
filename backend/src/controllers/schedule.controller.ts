@@ -3,6 +3,7 @@ import prisma from "../lib/prisma.js";
 import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
 import { withOccupiedSeats } from "../utils/serialization.utils.js";
 import { logError } from "../lib/logger.js";
+import { emitToStaff } from "../lib/socket.js";
 
 export const getSchedules = async (
   req: Request,
@@ -136,6 +137,7 @@ export const createSchedule = async (
         occupiedSeats: true,
       },
     });
+    emitToStaff("schedule:updated", { id: schedule.id, action: "created" });
     res.status(201).json({
       success: true,
       schedule: withOccupiedSeats(populatedSchedule),
@@ -178,6 +180,7 @@ export const updateSchedule = async (
         occupiedSeats: true,
       },
     });
+    emitToStaff("schedule:updated", { id: schedule.id, action: "updated" });
     res.json({ success: true, schedule: withOccupiedSeats(populated) });
   } catch (error: any) {
     if (error.code === "P2025") {
@@ -194,9 +197,11 @@ export const deleteSchedule = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const scheduleId = String(req.params.id);
     await prisma.schedule.delete({
-      where: { id: String(req.params.id) },
+      where: { id: scheduleId },
     });
+    emitToStaff("schedule:updated", { id: scheduleId, action: "deleted" });
     res.json({ success: true, message: "Horaire supprimé" });
   } catch (error: any) {
     if (error.code === "P2025") {

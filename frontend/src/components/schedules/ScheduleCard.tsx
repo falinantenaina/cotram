@@ -98,12 +98,12 @@ export function getDriverObj(
 
 interface Props {
   schedule: Schedule;
-  selected: boolean;
-  onSelect: (id: string) => void;
-  onEdit: (s: Schedule) => void;
-  onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: string) => void;
-  onAssignDriver: (s: Schedule) => void;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+  onEdit?: (s: Schedule) => void;
+  onDelete?: (id: string) => void;
+  onStatusChange?: (id: string, status: string) => void;
+  onAssignDriver?: (s: Schedule) => void;
   onViewPassengers: (s: Schedule) => void;
 }
 
@@ -160,12 +160,14 @@ export function ScheduleCard({
 
       <div className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3.5 pl-5 sm:pl-6 flex-wrap sm:flex-nowrap">
         {/* Checkbox */}
-        <button
-          onClick={() => onSelect(schedule.id)}
-          className={`size-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "border-primary bg-primary" : "border-gray-300 hover:border-primary/50"}`}
-        >
-          {selected && <Check size={11} className="text-black" />}
-        </button>
+        {onSelect && (
+          <button
+            onClick={() => onSelect(schedule.id)}
+            className={`size-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "border-primary bg-primary" : "border-gray-300 hover:border-primary/50"}`}
+          >
+            {selected && <Check size={11} className="text-black" />}
+          </button>
+        )}
 
         {/* Time + date */}
         <div className="w-16 sm:w-20 shrink-0">
@@ -212,10 +214,10 @@ export function ScheduleCard({
           {(() => {
             const d = getDriverObj(schedule.driver);
             return d ? (
-              <button
-                onClick={() => onAssignDriver(schedule)}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full text-left"
-              >
+                <button
+                  onClick={() => onAssignDriver?.(schedule)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full text-left"
+                >
                 <div
                   className={`size-7 rounded-lg bg-gradient-to-br ${hashColor(AVATAR_COLORS, d.id)} flex items-center justify-center text-white text-[10px] font-black shrink-0`}
                 >
@@ -231,13 +233,15 @@ export function ScheduleCard({
                   </p>
                 </div>
               </button>
-            ) : (
+            ) : onAssignDriver ? (
               <button
                 onClick={() => onAssignDriver(schedule)}
                 className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary border border-dashed border-gray-200 hover:border-primary/40 hover:bg-primary/5 rounded-xl px-2.5 py-1.5 transition-all w-full justify-center"
               >
                 <User size={11} /> Assigner
               </button>
+            ) : (
+              <span className="text-xs text-gray-400 text-center block">—</span>
             );
           })()}
         </div>
@@ -276,24 +280,28 @@ export function ScheduleCard({
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl border border-gray-100 shadow-xl z-20 overflow-hidden">
               <div className="p-1">
-                <MenuBtn
-                  icon={Edit3}
-                  label="Modifier"
-                  onClick={() => {
-                    onEdit(schedule);
-                    setMenuOpen(false);
-                  }}
-                />
-                <MenuBtn
-                  icon={User}
-                  label={
-                    schedule.driver ? "Changer chauffeur" : "Assigner chauffeur"
-                  }
-                  onClick={() => {
-                    onAssignDriver(schedule);
-                    setMenuOpen(false);
-                  }}
-                />
+                {onEdit && (
+                  <MenuBtn
+                    icon={Edit3}
+                    label="Modifier"
+                    onClick={() => {
+                      onEdit(schedule);
+                      setMenuOpen(false);
+                    }}
+                  />
+                )}
+                {onAssignDriver && (
+                  <MenuBtn
+                    icon={User}
+                    label={
+                      schedule.driver ? "Changer chauffeur" : "Assigner chauffeur"
+                    }
+                    onClick={() => {
+                      onAssignDriver(schedule);
+                      setMenuOpen(false);
+                    }}
+                  />
+                )}
                 <MenuBtn
                   icon={Users}
                   label="Voir les passagers"
@@ -302,7 +310,7 @@ export function ScheduleCard({
                     setMenuOpen(false);
                   }}
                 />
-                {schedule.status === "scheduled" && (
+                {onStatusChange && schedule.status === "scheduled" && (
                   <>
                     <MenuBtn
                       icon={Zap}
@@ -326,7 +334,7 @@ export function ScheduleCard({
                     />
                   </>
                 )}
-                {schedule.status === "in_progress" && (
+                {onStatusChange && schedule.status === "in_progress" && (
                   <MenuBtn
                     icon={Check}
                     label="Marquer terminé"
@@ -338,7 +346,7 @@ export function ScheduleCard({
                     }}
                   />
                 )}
-                {schedule.status === "cancelled" && (
+                {onStatusChange && schedule.status === "cancelled" && (
                   <MenuBtn
                     icon={Check}
                     label="Réactiver"
@@ -351,18 +359,20 @@ export function ScheduleCard({
                   />
                 )}
               </div>
-              <div className="border-t border-gray-100 p-1">
-                <MenuBtn
-                  icon={Trash2}
-                  label="Supprimer"
-                  color="text-red-500"
-                  hoverBg="hover:bg-red-50"
-                  onClick={() => {
-                    onDelete(schedule.id);
-                    setMenuOpen(false);
-                  }}
-                />
-              </div>
+              {onDelete && (
+                <div className="border-t border-gray-100 p-1">
+                  <MenuBtn
+                    icon={Trash2}
+                    label="Supprimer"
+                    color="text-red-500"
+                    hoverBg="hover:bg-red-50"
+                    onClick={() => {
+                      onDelete(schedule.id);
+                      setMenuOpen(false);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

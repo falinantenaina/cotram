@@ -12,7 +12,9 @@ import passport from "passport";
 import compression from "compression";
 import * as helmetPkg from "helmet";
 import path from "path";
+import http from "http";
 import { logError, logInfo } from "./lib/logger.js";
+import { initSocket } from "./lib/socket.js";
 
 import "./config/passport.js";
 import adminRoutes from "./routes/admin.route.js";
@@ -202,7 +204,9 @@ process.on("SIGINT", () => {
 
 (async () => {
   await connectDB();
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  initSocket(server);
+  server.listen(PORT, () => {
     logInfo(`Server running on port ${PORT}`);
     cronInterval = startScheduleAutoStatusJob();
   });

@@ -34,6 +34,7 @@ import {
   type Schedule,
 } from "../../components/schedules/ScheduleCard";
 import { ScheduleModal } from "../../components/schedules/ScheduleModal";
+import { useAuth } from "../../hooks/useAuth";
 import api from "../../lib/axios";
 
 interface Route {
@@ -62,6 +63,8 @@ function toLocalDateKey(date: Date): string {
 
 export default function AdminSchedules() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canEdit = user?.role === "admin";
   const [view, setView] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -226,18 +229,22 @@ export default function AdminSchedules() {
             >
               <History size={15} /> Historique
             </Link>
-            <Link
-              to="/admin/schedules/generate"
-              className="flex items-center gap-2 border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 font-bold px-3 py-2.5 rounded-xl text-sm"
-            >
-              <Zap size={15} /> Génération auto
-            </Link>
-            <button
-              onClick={() => setModalSchedule("new")}
-              className="flex items-center gap-2 bg-primary text-black font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-primary/90"
-            >
-              <Plus size={15} /> Nouvel voyage
-            </button>
+            {canEdit && (
+              <>
+                <Link
+                  to="/admin/schedules/generate"
+                  className="flex items-center gap-2 border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 font-bold px-3 py-2.5 rounded-xl text-sm"
+                >
+                  <Zap size={15} /> Génération auto
+                </Link>
+                <button
+                  onClick={() => setModalSchedule("new")}
+                  className="flex items-center gap-2 bg-primary text-black font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-primary/90"
+                >
+                  <Plus size={15} /> Nouvel voyage
+                </button>
+              </>
+            )}
           </>
         }
       />
@@ -425,7 +432,7 @@ export default function AdminSchedules() {
         )}
 
         {/* Bulk actions */}
-        {selectedIds.size > 0 && (
+        {canEdit && selectedIds.size > 0 && (
           <div className="flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl">
             <span className="text-sm font-semibold">
               {selectedIds.size} sélectionné{selectedIds.size > 1 ? "s" : ""}
@@ -455,20 +462,22 @@ export default function AdminSchedules() {
             title="Aucun horaire trouvé"
             description="Créez un horaire ou utilisez la génération automatique"
             action={
-              <div className="flex gap-3">
-                <Link
-                  to="/admin/schedules/generate"
-                  className="flex items-center gap-2 bg-primary text-black font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-primary/90"
-                >
-                  <Sparkles size={15} /> Génération auto
-                </Link>
-                <button
-                  onClick={() => setModalSchedule("new")}
-                  className="flex items-center gap-2 border border-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-gray-50"
-                >
-                  <Plus size={15} /> Créer manuellement
-                </button>
-              </div>
+              canEdit ? (
+                <div className="flex gap-3">
+                  <Link
+                    to="/admin/schedules/generate"
+                    className="flex items-center gap-2 bg-primary text-black font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-primary/90"
+                  >
+                    <Sparkles size={15} /> Génération auto
+                  </Link>
+                  <button
+                    onClick={() => setModalSchedule("new")}
+                    className="flex items-center gap-2 border border-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-gray-50"
+                  >
+                    <Plus size={15} /> Créer manuellement
+                  </button>
+                </div>
+              ) : undefined
             }
           />
         ) : view === "calendar" ? (
@@ -479,22 +488,24 @@ export default function AdminSchedules() {
         ) : (
           <div className="space-y-2">
             {/* Select all bar */}
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-2">
-              <button
-                onClick={toggleSelectAll}
-                className={`size-5 rounded border-2 flex items-center justify-center shrink-0 ${selectedIds.size === schedules.length && schedules.length > 0 ? "border-primary bg-primary" : "border-gray-300"}`}
-              >
-                {selectedIds.size === schedules.length &&
-                  schedules.length > 0 && (
-                    <Check size={11} className="text-black" />
-                  )}
-              </button>
-              <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-                {selectedIds.size > 0
-                  ? `${selectedIds.size} sélectionné${selectedIds.size > 1 ? "s" : ""}`
-                  : `${schedules.length} horaire${schedules.length > 1 ? "s" : ""}`}
-              </span>
-            </div>
+            {canEdit && (
+              <div className="flex items-center gap-3 px-4 sm:px-5 py-2">
+                <button
+                  onClick={toggleSelectAll}
+                  className={`size-5 rounded border-2 flex items-center justify-center shrink-0 ${selectedIds.size === schedules.length && schedules.length > 0 ? "border-primary bg-primary" : "border-gray-300"}`}
+                >
+                  {selectedIds.size === schedules.length &&
+                    schedules.length > 0 && (
+                      <Check size={11} className="text-black" />
+                    )}
+                </button>
+                <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                  {selectedIds.size > 0
+                    ? `${selectedIds.size} sélectionné${selectedIds.size > 1 ? "s" : ""}`
+                    : `${schedules.length} horaire${schedules.length > 1 ? "s" : ""}`}
+                </span>
+              </div>
+            )}
 
             {/* Grouped by date */}
             {(() => {
@@ -549,13 +560,22 @@ export default function AdminSchedules() {
                               key={s.id}
                               schedule={s}
                               selected={selectedIds.has(s.id)}
-                              onSelect={toggleSelect}
-                              onEdit={() => setModalSchedule(s)}
-                              onDelete={(id) => setDeleteTarget(id)}
-                              onStatusChange={(id, status) =>
-                                statusMutation.mutate({ id, status })
+                              onSelect={canEdit ? toggleSelect : undefined}
+                              onEdit={
+                                canEdit ? () => setModalSchedule(s) : undefined
                               }
-                              onAssignDriver={(sc) => setAssignTarget(sc)}
+                              onDelete={
+                                canEdit ? (id) => setDeleteTarget(id) : undefined
+                              }
+                              onStatusChange={
+                                canEdit
+                                  ? (id, status) =>
+                                      statusMutation.mutate({ id, status })
+                                  : undefined
+                              }
+                              onAssignDriver={
+                                canEdit ? (sc) => setAssignTarget(sc) : undefined
+                              }
                               onViewPassengers={(sc) => setPassengerTarget(sc)}
                             />
                           ))}
@@ -569,7 +589,7 @@ export default function AdminSchedules() {
       </div>
 
       {/* Modals */}
-      {modalSchedule !== null && (
+      {canEdit && modalSchedule !== null && (
         <ScheduleModal
           schedule={modalSchedule === "new" ? null : modalSchedule}
           routes={routes}
@@ -580,7 +600,7 @@ export default function AdminSchedules() {
           }
         />
       )}
-      {assignTarget !== null && (
+      {canEdit && assignTarget !== null && (
         <AssignDriverModal
           scheduleId={assignTarget.id}
           currentDriver={getDriverObj(assignTarget.driver) as any}
@@ -596,7 +616,7 @@ export default function AdminSchedules() {
           onClose={() => setPassengerTarget(null)}
         />
       )}
-      {deleteTarget !== null && (
+      {canEdit && deleteTarget !== null && (
         <ConfirmDeleteModal
           title={`Supprimer ${deleteTarget === "bulk" ? selectedIds.size : 1} horaire${(deleteTarget === "bulk" ? selectedIds.size : 1) > 1 ? "s" : ""} ?`}
           description="Cette action est irréversible."

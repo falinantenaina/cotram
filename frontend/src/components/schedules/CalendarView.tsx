@@ -27,7 +27,7 @@ function toLocalDateKey(date: Date): string {
 
 interface Props {
   schedules: Schedule[];
-  onEdit: (s: Schedule) => void;
+  onEdit?: (s: Schedule) => void;
 }
 
 export function CalendarView({ schedules, onEdit }: Props) {
@@ -130,7 +130,7 @@ export function CalendarView({ schedules, onEdit }: Props) {
                       return (
                         <button
                           key={s.id}
-                          onClick={() => onEdit(s)}
+                          onClick={() => onEdit?.(s)}
                           className={`w-full text-left text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border hover:scale-[1.02] transition-all ${cfg.badge}`}
                         >
                           <span

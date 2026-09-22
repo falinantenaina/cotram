@@ -23,7 +23,7 @@ import {
 const router = express.Router();
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
-router.get("/stats", protect, authorize("admin"), async (req, res) => {
+router.get("/stats", protect, authorize("admin", "caissier"), async (req, res) => {
   try {
     const stats = await getDashboardStats();
     res.json({ success: true, ...stats });
@@ -37,7 +37,7 @@ router.get("/stats", protect, authorize("admin"), async (req, res) => {
 router.get(
   "/today-schedules",
   protect,
-  authorize("admin"),
+  authorize("admin", "caissier"),
   async (req, res) => {
     try {
       const schedules = await getTodaySchedulesWithPassengers();
@@ -55,7 +55,7 @@ router.get(
 router.get(
   "/schedules/:scheduleId/passengers",
   protect,
-  authorize("admin"),
+  authorize("admin", "caissier"),
   async (req, res) => {
     try {
       const schedule = await prisma.schedule.findUnique({
@@ -124,7 +124,7 @@ router.get(
 router.get(
   "/recent-reservations",
   protect,
-  authorize("admin"),
+  authorize("admin", "caissier"),
   async (req, res) => {
     try {
       const reservations = await prisma.reservation.findMany({
@@ -153,7 +153,7 @@ router.get(
 router.post(
   "/reservations/walk-in",
   protect,
-  authorize("admin"),
+  authorize("admin", "caissier"),
   async (req, res) => {
     try {
       const { name, phone, scheduleId, seats } = req.body;
@@ -211,7 +211,7 @@ router.post(
 );
 
 // ─── Get all reservations (admin) ─────────────────────────────────────────────
-router.get("/reservations", protect, authorize("admin"), async (req, res) => {
+router.get("/reservations", protect, authorize("admin", "caissier"), async (req, res) => {
   try {
     const { status } = req.query;
       const where: Prisma.ReservationWhereInput = {};
@@ -239,7 +239,7 @@ router.get("/reservations", protect, authorize("admin"), async (req, res) => {
 });
 
 // ─── GET all schedules (main list) ───────────────────────────────────────────
-router.get("/schedules", protect, authorize("admin"), async (req, res) => {
+router.get("/schedules", protect, authorize("admin", "caissier"), async (req, res) => {
   try {
     const { includeHistory, routeId, status } = req.query;
 
@@ -292,7 +292,7 @@ router.get("/schedules", protect, authorize("admin"), async (req, res) => {
 router.get(
   "/schedules/history",
   protect,
-  authorize("admin"),
+  authorize("admin", "caissier"),
   async (req, res) => {
     try {
       const {

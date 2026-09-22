@@ -40,51 +40,87 @@ const AdminLayout = () => {
 
   if (!user) return null;
 
-  const menuItems = [
+  const isAgent = user.role === "agent";
+  const isCaissier = user.role === "caissier";
+
+  const allMenuItems = [
     {
       path: "/admin",
       icon: <LayoutDashboard size={18} />,
       label: "Dashboard",
       exact: true,
+      roles: ["admin", "caissier"] as string[],
     },
     {
       path: "/admin/reservations",
       icon: <Ticket size={18} />,
       label: "Réservations",
+      roles: ["admin", "caissier"] as string[],
     },
     {
       path: "/admin/schedules",
       icon: <Calendar size={18} />,
       label: "Voyages",
+      roles: ["admin", "caissier"] as string[],
     },
-
     {
       path: "/admin/schedules/generate",
       icon: <Zap size={18} />,
       label: "Génération auto",
       sub: true,
+      roles: ["admin"] as string[],
     },
     {
       path: "/admin/seattemplate",
       icon: <Car size={18} />,
       label: "Disposition chaises",
+      roles: ["admin"] as string[],
     },
-    { path: "/admin/routes", icon: <MapPin size={18} />, label: "Routes" },
-    { path: "/admin/cities", icon: <MapPin size={18} />, label: "Villes" },
-    { path: "/admin/parcels", icon: <Package size={18} />, label: "Colis" },
-    { path: "/admin/users", icon: <Users size={18} />, label: "Utilisateurs" },
-    { path: "/admin/drivers", label: "Chauffeurs", icon: <User2 size={18} /> },
+    {
+      path: "/admin/routes",
+      icon: <MapPin size={18} />,
+      label: "Routes",
+      roles: ["admin"] as string[],
+    },
+    {
+      path: "/admin/cities",
+      icon: <MapPin size={18} />,
+      label: "Villes",
+      roles: ["admin"] as string[],
+    },
+    {
+      path: "/admin/parcels",
+      icon: <Package size={18} />,
+      label: "Colis",
+      roles: ["admin", "agent"] as string[],
+    },
+    {
+      path: "/admin/users",
+      icon: <Users size={18} />,
+      label: "Utilisateurs",
+      roles: ["admin"] as string[],
+    },
+    {
+      path: "/admin/drivers",
+      label: "Chauffeurs",
+      icon: <User2 size={18} />,
+      roles: ["admin"] as string[],
+    },
     {
       path: "/admin/trips/history",
       label: "Historique voyages",
       icon: <History size={18} />,
+      roles: ["admin", "caissier"] as string[],
     },
     {
       path: "/admin/finance",
       label: "Finance",
       icon: <DollarSign size={18} />,
+      roles: ["admin"] as string[],
     },
   ];
+
+  const menuItems = allMenuItems.filter((item) => item.roles.includes(user.role));
 
   const isActive = (path: string, exact?: boolean) => {
     if (exact) return location.pathname === path;
@@ -110,7 +146,7 @@ const AdminLayout = () => {
               Cotram
             </span>
             <span className="block text-primary/70 text-[10px] font-bold uppercase tracking-wider">
-              Admin
+              {isAgent ? "Colis" : isCaissier ? "Guichet" : "Admin"}
             </span>
           </div>
         </Link>

@@ -58,8 +58,8 @@ router.get("/me/stats", protect, authorize("driver"), async (req, res) => {
   }
 });
 
-// ─── GET all drivers (admin) ─────────────────────────────────────────────────
-router.get("/", protect, authorize("admin"), async (req, res) => {
+// ─── GET all drivers (admin + caissier) ──────────────────────────────────────
+router.get("/", protect, authorize("admin", "caissier"), async (req, res) => {
   try {
     const { status, search } = req.query;
     const drivers = await driverService.listDrivers({

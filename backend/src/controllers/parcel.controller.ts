@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { logError } from "../lib/logger.js";
+import { emitToStaff } from "../lib/socket.js";
 import type { AuthRequest } from "../types/index.js";
 import { generateTrackingCode, generateRetrievalCode } from "../utils/tracking.utils.js";
 
@@ -377,6 +378,12 @@ export const createParcel = async (req: Request, res: Response): Promise<void> =
       return created;
     });
 
+    emitToStaff("parcel:created", {
+      id: parcel.id,
+      trackingCode: parcel.trackingCode,
+      status: parcel.status,
+    });
+
     res.status(201).json({ success: true, parcel });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -455,6 +462,11 @@ export const updateParcel = async (req: Request, res: Response): Promise<void> =
       include: PARCEL_INCLUDE,
     });
 
+    emitToStaff("parcel:updated", {
+      id: parcel.id,
+      trackingCode: parcel.trackingCode,
+    });
+
     res.json({ success: true, parcel });
   } catch (error) {
     logError("PUT /parcels/:id", error);
@@ -522,6 +534,12 @@ export const updateParcelStatus = async (req: Request, res: Response): Promise<v
       return updated;
     });
 
+    emitToStaff("parcel:status", {
+      id: parcel.id,
+      trackingCode: parcel.trackingCode,
+      status: parcel.status,
+    });
+
     res.json({ success: true, parcel });
   } catch (error) {
     logError("PUT /parcels/:id/status", error);
@@ -576,6 +594,13 @@ export const recordPayment = async (req: Request, res: Response): Promise<void> 
       });
 
       return updated;
+    });
+
+    emitToStaff("parcel:payment", {
+      id: parcel.id,
+      trackingCode: parcel.trackingCode,
+      paidAmount: parcel.paidAmount,
+      paymentStatus: parcel.paymentStatus,
     });
 
     res.json({ success: true, parcel });

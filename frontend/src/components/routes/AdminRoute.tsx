@@ -16,7 +16,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
-  if (!user || user.role !== "admin") {
+  if (!user || !["admin", "caissier", "agent"].includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 

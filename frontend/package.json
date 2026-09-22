@@ -23,6 +23,7 @@
     "react-error-boundary": "^5.0.0",
     "react-router-dom": "^7.11.0",
     "recharts": "^3.10.1",
+    "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.1.18",
     "zustand": "^5.0.9"
   },

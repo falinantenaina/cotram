@@ -102,10 +102,24 @@ const Profile = () => {
                   className={`text-xs font-semibold px-2.5 py-1 rounded-full mt-1 inline-block ${
                     user.role === "admin"
                       ? "bg-purple-100 text-purple-700"
-                      : "bg-gray-100 text-gray-600"
+                      : user.role === "caissier"
+                        ? "bg-cyan-100 text-cyan-700"
+                        : user.role === "agent"
+                          ? "bg-orange-100 text-orange-700"
+                          : user.role === "driver"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-600"
                   }`}
                 >
-                  {user.role === "admin" ? "Administrateur" : "Voyageur"}
+                  {user.role === "admin"
+                    ? "Administrateur"
+                    : user.role === "caissier"
+                      ? "Caissier"
+                      : user.role === "agent"
+                        ? "Agent"
+                        : user.role === "driver"
+                          ? "Chauffeur"
+                          : "Voyageur"}
                 </span>
               </div>
             </div>
@@ -239,8 +253,14 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 mb-0.5">Rôle</p>
-                    <p className="font-semibold text-gray-900 text-sm capitalize">
-                      {user.role}
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {user.role === "caissier"
+                        ? "Caissier"
+                        : user.role === "agent"
+                          ? "Agent"
+                          : user.role === "driver"
+                            ? "Chauffeur"
+                            : user.role}
                     </p>
                   </div>
                 </div>

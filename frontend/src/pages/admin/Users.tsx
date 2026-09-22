@@ -14,7 +14,7 @@ interface User {
   name: string;
   email: string;
   phone?: string;
-  role: "user" | "admin" | "driver" | "agent";
+  role: "user" | "admin" | "driver" | "agent" | "caissier";
   isEmailVerified: boolean;
   createdAt: string;
 }
@@ -24,6 +24,7 @@ const ROLE_LABELS: Record<string, { label: string; cls: string }> = {
   driver: { label: "Chauffeur", cls: "bg-blue-100 text-blue-700" },
   admin: { label: "Admin", cls: "bg-purple-100 text-purple-700" },
   agent: { label: "Agent", cls: "bg-orange-100 text-orange-700" },
+  caissier: { label: "Caissier", cls: "bg-cyan-100 text-cyan-700" },
 };
 
 export default function AdminUsers() {
@@ -153,6 +154,7 @@ export default function AdminUsers() {
                             className="text-xs font-semibold border border-gray-200 rounded-lg py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
                           >
                             <option value="user">Utilisateur</option>
+                            <option value="caissier">Caissier</option>
                             <option value="driver">Chauffeur</option>
                             <option value="agent">Agent</option>
                             <option value="admin">Admin</option>
@@ -242,6 +244,7 @@ export default function AdminUsers() {
                         className="text-xs border border-gray-200 rounded-lg py-1 px-2 focus:outline-none bg-white"
                       >
                         <option value="user">Utilisateur</option>
+                        <option value="caissier">Caissier</option>
                         <option value="driver">Chauffeur</option>
                         <option value="agent">Agent</option>
                         <option value="admin">Admin</option>

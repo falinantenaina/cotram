@@ -6,7 +6,7 @@ export interface IUser {
   email: string;
   phone?: string | null;
   password?: string | null;
-  role: "user" | "admin" | "driver" | "agent";
+  role: "user" | "admin" | "driver" | "agent" | "caissier";
   googleId?: string | null;
   avatar?: string | null;
   isEmailVerified: boolean;

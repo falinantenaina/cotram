@@ -2,6 +2,7 @@ import express from "express";
 import * as scheduleController from "../controllers/schedule.controller.js";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import * as scheduleService from "../services/schedule.service.js";
+import { emitToStaff } from "../lib/socket.js";
 import type { AuthRequest } from "../types/index.js";
 
 const router = express.Router();
@@ -10,7 +11,7 @@ router.get("/", scheduleController.getSchedules);
 router.get(
   "/history",
   protect,
-  authorize("admin"),
+  authorize("admin", "caissier"),
   scheduleController.getScheduleHistory,
 );
 router.get("/:id", scheduleController.getSchedule);
@@ -53,6 +54,7 @@ router.put(
           res.status(result.status!).json({ success: false, message: result.message });
           return;
         }
+        emitToStaff("schedule:updated", { id: String(req.params.id), action: "driver" });
         res.json({ success: true, schedule: result.schedule });
       } else {
         const result = await scheduleService.unassignDriver(
@@ -63,6 +65,7 @@ router.put(
           res.status(result.status!).json({ success: false, message: result.message });
           return;
         }
+        emitToStaff("schedule:updated", { id: String(req.params.id), action: "driver" });
         res.json({ success: true, schedule: result.schedule });
       }
     } catch (err) {

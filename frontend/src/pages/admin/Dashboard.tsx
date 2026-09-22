@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { DashboardStats } from "../../components/dashboard/DashboardStats";
 import { RecentReservations } from "../../components/dashboard/RecentReservations";
 import {
@@ -6,10 +7,16 @@ import {
   type TodaySchedule,
 } from "../../components/dashboard/TodaySchedules";
 import { PassengerModal } from "../../components/schedules/PassengerModal";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [selectedSchedule, setSelectedSchedule] =
     useState<TodaySchedule | null>(null);
+
+  if (user?.role === "agent") {
+    return <Navigate to="/admin/parcels" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { sendReservationConfirmation } from "../config/email.js";
 import prisma from "../lib/prisma.js";
+import { emitToStaff } from "../lib/socket.js";
 import type { AuthRequest } from "../types/index.js";
 
 function flattenSeats(reservation: any) {
@@ -153,6 +154,11 @@ export const cancelReservation = async (
       }),
     ]);
 
+    emitToStaff("reservation:cancelled", {
+      id: reservation.id,
+      scheduleId: reservation.scheduleId,
+    });
+
     res.json({
       success: true,
       message: "Réservation annulée avec succès",
@@ -264,6 +270,13 @@ export const createReservation = async (
       },
     });
 
+    emitToStaff("reservation:created", {
+      id: reservation.id,
+      scheduleId,
+      seats,
+      totalPrice: populatedReservation?.totalPrice,
+    });
+
     res.status(201).json({ success: true, reservation: flattenSeats(populatedReservation) });
   } catch (error) {
     if (error instanceof Error) {
@@ -331,6 +344,12 @@ export const confirmReservation = async (
         paymentStatus: "paid",
         expiresAt: null,
       },
+    });
+
+    emitToStaff("reservation:updated", {
+      id: reservation.id,
+      status: "confirmed",
+      paymentStatus: "paid",
     });
 
     try {
