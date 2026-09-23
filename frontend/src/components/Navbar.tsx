@@ -1,6 +1,7 @@
 import {
   Calendar,
   ChevronDown,
+  CreditCard,
   Home,
   LayoutDashboard,
   LogIn,
@@ -171,6 +172,14 @@ export const Navbar = () => {
                       >
                         <Ticket size={15} />
                         Mes réservations
+                      </Link>
+                      <Link
+                        to="/payment-history"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-sm transition-colors"
+                      >
+                        <CreditCard size={15} />
+                        Historique paiements
                       </Link>
                       {(user.role === "admin" || user.role === "caissier" || user.role === "agent") && (
                         <Link

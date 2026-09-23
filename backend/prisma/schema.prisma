@@ -103,6 +103,7 @@ model User {
   updatedAt                 DateTime  @updatedAt
 
   reservations              Reservation[]
+  payments                  Payment[]
 
   driver                    Driver?
   parcelsCreated            Parcel[]       @relation("ParcelCreator")
@@ -179,6 +180,7 @@ model Schedule {
   reservations        Reservation[]
   history             ScheduleHistory[]
   parcels             Parcel[]
+  payments            Payment[]
 
   @@index([routeId, date, time])
   @@index([date, status])
@@ -252,10 +254,13 @@ model Payment {
   updatedAt           DateTime          @updatedAt
 
   reservation         Reservation?      @relation(fields: [reservationId], references: [id])
+  user                User              @relation(fields: [userId], references: [id])
+  schedule            Schedule          @relation(fields: [scheduleId], references: [id])
 
   @@index([status])
   @@index([userId])
   @@index([scheduleId])
+  @@index([method, status])
   @@map("payments")
 }
 

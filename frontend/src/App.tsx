@@ -20,6 +20,7 @@ const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const GenerateSchedules = lazy(() => import("./pages/admin/GenerateSchedules"));
 const TripHistory = lazy(() => import("./pages/admin/TripHistory"));
 const AdminParcels = lazy(() => import("./pages/admin/Parcels"));
+const AdminPayments = lazy(() => import("./pages/admin/Payments"));
 
 // Lazy-loaded Driver pages
 const DriverDashboard = lazy(() => import("./pages/driver/Dashboard"));
@@ -36,6 +37,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const GoogleAuthCallback = lazy(() => import("./pages/GoogleAuthCallback"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 const MyReservations = lazy(() => import("./pages/MyReservations"));
+const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Reservation = lazy(() => import("./pages/Reservation"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -50,6 +52,7 @@ const clientPrefetch = [
   () => import("./pages/GoogleAuthCallback"),
   () => import("./pages/HomePage"),
   () => import("./pages/MyReservations"),
+  () => import("./pages/PaymentHistory"),
   () => import("./pages/Profile"),
   () => import("./pages/Reservation"),
   () => import("./pages/ResetPassword"),
@@ -69,6 +72,7 @@ const adminPrefetch = [
   () => import("./pages/admin/GenerateSchedules"),
   () => import("./pages/admin/TripHistory"),
   () => import("./pages/admin/Parcels"),
+  () => import("./pages/admin/Payments"),
 ];
 
 const driverPrefetch = [
@@ -215,6 +219,16 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "payment-history",
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <PaymentHistory />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
         path: "reservation/:id/boarding-pass",
         element: (
           <LazyPage>
@@ -311,6 +325,14 @@ const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <TripHistory />
+              </LazyPage>
+            ),
+          },
+          {
+            path: "payments",
+            element: (
+              <LazyPage>
+                <AdminPayments />
               </LazyPage>
             ),
           },

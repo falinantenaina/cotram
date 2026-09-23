@@ -2,6 +2,7 @@ import {
   Bus,
   Calendar,
   Car,
+  CreditCard,
   DollarSign,
   History,
   LayoutDashboard,
@@ -110,6 +111,12 @@ const AdminLayout = () => {
       path: "/admin/trips/history",
       label: "Historique voyages",
       icon: <History size={18} />,
+      roles: ["admin", "caissier"] as string[],
+    },
+    {
+      path: "/admin/payments",
+      label: "Paiements",
+      icon: <CreditCard size={18} />,
       roles: ["admin", "caissier"] as string[],
     },
     {

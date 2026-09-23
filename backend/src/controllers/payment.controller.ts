@@ -1,8 +1,10 @@
 import type { Request, Response } from "express";
+import type { Prisma } from "@prisma/client";
 import { logError, logInfo } from "../lib/logger.js";
 import prisma from "../lib/prisma.js";
 import { emitToStaffAndDrivers, emitToUser } from "../lib/socket.js";
 import * as mvolaService from "../services/mvolaService.js";
+import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
 import type { AuthRequest } from "../types/index.js";
 
 const PHONE_REGEX = /^03\d{8}$/;
@@ -506,6 +508,215 @@ export const getPayment = async (
     res.json({ success: true, payment });
   } catch (err) {
     logError("PAYMENT_GET", err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+};
+
+//  GET /api/payments/history
+// User's own mobile-money payments (mvola + orange_money), all statuses incl. failed
+export const getMyPaymentHistory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { user } = req as AuthRequest;
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      method,
+      from,
+      to,
+    } = req.query;
+
+    const where: Prisma.PaymentWhereInput = {
+      userId: user.id,
+      method: { in: ["mvola", "orange_money"] },
+    };
+
+    if (status && status !== "all") {
+      where.status = status as "pending" | "completed" | "failed";
+    }
+    if (method && method !== "all") {
+      where.method = String(method);
+    }
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = parseLocalDate(String(from));
+      if (to) where.createdAt.lte = endOfLocalDay(parseLocalDate(String(to)));
+    }
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(Math.max(1, Number(limit) || 20), 100);
+
+    const [payments, total, stats] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        include: {
+          reservation: { select: { id: true, bookingReference: true } },
+          schedule: {
+            select: {
+              id: true,
+              date: true,
+              time: true,
+              route: {
+                select: {
+                  departure: { select: { name: true } },
+                  destination: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.payment.count({ where }),
+      prisma.payment.groupBy({
+        by: ["status"],
+        where: {
+          userId: user.id,
+          method: { in: ["mvola", "orange_money"] },
+        },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const statsByStatus = Object.fromEntries(
+      stats.map((s) => [
+        s.status,
+        { count: s._count._all, totalAmount: s._sum.amount ?? 0 },
+      ]),
+    );
+
+    res.json({
+      success: true,
+      payments,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      stats: {
+        completed: statsByStatus["completed"] ?? { count: 0, totalAmount: 0 },
+        failed: statsByStatus["failed"] ?? { count: 0, totalAmount: 0 },
+        pending: statsByStatus["pending"] ?? { count: 0, totalAmount: 0 },
+      },
+    });
+  } catch (err) {
+    logError("PAYMENT_HISTORY", err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+};
+
+//  GET /api/payments/admin/history
+// Admin + caissier: only SUCCESSFUL (completed) payments, with user/schedule info
+export const getAdminPaymentHistory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const {
+      page = 1,
+      limit = 25,
+      method,
+      search,
+      from,
+      to,
+    } = req.query;
+
+    const where: Prisma.PaymentWhereInput = {
+      status: "completed",
+      method: { in: ["mvola", "orange_money"] },
+    };
+
+    if (method && method !== "all") {
+      where.method = String(method);
+    }
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = parseLocalDate(String(from));
+      if (to) where.createdAt.lte = endOfLocalDay(parseLocalDate(String(to)));
+    }
+    if (search) {
+      const q = String(search).trim();
+      where.OR = [
+        { phone: { contains: q, mode: "insensitive" } },
+        { user: { name: { contains: q, mode: "insensitive" } } },
+        { user: { email: { contains: q, mode: "insensitive" } } },
+        { reservation: { bookingReference: { contains: q, mode: "insensitive" } } },
+      ];
+    }
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(Math.max(1, Number(limit) || 25), 100);
+
+    const [payments, total, methodAgg, globalAgg] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          reservation: { select: { id: true, bookingReference: true } },
+          schedule: {
+            select: {
+              id: true,
+              date: true,
+              time: true,
+              route: {
+                select: {
+                  departure: { select: { name: true } },
+                  destination: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.payment.count({ where }),
+      prisma.payment.groupBy({
+        by: ["method"],
+        where: {
+          status: "completed",
+          method: { in: ["mvola", "orange_money"] },
+        },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
+      prisma.payment.aggregate({
+        where: {
+          status: "completed",
+          method: { in: ["mvola", "orange_money"] },
+        },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const byMethod = Object.fromEntries(
+      methodAgg.map((m) => [
+        m.method,
+        { count: m._count._all, totalAmount: m._sum.amount ?? 0 },
+      ]),
+    );
+
+    res.json({
+      success: true,
+      payments,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      stats: {
+        totalPayments: globalAgg._count._all,
+        totalAmount: globalAgg._sum.amount ?? 0,
+        mvola: byMethod["mvola"] ?? { count: 0, totalAmount: 0 },
+        orangeMoney: byMethod["orange_money"] ?? { count: 0, totalAmount: 0 },
+      },
+    });
+  } catch (err) {
+    logError("PAYMENT_ADMIN_HISTORY", err);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };

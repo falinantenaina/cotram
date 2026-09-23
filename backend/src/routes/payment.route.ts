@@ -1,8 +1,19 @@
 import express from "express";
-import { protect } from "../middleware/auth.middleware.js";
+import { authorize, protect } from "../middleware/auth.middleware.js";
 import * as paymentController from "../controllers/payment.controller.js";
 
 const router = express.Router();
+
+// User's own payment history (mvola + orange_money, all statuses) — authenticated
+router.get("/history", protect, paymentController.getMyPaymentHistory);
+
+// Admin + caissier: successful payments only — must be before /:id
+router.get(
+  "/admin/history",
+  protect,
+  authorize("admin", "caissier"),
+  paymentController.getAdminPaymentHistory,
+);
 
 // Initiate a payment for a reservation (authenticated)
 router.post("/initiate", protect, paymentController.initiatePayment);
