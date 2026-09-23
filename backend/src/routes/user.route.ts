@@ -5,6 +5,7 @@ import { authorize, protect } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.get("/", protect, authorize("admin"), userController.getUsers);
+router.post("/", protect, authorize("admin"), userController.createUser);
 router.get("/:id", protect, userController.getUser);
 router.put("/:id", protect, userController.updateUser);
 router.delete("/:id", protect, authorize("admin"), userController.deleteUser);

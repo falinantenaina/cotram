@@ -1,11 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, ShieldCheck, Trash2, Users } from "lucide-react";
+import {
+  Loader,
+  Plus,
+  Shield,
+  ShieldCheck,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import {
   ConfirmDeleteModal,
   EmptyState,
+  ErrorAlert,
+  FormField,
   LoadingSpinner,
+  Modal,
   PageHeader,
+  inputClass,
 } from "../../components/common";
 import api from "../../lib/axios";
 
@@ -27,9 +38,28 @@ const ROLE_LABELS: Record<string, { label: string; cls: string }> = {
   caissier: { label: "Caissier", cls: "bg-cyan-100 text-cyan-700" },
 };
 
+const ROLE_OPTIONS = [
+  { value: "caissier", label: "Caissier" },
+  { value: "agent", label: "Agent colis" },
+  { value: "driver", label: "Chauffeur" },
+  { value: "admin", label: "Admin" },
+  { value: "user", label: "Utilisateur" },
+];
+
+const emptyForm = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  role: "caissier",
+};
+
 export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -44,6 +74,22 @@ export default function AdminUsers() {
       api.put(`/users/${id}`, { role }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (payload: typeof emptyForm) => api.post("/users", payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setShowCreate(false);
+      setForm(emptyForm);
+      setFormError(null);
+    },
+    onError: (err) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Impossible de créer le compte";
+      setFormError(message);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -63,6 +109,18 @@ export default function AdminUsers() {
       <PageHeader
         title="Utilisateurs"
         subtitle={`${totalUsers} compte${totalUsers !== 1 ? "s" : ""} enregistré${totalUsers !== 1 ? "s" : ""}`}
+        actions={
+          <button
+            onClick={() => {
+              setForm(emptyForm);
+              setFormError(null);
+              setShowCreate(true);
+            }}
+            className="flex items-center gap-2 bg-primary text-black font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-primary/90 transition-all"
+          >
+            <Plus size={15} /> Nouveau compte
+          </button>
+        }
       />
 
       <div className="p-4 sm:p-6 space-y-5">
@@ -257,6 +315,105 @@ export default function AdminUsers() {
           </>
         )}
       </div>
+
+      {showCreate && (
+        <Modal
+          title="Créer un compte staff"
+          subtitle="Admin · Utilisateurs"
+          onClose={() => setShowCreate(false)}
+          footer={
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCreate(false)}
+                className="flex-1 py-2.5 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 text-sm hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => createMutation.mutate(form)}
+                disabled={
+                  createMutation.isPending ||
+                  !form.name.trim() ||
+                  !form.email.trim() ||
+                  form.password.length < 6
+                }
+                className="flex-1 py-2.5 bg-primary text-black font-bold rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary/90"
+              >
+                {createMutation.isPending ? (
+                  <Loader size={14} className="animate-spin" />
+                ) : (
+                  <Plus size={14} />
+                )}
+                Créer
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            {formError && <ErrorAlert message={formError} />}
+
+            <FormField label="Rôle" required>
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className={inputClass}
+              >
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            <FormField label="Nom complet" required>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ex: Jean Rakoto"
+                className={inputClass}
+              />
+            </FormField>
+
+            <FormField label="Email" required>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="ex: jean@cotram.mg"
+                className={inputClass}
+              />
+            </FormField>
+
+            <FormField label="Téléphone">
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="Ex: 034 000 0000"
+                className={inputClass}
+              />
+            </FormField>
+
+            <FormField
+              label="Mot de passe"
+              required
+              hint="Minimum 6 caractères. Le compte sera créé vérifié."
+            >
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) =>
+                  setForm({ ...form, password: e.target.value })
+                }
+                placeholder="••••••"
+                className={inputClass}
+              />
+            </FormField>
+          </div>
+        </Modal>
+      )}
 
       {deleteId && (
         <ConfirmDeleteModal
