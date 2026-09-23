@@ -26,9 +26,7 @@ router.get("/me/profile", protect, authorize("driver"), async (req, res) => {
 router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
   try {
     const { user } = req as AuthRequest;
-    const driver = await prisma.driver.findUnique({
-      where: { userId: user.id },
-    });
+    const driver = await driverService.getDriverProfile(user.id);
     if (!driver) {
       res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
       return;
@@ -45,13 +43,156 @@ router.get("/me/trips", protect, authorize("driver"), async (req, res) => {
 router.get("/me/stats", protect, authorize("driver"), async (req, res) => {
   try {
     const { user } = req as AuthRequest;
-    const driver = await prisma.driver.findUnique({ where: { userId: user.id } });
+    const driver = await driverService.getDriverProfile(user.id);
     if (!driver) {
       res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
       return;
     }
     const stats = await driverService.getDriverSelfStats(driver.id);
     res.json({ success: true, stats });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+});
+
+router.get(
+  "/me/schedules/:scheduleId/passengers",
+  protect,
+  authorize("driver"),
+  async (req, res) => {
+    try {
+      const { user } = req as AuthRequest;
+      const driver = await driverService.getDriverProfile(user.id);
+      if (!driver) {
+        res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
+        return;
+      }
+
+      const scheduleId = String(req.params.scheduleId);
+      const schedule = await prisma.schedule.findUnique({
+        where: { id: scheduleId },
+        include: { route: true },
+      });
+      if (!schedule) {
+        res.status(404).json({ success: false, message: "Horaire non trouvé" });
+        return;
+      }
+      if (schedule.driverId !== driver.id) {
+        res.status(403).json({
+          success: false,
+          message: "Ce voyage ne vous est pas assigné",
+        });
+        return;
+      }
+
+      const reservations = await prisma.reservation.findMany({
+        where: {
+          scheduleId,
+          status: { in: ["confirmed", "pending"] },
+        },
+        include: {
+          user: { select: { name: true, email: true, phone: true } },
+          seats: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const totalPassengers = reservations.reduce(
+        (sum, r) => sum + r.seats.length,
+        0,
+      );
+      const confirmedSeats = reservations
+        .filter((r) => r.status === "confirmed")
+        .reduce((sum, r) => sum + r.seats.length, 0);
+      const pendingSeats = reservations
+        .filter((r) => r.status === "pending")
+        .reduce((sum, r) => sum + r.seats.length, 0);
+      const revenue = reservations
+        .filter((r) => r.paymentStatus === "paid")
+        .reduce((sum, r) => sum + r.totalPrice, 0);
+
+      res.json({
+        success: true,
+        schedule,
+        passengers: reservations.map((r) => ({
+          reservationId: r.id,
+          bookingReference: r.bookingReference,
+          status: r.status,
+          paymentStatus: r.paymentStatus,
+          seats: r.seats.map((s) => s.seatNumber),
+          totalPrice: r.totalPrice,
+          user: r.user,
+          createdAt: r.createdAt,
+        })),
+        summary: {
+          totalPassengers,
+          totalReservations: reservations.length,
+          confirmed: confirmedSeats,
+          pending: pendingSeats,
+          revenue,
+          occupancyRate:
+            schedule.totalSeats > 0
+              ? Math.round((totalPassengers / schedule.totalSeats) * 100)
+              : 0,
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: "Erreur serveur" });
+    }
+  },
+);
+
+router.put("/me/profile", protect, authorize("driver"), async (req, res) => {
+  try {
+    const { user } = req as AuthRequest;
+    const driver = await driverService.getDriverProfile(user.id);
+    if (!driver) {
+      res.status(404).json({ success: false, message: "Profil chauffeur introuvable" });
+      return;
+    }
+
+    const { firstName, lastName, phone, licenseNumber, vehicleNumber, vehicleType } = req.body as {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      licenseNumber?: string;
+      vehicleNumber?: string;
+      vehicleType?: string;
+    };
+
+    if (!firstName?.trim() || !lastName?.trim() || !phone?.trim() || !licenseNumber?.trim()) {
+      res.status(400).json({
+        success: false,
+        message: "Nom, prénom, téléphone et permis sont requis",
+      });
+      return;
+    }
+
+    const allowedVehicles = ["Crafter", "Sprinter", "Transit"];
+    const vt = allowedVehicles.includes(vehicleType ?? "")
+      ? vehicleType
+      : driver.vehicleType;
+
+    try {
+      const updated = await driverService.updateDriverSelf(driver.id, {
+        userId: user.id,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        licenseNumber: licenseNumber.trim(),
+        vehicleNumber: (vehicleNumber ?? "").trim(),
+        vehicleType: vt!,
+      });
+      res.json({ success: true, driver: updated });
+    } catch (innerErr: unknown) {
+      if (innerErr && typeof innerErr === "object" && "code" in innerErr && (innerErr as { code: string }).code === "P2002") {
+        res.status(400).json({ success: false, message: "Numéro de permis déjà utilisé" });
+        return;
+      }
+      throw innerErr;
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Erreur serveur" });

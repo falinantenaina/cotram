@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { sendReservationConfirmation } from "../config/email.js";
 import prisma from "../lib/prisma.js";
-import { emitToStaff } from "../lib/socket.js";
+import { emitToStaffAndDrivers } from "../lib/socket.js";
 import type { AuthRequest } from "../types/index.js";
 
 function flattenSeats(reservation: any) {
@@ -154,7 +154,7 @@ export const cancelReservation = async (
       }),
     ]);
 
-    emitToStaff("reservation:cancelled", {
+    emitToStaffAndDrivers("reservation:cancelled", {
       id: reservation.id,
       scheduleId: reservation.scheduleId,
     });
@@ -270,7 +270,7 @@ export const createReservation = async (
       },
     });
 
-    emitToStaff("reservation:created", {
+    emitToStaffAndDrivers("reservation:created", {
       id: reservation.id,
       scheduleId,
       seats,
@@ -346,7 +346,7 @@ export const confirmReservation = async (
       },
     });
 
-    emitToStaff("reservation:updated", {
+    emitToStaffAndDrivers("reservation:updated", {
       id: reservation.id,
       status: "confirmed",
       paymentStatus: "paid",

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { sendReservationConfirmation } from "../config/email.js";
-import { emitToStaff } from "../lib/socket.js";
+import { emitToStaffAndDrivers } from "../lib/socket.js";
 
 export class WalkinError extends Error {
   constructor(message: string, public statusCode: number, public unavailableSeats?: number[]) {
@@ -116,7 +116,7 @@ export async function createWalkinReservation(data: {
     return createdReservation;
   });
 
-  emitToStaff("reservation:created", {
+  emitToStaffAndDrivers("reservation:created", {
     id: reservation.id,
     scheduleId,
     seats,

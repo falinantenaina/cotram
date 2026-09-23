@@ -53,6 +53,8 @@ interface ScheduleInfo {
 interface Props {
   schedule: ScheduleInfo;
   onClose: () => void;
+  /** Custom API path; defaults to admin passengers endpoint */
+  endpoint?: string;
 }
 
 type ViewMode = "map" | "list";
@@ -228,16 +230,17 @@ function SeatPlan({
   );
 }
 
-export function PassengerModal({ schedule, onClose }: Props) {
+export function PassengerModal({ schedule, onClose, endpoint }: Props) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<ViewMode>("map");
 
   const { data, isLoading } = useQuery({
     queryKey: ["passengers", schedule.id],
     queryFn: async () => {
-      const { data } = await api.get(
-        `/admin/schedules/${schedule.id}/passengers`,
-      );
+      const path =
+        endpoint ??
+        `/admin/schedules/${schedule.id}/passengers`;
+      const { data } = await api.get(path);
       return data;
     },
   });

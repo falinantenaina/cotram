@@ -2,7 +2,8 @@ import express from "express";
 import * as scheduleController from "../controllers/schedule.controller.js";
 import { authorize, protect } from "../middleware/auth.middleware.js";
 import * as scheduleService from "../services/schedule.service.js";
-import { emitToStaff } from "../lib/socket.js";
+import { emitToStaffAndDrivers, emitToUser } from "../lib/socket.js";
+import prisma from "../lib/prisma.js";
 import type { AuthRequest } from "../types/index.js";
 
 const router = express.Router();
@@ -54,9 +55,27 @@ router.put(
           res.status(result.status!).json({ success: false, message: result.message });
           return;
         }
-        emitToStaff("schedule:updated", { id: String(req.params.id), action: "driver" });
+        emitToStaffAndDrivers("schedule:updated", { id: String(req.params.id), action: "driver" });
+        // Notify the assigned driver user directly
+        try {
+          const driver = await prisma.driver.findUnique({
+            where: { id: driverId },
+            select: { userId: true },
+          });
+          if (driver?.userId) {
+            emitToUser(driver.userId, "schedule:assigned", {
+              id: String(req.params.id),
+            });
+          }
+        } catch {
+          // non-blocking
+        }
         res.json({ success: true, schedule: result.schedule });
       } else {
+        const previous = await prisma.schedule.findUnique({
+          where: { id: String(req.params.id) },
+          select: { driverId: true },
+        });
         const result = await scheduleService.unassignDriver(
           String(req.params.id),
           user.id,
@@ -65,7 +84,22 @@ router.put(
           res.status(result.status!).json({ success: false, message: result.message });
           return;
         }
-        emitToStaff("schedule:updated", { id: String(req.params.id), action: "driver" });
+        emitToStaffAndDrivers("schedule:updated", { id: String(req.params.id), action: "driver" });
+        if (previous?.driverId) {
+          try {
+            const driver = await prisma.driver.findUnique({
+              where: { id: previous.driverId },
+              select: { userId: true },
+            });
+            if (driver?.userId) {
+              emitToUser(driver.userId, "schedule:unassigned", {
+                id: String(req.params.id),
+              });
+            }
+          } catch {
+            // non-blocking
+          }
+        }
         res.json({ success: true, schedule: result.schedule });
       }
     } catch (err) {

@@ -4,10 +4,12 @@ import {
   Bus,
   Clock,
   MapPin,
+  Printer,
   Users,
 } from "lucide-react";
 import { useState } from "react";
 import api from "../../lib/axios";
+import { PassengerModal } from "../../components/schedules/PassengerModal";
 
 interface TripSchedule {
   id: string;
@@ -18,8 +20,8 @@ interface TripSchedule {
   availableSeats: number;
   vehicleNumber: string | null;
   route: {
-    departure: { name: string };
-    destination: { name: string };
+    departure: { name: string; id?: string };
+    destination: { name: string; id?: string };
     duration: string;
   };
   _count: { reservations: number };
@@ -41,6 +43,7 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
 
 export default function MyTrips() {
   const [filter, setFilter] = useState<"upcoming" | "completed" | "cancelled" | "all">("upcoming");
+  const [passengerTrip, setPassengerTrip] = useState<TripSchedule | null>(null);
 
   const { data: trips = [], isLoading } = useQuery<TripSchedule[]>({
     queryKey: ["driver-trips", filter],
@@ -96,31 +99,67 @@ export default function MyTrips() {
           ) : (
             <div className="divide-y divide-gray-50">
               {trips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  onShowPassengers={() => setPassengerTrip(trip)}
+                />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {passengerTrip && (
+        <PassengerModal
+          schedule={{
+            id: passengerTrip.id,
+            time: passengerTrip.time,
+            date: passengerTrip.date,
+            totalSeats: passengerTrip.totalSeats,
+            availableSeats: passengerTrip.availableSeats,
+            route: {
+              departure: {
+                id: passengerTrip.route.departure.id ?? "",
+                name: passengerTrip.route.departure.name,
+              },
+              destination: {
+                id: passengerTrip.route.destination.id ?? "",
+                name: passengerTrip.route.destination.name,
+              },
+            },
+            passengerCount:
+              passengerTrip.totalSeats - passengerTrip.availableSeats,
+          }}
+          endpoint={`/drivers/me/schedules/${passengerTrip.id}/passengers`}
+          onClose={() => setPassengerTrip(null)}
+        />
+      )}
     </div>
   );
 }
 
-function TripCard({ trip }: { trip: TripSchedule }) {
+function TripCard({
+  trip,
+  onShowPassengers,
+}: {
+  trip: TripSchedule;
+  onShowPassengers: () => void;
+}) {
   const st = STATUS_CONFIG[trip.status] ?? STATUS_CONFIG.scheduled;
   const depDate = new Date(trip.date);
   const now = new Date();
   const isToday = depDate.toISOString().split("T")[0] === now.toISOString().split("T")[0];
   const isPast = depDate < now && trip.status !== "scheduled";
-  const passengers = trip._count.reservations;
-  const occupancyPct = Math.round(((trip.totalSeats - trip.availableSeats) / trip.totalSeats) * 100);
+  const passengerSeats = trip.totalSeats - trip.availableSeats;
+  const occupancyPct = Math.round((passengerSeats / trip.totalSeats) * 100);
 
   return (
-    <div className={`px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition-colors ${isPast ? "opacity-60" : ""}`}>
-      <div className="flex items-start gap-4">
+    <div className={`relative px-4 sm:px-6 py-4 sm:py-5 pr-4 sm:pr-36 hover:bg-gray-50 transition-colors ${isPast ? "opacity-60" : ""}`}>
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* Time */}
-        <div className="text-center shrink-0 w-14">
-          <p className="text-xl font-black text-gray-900">{trip.time}</p>
+        <div className="text-center shrink-0 w-12 sm:w-14">
+          <p className="text-lg sm:text-xl font-black text-gray-900">{trip.time}</p>
           <p className={`text-[10px] font-semibold rounded px-1 mt-0.5 ${isToday ? "text-emerald-600 bg-emerald-50" : "text-gray-400 bg-gray-100"}`}>
             {isToday
               ? "Aujourd'hui"
@@ -128,28 +167,28 @@ function TripCard({ trip }: { trip: TripSchedule }) {
           </p>
         </div>
 
-        {/* Details */}
+        {/* Route + status + meta */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="flex items-center gap-1 font-bold text-gray-900 text-sm">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="flex items-center gap-1 font-bold text-gray-900 text-sm min-w-0">
               <MapPin size={12} className="text-gray-400 shrink-0" />
-              <span>{trip.route.departure.name}</span>
+              <span className="truncate">{trip.route.departure.name}</span>
               <ArrowRight size={12} className="text-gray-300 shrink-0" />
-              <span>{trip.route.destination.name}</span>
+              <span className="truncate">{trip.route.destination.name}</span>
             </div>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${st.cls}`}>
               {st.label}
             </span>
           </div>
 
-          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-400">
             <span className="flex items-center gap-1">
               <Clock size={11} />
               {trip.route.duration}
             </span>
             <span className="flex items-center gap-1">
               <Users size={11} />
-              {passengers}/{trip.totalSeats} passagers
+              {passengerSeats}/{trip.totalSeats} sièges
             </span>
             {trip.vehicleNumber && (
               <span className="flex items-center gap-1">
@@ -159,7 +198,6 @@ function TripCard({ trip }: { trip: TripSchedule }) {
             )}
           </div>
 
-          {/* Occupancy bar */}
           <div className="mt-3 max-w-xs">
             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -172,6 +210,26 @@ function TripCard({ trip }: { trip: TripSchedule }) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 mt-3 sm:mt-0 sm:absolute sm:right-6 sm:top-5 flex-col sm:flex-row">
+        <button
+          onClick={onShowPassengers}
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-black text-xs font-bold hover:bg-primary/90 transition-all"
+          title="Voir les passagers et imprimer le plan"
+        >
+          <Users size={13} />
+          Passagers
+        </button>
+        <button
+          onClick={onShowPassengers}
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50 transition-all"
+          title="Imprimer le plan des sièges"
+        >
+          <Printer size={13} />
+          Plan
+        </button>
       </div>
     </div>
   );

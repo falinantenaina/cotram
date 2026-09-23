@@ -1,9 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bus,
   CheckCircle,
+  Check,
   Clock,
+  Edit3,
   FileText,
+  Loader,
   Mail,
   Phone,
   Shield,
@@ -11,7 +14,9 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import { useState } from "react";
 import api from "../../lib/axios";
+import { ErrorAlert } from "../../components/common";
 
 interface DriverProfile {
   id: string;
@@ -55,7 +60,25 @@ const VEHICLE_ICONS: Record<string, string> = {
   Transit: "🚐",
 };
 
+const VEHICLES = ["Crafter", "Sprinter", "Transit"];
+
+const inputClass =
+  "w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white";
+
 export default function DriverProfile() {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    licenseNumber: "",
+    vehicleNumber: "",
+    vehicleType: "Crafter",
+  });
+  const [formError, setFormError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   const { data: profile, isLoading: loadingProfile } = useQuery<DriverProfile>({
     queryKey: ["driver-profile"],
     queryFn: async () => {
@@ -71,6 +94,45 @@ export default function DriverProfile() {
       return data.stats;
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: typeof form) =>
+      api.put("/drivers/me/profile", payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["driver-profile"] });
+      setEditing(false);
+      setFormError(null);
+      setSuccessMsg("Profil mis à jour");
+      setTimeout(() => setSuccessMsg(null), 3000);
+    },
+    onError: (err) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Erreur lors de la mise à jour";
+      setFormError(message);
+    },
+  });
+
+  const startEdit = () => {
+    if (!profile) return;
+    setForm({
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      phone: profile.phone,
+      licenseNumber: profile.licenseNumber,
+      vehicleNumber: profile.vehicleNumber,
+      vehicleType: profile.vehicleType,
+    });
+    setFormError(null);
+    setEditing(true);
+  };
+
+  const canSubmit =
+    form.firstName.trim() &&
+    form.lastName.trim() &&
+    form.phone.trim() &&
+    form.licenseNumber.trim() &&
+    !updateMutation.isPending;
 
   if (loadingProfile) {
     return (
@@ -94,14 +156,31 @@ export default function DriverProfile() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-5">
         {/* Header */}
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-            Mon profil
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Vos informations personnelles
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+              Mon profil
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              Vos informations personnelles
+            </p>
+          </div>
+          {!editing && (
+            <button
+              onClick={startEdit}
+              className="flex items-center gap-2 bg-primary text-black font-bold px-4 py-2.5 rounded-xl text-sm hover:bg-primary/90 transition-all shrink-0"
+            >
+              <Edit3 size={15} /> Modifier
+            </button>
+          )}
         </div>
+
+        {successMsg && (
+          <div className="flex gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+            <CheckCircle size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-emerald-700">{successMsg}</p>
+          </div>
+        )}
 
         {/* Profile card */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -109,11 +188,14 @@ export default function DriverProfile() {
           <div className="bg-linear-to-br from-dark-gray to-gray-800 px-6 py-8 text-center">
             <div className="size-20 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
               <span className="text-3xl font-black text-black">
-                {profile.firstName[0]}{profile.lastName[0]}
+                {(editing ? form.firstName : profile.firstName)[0]}
+                {(editing ? form.lastName : profile.lastName)[0]}
               </span>
             </div>
             <h2 className="text-xl font-black text-white">
-              {profile.firstName} {profile.lastName}
+              {editing
+                ? `${form.firstName} ${form.lastName}`
+                : `${profile.firstName} ${profile.lastName}`}
             </h2>
             <p className="text-white/50 text-sm mt-1">{profile.user.email}</p>
             <div className="flex items-center justify-center gap-2 mt-3">
@@ -124,26 +206,140 @@ export default function DriverProfile() {
             </div>
           </div>
 
-          {/* Info rows */}
-          <div className="divide-y divide-gray-50">
-            <InfoRow icon={User} label="Nom complet" value={`${profile.firstName} ${profile.lastName}`} />
-            <InfoRow icon={Mail} label="Email" value={profile.user.email} />
-            <InfoRow icon={Phone} label="Téléphone" value={profile.phone} />
-            <InfoRow icon={FileText} label="N° Permis" value={profile.licenseNumber} />
-            <InfoRow
-              icon={Truck}
-              label="Véhicule"
-              value={`${VEHICLE_ICONS[profile.vehicleType] || "🚐"} ${profile.vehicleNumber} (${profile.vehicleType})`}
-            />
-            <InfoRow
-              icon={Clock}
-              label="Membre depuis"
-              value={new Date(profile.joinedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-            />
-            {profile.notes && (
-              <InfoRow icon={Shield} label="Notes" value={profile.notes} />
-            )}
-          </div>
+          {editing ? (
+            <div className="p-6 space-y-4">
+              {formError && <ErrorAlert message={formError} />}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Prénom <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.firstName}
+                    onChange={(e) =>
+                      setForm({ ...form, firstName: e.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Nom <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.lastName}
+                    onChange={(e) =>
+                      setForm({ ...form, lastName: e.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Téléphone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+261 34 00 000 00"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  N° Permis <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={form.licenseNumber}
+                  onChange={(e) =>
+                    setForm({ ...form, licenseNumber: e.target.value })
+                  }
+                  placeholder="MDG-2024-00001"
+                  className={`${inputClass} font-mono`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Immatriculation
+                  </label>
+                  <input
+                    value={form.vehicleNumber}
+                    onChange={(e) =>
+                      setForm({ ...form, vehicleNumber: e.target.value })
+                    }
+                    placeholder="1234 TA"
+                    className={`${inputClass} font-mono uppercase`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Type véhicule
+                  </label>
+                  <select
+                    value={form.vehicleType}
+                    onChange={(e) =>
+                      setForm({ ...form, vehicleType: e.target.value })
+                    }
+                    className={inputClass}
+                  >
+                    {VEHICLES.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setEditing(false);
+                    setFormError(null);
+                  }}
+                  className="flex-1 py-2.5 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 text-sm hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => updateMutation.mutate(form)}
+                  disabled={!canSubmit}
+                  className="flex-1 py-2.5 bg-primary text-black font-bold rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary/90"
+                >
+                  {updateMutation.isPending ? (
+                    <Loader size={14} className="animate-spin" />
+                  ) : (
+                    <Check size={14} />
+                  )}
+                  Sauvegarder
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              <InfoRow icon={User} label="Nom complet" value={`${profile.firstName} ${profile.lastName}`} />
+              <InfoRow icon={Mail} label="Email" value={profile.user.email} />
+              <InfoRow icon={Phone} label="Téléphone" value={profile.phone} />
+              <InfoRow icon={FileText} label="N° Permis" value={profile.licenseNumber} />
+              <InfoRow
+                icon={Truck}
+                label="Véhicule"
+                value={`${VEHICLE_ICONS[profile.vehicleType] || "🚐"} ${profile.vehicleNumber || "—"} (${profile.vehicleType})`}
+              />
+              <InfoRow
+                icon={Clock}
+                label="Membre depuis"
+                value={new Date(profile.joinedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+              />
+              {profile.notes && (
+                <InfoRow icon={Shield} label="Notes" value={profile.notes} />
+              )}
+            </div>
+          )}
         </div>
 
         {/* Stats */}

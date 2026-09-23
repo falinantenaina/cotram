@@ -2,8 +2,40 @@ import prisma from "../lib/prisma.js";
 import type { Prisma } from "@prisma/client";
 
 export async function getDriverProfile(userId: string) {
-  return prisma.driver.findUnique({
+  const existing = await prisma.driver.findUnique({
     where: { userId },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, phone: true, avatar: true },
+      },
+    },
+  });
+  if (existing) return existing;
+
+  // Self-heal: user has role driver but no linked Driver profile
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== "driver") return null;
+
+  const parts = user.name.trim().split(/\s+/);
+  const firstName = parts[0] || user.name;
+  const lastName = parts.slice(1).join(" ") || "-";
+  const phone = user.phone || "000 000 000";
+  let licenseNumber = `MDG-TEMP-${user.id.slice(-8).toUpperCase()}`;
+  const taken = await prisma.driver.findUnique({ where: { licenseNumber } });
+  if (taken) {
+    licenseNumber = `MDG-TEMP-${Date.now().toString(36).toUpperCase()}`;
+  }
+
+  return prisma.driver.create({
+    data: {
+      userId: user.id,
+      firstName,
+      lastName,
+      phone,
+      licenseNumber,
+      vehicleNumber: "",
+      status: "available",
+    },
     include: {
       user: {
         select: { id: true, name: true, email: true, phone: true, avatar: true },
@@ -144,7 +176,53 @@ export async function updateDriver(id: string, data: {
   return prisma.driver.update({
     where: { id },
     data: updateData,
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, phone: true, avatar: true },
+      },
+    },
   });
+}
+
+export async function updateDriverSelf(
+  driverId: string,
+  data: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    licenseNumber: string;
+    vehicleNumber: string;
+    vehicleType: string;
+  },
+) {
+  const [driver] = await prisma.$transaction([
+    prisma.driver.update({
+      where: { id: driverId },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        licenseNumber: data.licenseNumber,
+        vehicleNumber: data.vehicleNumber,
+        vehicleType: data.vehicleType as never,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, phone: true, avatar: true },
+        },
+      },
+    }),
+    prisma.user.update({
+      where: { id: data.userId },
+      data: {
+        name: `${data.firstName} ${data.lastName}`.trim(),
+        phone: data.phone,
+      },
+    }),
+  ]);
+
+  return driver;
 }
 
 export async function deleteDriver(id: string) {

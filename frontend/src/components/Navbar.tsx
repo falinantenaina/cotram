@@ -134,7 +134,9 @@ export const Navbar = () => {
                           ? "Caissier"
                           : user.role === "agent"
                             ? "Agent"
-                            : "Voyageur"}
+                            : user.role === "driver"
+                              ? "Chauffeur"
+                              : "Voyageur"}
                     </span>
                   </div>
                   <ChevronDown
@@ -178,6 +180,16 @@ export const Navbar = () => {
                         >
                           <LayoutDashboard size={15} />
                           Administration
+                        </Link>
+                      )}
+                      {user.role === "driver" && (
+                        <Link
+                          to="/driver"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-primary/80 hover:text-primary hover:bg-primary/10 rounded-lg text-sm transition-colors"
+                        >
+                          <LayoutDashboard size={15} />
+                          Espace chauffeur
                         </Link>
                       )}
                     </div>
@@ -276,6 +288,15 @@ export const Navbar = () => {
                 >
                   <LayoutDashboard size={18} />
                   Administration
+                </Link>
+              )}
+              {user.role === "driver" && (
+                <Link
+                  to="/driver"
+                  className="flex items-center gap-3 px-4 py-3 text-primary/80 hover:bg-primary/10 rounded-xl text-sm transition-colors"
+                >
+                  <LayoutDashboard size={18} />
+                  Espace chauffeur
                 </Link>
               )}
               <button

@@ -36,16 +36,24 @@ const Auth = () => {
     registerError,
   } = useAuth();
 
-  if (user) return <Navigate to={returnTo} replace />;
+  const homeForRole = (role?: string) => {
+    if (role === "driver") return "/driver";
+    if (role === "admin" || role === "caissier" || role === "agent")
+      return "/admin";
+    return returnTo;
+  };
+
+  if (user) return <Navigate to={homeForRole(user.role)} replace />;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       if (tab === "login") {
-        await login({
+        const result = await login({
           identifier: formData.email,
           password: formData.password,
         });
+        navigate(homeForRole(result?.user?.role));
       } else {
         if (formData.password !== formData.confirmPassword) {
           alert("Les mots de passe ne correspondent pas");
@@ -57,8 +65,8 @@ const Auth = () => {
           phone: formData.phone,
           password: formData.password,
         });
+        navigate(returnTo);
       }
-      navigate(returnTo);
     } catch {
       // Error handled by useAuth hook
     }

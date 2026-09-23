@@ -16,6 +16,41 @@ const USER_SELECT = {
   updatedAt: true,
 } as const;
 
+async function ensureDriverProfile(user: {
+  id: string;
+  name: string;
+  phone: string | null;
+}) {
+  const existing = await prisma.driver.findUnique({
+    where: { userId: user.id },
+  });
+  if (existing) return;
+
+  const parts = user.name.trim().split(/\s+/);
+  const firstName = parts[0] || user.name;
+  const lastName = parts.slice(1).join(" ") || "-";
+  const phone = user.phone || "000 000 000";
+  const licenseNumber = `MDG-TEMP-${user.id.slice(-8).toUpperCase()}`;
+
+  const licenseTaken = await prisma.driver.findUnique({
+    where: { licenseNumber },
+  });
+
+  await prisma.driver.create({
+    data: {
+      userId: user.id,
+      firstName,
+      lastName,
+      phone,
+      licenseNumber: licenseTaken
+        ? `MDG-TEMP-${Date.now().toString(36).toUpperCase()}`
+        : licenseNumber,
+      vehicleNumber: "",
+      status: "available",
+    },
+  });
+}
+
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
@@ -90,6 +125,10 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       },
       select: USER_SELECT,
     });
+
+    if (userRole === "driver") {
+      await ensureDriverProfile(user);
+    }
 
     res.status(201).json({ success: true, user });
   } catch (error) {
@@ -234,6 +273,16 @@ export const updateUser = async (
       select: USER_SELECT,
     });
 
+    if (role === "driver") {
+      await ensureDriverProfile(user);
+    } else if (role !== undefined && role !== "driver") {
+      // Unlink driver profile if role changed away from driver
+      await prisma.driver.updateMany({
+        where: { userId: user.id },
+        data: { userId: null },
+      });
+    }
+
     res.json({ success: true, user });
   } catch (error: any) {
     if (error.code === "P2025") {
@@ -260,8 +309,16 @@ export const deleteUser = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const userId = String(req.params["id"]);
+
+    // Unlink driver profile before deleting user (keep schedules history)
+    await prisma.driver.updateMany({
+      where: { userId },
+      data: { userId: null },
+    });
+
     await prisma.user.delete({
-      where: { id: String(req.params["id"]) },
+      where: { id: userId },
     });
 
     res.json({ success: true, message: "Utilisateur supprimé" });

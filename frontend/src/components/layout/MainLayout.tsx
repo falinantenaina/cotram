@@ -5,8 +5,9 @@ import { Navbar } from "../Navbar";
 const MainLayout = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isDriverRoute = location.pathname.startsWith("/driver");
 
-  if (isAdminRoute) {
+  if (isAdminRoute || isDriverRoute) {
     return <Outlet />;
   }
 

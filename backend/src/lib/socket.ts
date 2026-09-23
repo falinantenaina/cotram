@@ -55,6 +55,9 @@ export function initSocket(server: HttpServer): Server {
       if (user && STAFF_ROLES.has(user.role)) {
         socket.join("staff");
       }
+      if (user && user.role === "driver") {
+        socket.join("drivers");
+      }
     } catch {
       // connection stays on personal room only
     }
@@ -69,6 +72,15 @@ export function getIO(): Server | null {
 
 export function emitToStaff(event: string, payload: unknown): void {
   io?.to("staff").emit(event, payload);
+}
+
+export function emitToDrivers(event: string, payload: unknown): void {
+  io?.to("drivers").emit(event, payload);
+}
+
+export function emitToStaffAndDrivers(event: string, payload: unknown): void {
+  io?.to("staff").emit(event, payload);
+  io?.to("drivers").emit(event, payload);
 }
 
 export function emitToUser(userId: string, event: string, payload: unknown): void {

@@ -16,6 +16,15 @@ const STAFF_EVENTS = [
   "parcel:payment",
 ] as const;
 
+const DRIVER_EVENTS = [
+  "reservation:created",
+  "reservation:updated",
+  "reservation:cancelled",
+  "schedule:updated",
+  "schedule:assigned",
+  "schedule:unassigned",
+] as const;
+
 export function useSocketSync(): void {
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
@@ -25,6 +34,7 @@ export function useSocketSync(): void {
     if (!token) return;
 
     const isStaff = role != null && (STAFF_ROLES as readonly string[]).includes(role);
+    const isDriver = role === "driver";
 
     connectSocket();
     const socket = getSocket();
@@ -45,6 +55,9 @@ export function useSocketSync(): void {
           ["admin-schedules-walkin"],
           ["my-reservations"],
           ["reservations"],
+          ["driver-trips"],
+          ["driver-stats"],
+          ["passengers"],
         ]),
       "reservation:updated": () =>
         invalidate([
@@ -52,6 +65,9 @@ export function useSocketSync(): void {
           ["admin-stats"],
           ["admin-recent-reservations"],
           ["my-reservations"],
+          ["driver-trips"],
+          ["driver-stats"],
+          ["passengers"],
         ]),
       "reservation:cancelled": () =>
         invalidate([
@@ -60,6 +76,9 @@ export function useSocketSync(): void {
           ["admin-recent-reservations"],
           ["admin-schedules"],
           ["my-reservations"],
+          ["driver-trips"],
+          ["driver-stats"],
+          ["passengers"],
         ]),
       "schedule:updated": () =>
         invalidate([
@@ -67,7 +86,13 @@ export function useSocketSync(): void {
           ["admin-schedule-history"],
           ["admin-today-schedules"],
           ["schedules"],
+          ["driver-trips"],
+          ["driver-stats"],
         ]),
+      "schedule:assigned": () =>
+        invalidate([["driver-trips"], ["driver-stats"]]),
+      "schedule:unassigned": () =>
+        invalidate([["driver-trips"], ["driver-stats"]]),
       "parcel:created": () =>
         invalidate([["admin-parcels"], ["parcel-stats"]]),
       "parcel:updated": () =>
@@ -78,14 +103,18 @@ export function useSocketSync(): void {
         invalidate([["admin-parcels"], ["parcel-stats"]]),
     };
 
-    if (isStaff) {
-      for (const event of STAFF_EVENTS) {
-        socket.on(event, handlers[event]);
-      }
+    const eventsToBind: readonly string[] = isStaff
+      ? STAFF_EVENTS
+      : isDriver
+        ? DRIVER_EVENTS
+        : [];
+
+    for (const event of eventsToBind) {
+      socket.on(event, handlers[event]);
     }
 
     return () => {
-      for (const event of STAFF_EVENTS) {
+      for (const event of eventsToBind) {
         socket.off(event, handlers[event]);
       }
       disconnectSocket();
