@@ -33,6 +33,26 @@ export interface CreateReservationData {
   paymentMethod?: "mvola" | "orange_money" | "cash";
 }
 
+export interface CreateReservationResponse {
+  reservation: Reservation;
+  paymentId?: string;
+}
+
+export interface PaymentInitiateData {
+  scheduleId: string;
+  seats: number[];
+  phone: string;
+  method?: string;
+}
+
+export interface PaymentStatus {
+  paymentId: string;
+  status: "pending" | "completed" | "failed";
+  serverCorrelationId?: string | null;
+  mvolaTransactionRef?: string | null;
+  reservationId: string | null;
+}
+
 export const reservationApi = {
   getReservations: async (): Promise<Reservation[]> => {
     const { data } = await api.get("/reservations");
@@ -59,5 +79,28 @@ export const reservationApi = {
   cancelReservation: async (id: string): Promise<Reservation> => {
     const { data } = await api.put(`/reservations/${id}/cancel`);
     return data.reservation;
+  },
+};
+
+export const paymentApi = {
+  initiate: async (payload: PaymentInitiateData): Promise<PaymentStatus> => {
+    const { data } = await api.post("/payments/initiate", payload);
+    return {
+      paymentId: data.paymentId,
+      status: data.status,
+      serverCorrelationId: data.serverCorrelationId,
+      reservationId: data.reservationId ?? null,
+    };
+  },
+
+  getStatus: async (paymentId: string): Promise<PaymentStatus> => {
+    const { data } = await api.get(`/payments/${paymentId}/status`);
+    return {
+      paymentId: data.paymentId,
+      status: data.status,
+      serverCorrelationId: data.serverCorrelationId,
+      mvolaTransactionRef: data.mvolaTransactionRef,
+      reservationId: data.reservationId ?? null,
+    };
   },
 };

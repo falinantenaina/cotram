@@ -47,6 +47,12 @@ enum PaymentStatus {
   refunded
 }
 
+enum MvolaPaymentStatus {
+  pending
+  completed
+  failed
+}
+
 enum ParcelStatus {
   registered
   in_transit
@@ -220,10 +226,37 @@ model Reservation {
   user              User            @relation(fields: [userId], references: [id])
   schedule          Schedule        @relation(fields: [scheduleId], references: [id])
   seats             ReservationSeat[]
+  payments          Payment[]
 
   @@index([userId, status])
   @@index([scheduleId])
   @@map("reservations")
+}
+
+model Payment {
+  id                  String            @id @default(cuid())
+  reservationId       String?
+  userId              String
+  scheduleId          String
+  seats               Json
+  phone               String
+  amount              Float
+  method              String            @default("mvola")
+  status              MvolaPaymentStatus @default(pending)
+  serverCorrelationId String?           @unique
+  mvolaTransactionRef String?
+  mvolaResponse       Json?
+  metadata            Json?
+  expiresAt           DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  reservation         Reservation?      @relation(fields: [reservationId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+  @@index([scheduleId])
+  @@map("payments")
 }
 
 model ReservationSeat {

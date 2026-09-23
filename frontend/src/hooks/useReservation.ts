@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import {
   reservationApi,
+  paymentApi,
   type CreateReservationData,
+  type PaymentInitiateData,
 } from "../api/reservationApi";
-import { useReservationTempStore } from "../stores/reservationStore";
 
 export const useReservations = () => {
   const { data, isLoading, error } = useQuery({
@@ -35,16 +35,14 @@ export const useReservation = (id: string) => {
 
 export const useCreateReservation = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const { clearReservation } = useReservationTempStore();
 
   const mutation = useMutation({
     mutationFn: reservationApi.createReservation,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
-      clearReservation();
-      navigate(`/reservation/${data.id}/boarding-pass`);
+      // Do NOT clearReservation/navigate here — PaymentModal shows success first
+      // and navigates on "Voir mon billet"
     },
   });
 
@@ -53,6 +51,29 @@ export const useCreateReservation = () => {
       mutation.mutateAsync(data),
     isLoading: mutation.isPending,
     error: mutation.error,
+  };
+};
+
+export const useInitiatePayment = () => {
+  const mutation = useMutation({
+    mutationFn: paymentApi.initiate,
+  });
+
+  return {
+    initiatePayment: (data: PaymentInitiateData) => mutation.mutateAsync(data),
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+};
+
+export const usePaymentStatus = () => {
+  const mutation = useMutation({
+    mutationFn: paymentApi.getStatus,
+  });
+
+  return {
+    checkStatus: (paymentId: string) => mutation.mutateAsync(paymentId),
+    isLoading: mutation.isPending,
   };
 };
 

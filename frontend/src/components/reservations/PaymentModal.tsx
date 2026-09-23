@@ -1,11 +1,23 @@
 import { CheckCircle, Loader, Phone, X, XCircle } from "lucide-react";
-import { useState } from "react";
-import { useCreateReservation } from "../../hooks/useReservation";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { reservationApi } from "../../api/reservationApi";
+import { useInitiatePayment, usePaymentStatus } from "../../hooks/useReservation";
+import { useReservationTempStore } from "../../stores/reservationStore";
 import mvolaLogo from "../../assets/mvola.svg";
 import orangeLogo from "../../assets/orangemoney.svg";
 
 type PaymentMethod = "mvola" | "orange_money" | "cash";
 type PaymentStep = "method" | "phone" | "processing" | "success" | "error";
+
+interface SuccessInfo {
+  reservationId: string | null;
+  method: PaymentMethod;
+  seats: number[];
+  amount: number;
+  phone?: string;
+}
 
 interface Props {
   scheduleId: string;
@@ -38,12 +50,35 @@ const METHOD_CONFIG: Record<
   },
 };
 
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLL_ATTEMPTS = 100; // 5 minutes
+
 export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) {
-  const { createReservation } = useCreateReservation();
+  const { initiatePayment } = useInitiatePayment();
+  const { checkStatus } = usePaymentStatus();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { clearReservation } = useReservationTempStore();
+
   const [step, setStep] = useState<PaymentStep>("method");
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [phone, setPhone] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [pollAttempts, setPollAttempts] = useState(0);
+  const [successInfo, setSuccessInfo] = useState<SuccessInfo | null>(null);
+
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paymentIdRef = useRef<string | null>(null);
+  const reservationIdRef = useRef<string | null>(null);
+  const cancelledRef = useRef(false);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
+  }, []);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -56,17 +91,14 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
 
   const isValidPhone = (p: string) => {
     const digits = p.replace(/\D/g, "");
-    return (
-      digits.length === 10 &&
-      /^(033|034|032|037|038)/.test(digits)
-    );
+    return digits.length === 10 && /^03\d{8}$/.test(digits);
   };
 
   const handleSelectMethod = (m: PaymentMethod) => {
     setMethod(m);
     if (m === "cash") {
       setStep("processing");
-      submitReservation(m);
+      submitCash();
     } else {
       setStep("phone");
     }
@@ -75,23 +107,143 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
   const handlePay = () => {
     if (!method || !isValidPhone(phone)) return;
     setStep("processing");
-    submitReservation(method);
+    submitMvola(method);
   };
 
-  const submitReservation = async (m: PaymentMethod) => {
+  const showSuccess = (info: SuccessInfo) => {
+    setSuccessInfo(info);
+    setStep("success");
+  };
+
+  const submitCash = async () => {
     try {
-      await createReservation({ scheduleId, seats, paymentMethod: m });
-      setStep("success");
-    } catch (err: any) {
-      setErrorMsg(
-        err?.response?.data?.message || "Erreur lors de la création de la réservation",
-      );
+      // Bypass mutation onSuccess auto-navigate — show success in modal first
+      const reservation = await reservationApi.createReservation({
+        scheduleId,
+        seats,
+        paymentMethod: "cash",
+      });
+      reservationIdRef.current = reservation.id;
+      queryClient.invalidateQueries({ queryKey: ["reservations"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      showSuccess({
+        reservationId: reservation.id,
+        method: "cash",
+        seats: [...seats],
+        amount: totalPrice,
+      });
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      setErrorMsg(msg || "Erreur lors de la création de la réservation");
       setStep("error");
     }
   };
 
+  const submitMvola = async (m: PaymentMethod) => {
+    try {
+      // 1. Initiate Mvola payment (holds seats, NO reservation yet)
+      const cleanPhone = phone.replace(/\s/g, "");
+      const payment = await initiatePayment({
+        scheduleId,
+        seats,
+        phone: cleanPhone,
+        method: m,
+      });
+      paymentIdRef.current = payment.paymentId;
+
+      // 2. Poll — reservation is created by the backend only when payment completes
+      setPollAttempts(0);
+      pollPaymentStatus();
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      setErrorMsg(msg || "Erreur lors du paiement");
+      setStep("error");
+    }
+  };
+
+  const pollPaymentStatus = async () => {
+    if (cancelledRef.current || !paymentIdRef.current) return;
+
+    try {
+      const status = await checkStatus(paymentIdRef.current);
+
+      if (status.status === "completed") {
+        // Reservation created server-side — do NOT clear store yet (would unmount modal)
+        reservationIdRef.current = status.reservationId;
+        queryClient.invalidateQueries({ queryKey: ["reservations"] });
+        queryClient.invalidateQueries({ queryKey: ["schedules"] });
+        showSuccess({
+          reservationId: status.reservationId,
+          method: method || "mvola",
+          seats: [...seats],
+          amount: totalPrice,
+          phone,
+        });
+        return;
+      }
+
+      if (status.status === "failed") {
+        setErrorMsg("Le paiement a échoué. Aucune réservation n'a été créée.");
+        setStep("error");
+        return;
+      }
+
+      // Still pending — schedule next poll
+      setPollAttempts((prev) => {
+        const next = prev + 1;
+        if (next >= MAX_POLL_ATTEMPTS) {
+          setErrorMsg("Délai de paiement dépassé. Aucune réservation n'a été créée.");
+          setStep("error");
+          return next;
+        }
+        pollTimerRef.current = setTimeout(pollPaymentStatus, POLL_INTERVAL_MS);
+        return next;
+      });
+    } catch {
+      // Network error — retry
+      setPollAttempts((prev) => {
+        const next = prev + 1;
+        if (next >= MAX_POLL_ATTEMPTS) {
+          setErrorMsg("Impossible de vérifier le statut du paiement.");
+          setStep("error");
+          return next;
+        }
+        pollTimerRef.current = setTimeout(pollPaymentStatus, POLL_INTERVAL_MS);
+        return next;
+      });
+    }
+  };
+
+  const handleSuccessClose = () => {
+    const id = successInfo?.reservationId ?? reservationIdRef.current;
+    if (id) {
+      navigate(`/reservation/${id}/boarding-pass`);
+    }
+    clearReservation();
+    onClose();
+  };
+
   const handleBackdropClick = (e: React.MouseEvent) => {
+    // Don't allow backdrop dismiss on success (would lose the receipt without navigating)
+    if (step === "success") return;
     if (e.target === e.currentTarget) onClose();
+  };
+
+  const handleRetry = () => {
+    setStep("method");
+    setMethod(null);
+    setPhone("");
+    setErrorMsg("");
+    setPollAttempts(0);
+    paymentIdRef.current = null;
+    reservationIdRef.current = null;
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
   };
 
   return (
@@ -104,7 +256,10 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-black text-gray-900">Paiement</h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              if (step === "success") handleSuccessClose();
+              else onClose();
+            }}
             className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400"
           >
             <X size={18} />
@@ -234,30 +389,69 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
                 <p className="text-sm text-gray-500 mt-1">
                   {method === "cash"
                     ? "Veuillez patienter"
-                    : "Confirmez sur votre téléphone"}
+                    : "Confirmez la demande sur votre téléphone MVola"}
                 </p>
+                {method !== "cash" && pollAttempts > 0 && (
+                  <p className="text-xs text-gray-400 mt-2">
+                    Vérification du statut... ({pollAttempts})
+                  </p>
+                )}
               </div>
             </div>
           )}
 
           {/* Step: Success */}
-          {step === "success" && (
-            <div className="flex flex-col items-center py-8 space-y-4">
+          {step === "success" && successInfo && (
+            <div className="flex flex-col items-center py-6 space-y-4">
               <div className="size-16 bg-emerald-100 rounded-full flex items-center justify-center">
                 <CheckCircle size={32} className="text-emerald-600" />
               </div>
               <div className="text-center">
                 <h3 className="font-bold text-gray-900 text-lg">
-                  {method === "cash" ? "Réservation créée !" : "Paiement réussi !"}
+                  {successInfo.method === "cash"
+                    ? "Réservation créée !"
+                    : "Paiement effectué !"}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  {method === "cash"
+                  {successInfo.method === "cash"
                     ? "Présentez-vous au comptoir pour payer"
                     : "Votre réservation est confirmée"}
                 </p>
               </div>
+
+              <div className="w-full bg-gray-50 rounded-xl px-4 py-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Siège(s)</span>
+                  <span className="font-semibold text-gray-900">
+                    {successInfo.seats.join(", ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Montant payé</span>
+                  <span className="font-black text-gray-900">
+                    {successInfo.amount.toLocaleString()} Ar
+                  </span>
+                </div>
+                {successInfo.method !== "cash" && successInfo.phone && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Téléphone</span>
+                    <span className="font-semibold text-gray-900">
+                      {successInfo.phone}
+                    </span>
+                  </div>
+                )}
+                {successInfo.method !== "cash" && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Méthode</span>
+                    <span className="font-semibold text-gray-900">
+                      {successInfo.method === "mvola" ? "MVola" : "Orange Money"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <button
-                onClick={onClose}
+                onClick={handleSuccessClose}
                 className="w-full py-3 bg-primary text-black font-bold rounded-xl hover:bg-primary/90"
               >
                 Voir mon billet
@@ -283,12 +477,7 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
                   Annuler
                 </button>
                 <button
-                  onClick={() => {
-                    setStep("method");
-                    setMethod(null);
-                    setPhone("");
-                    setErrorMsg("");
-                  }}
+                  onClick={handleRetry}
                   className="flex-1 py-3 bg-primary text-black font-bold rounded-xl text-sm hover:bg-primary/90"
                 >
                   Réessayer

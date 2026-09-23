@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
+import type { Request, Response } from "express";
 import { sendReservationConfirmation } from "../config/email.js";
 import prisma from "../lib/prisma.js";
 import { emitToStaffAndDrivers } from "../lib/socket.js";
@@ -8,7 +8,9 @@ import type { AuthRequest } from "../types/index.js";
 function flattenSeats(reservation: any) {
   return {
     ...reservation,
-    seats: (reservation.seats ?? []).map((s: { seatNumber: number }) => s.seatNumber),
+    seats: (reservation.seats ?? []).map(
+      (s: { seatNumber: number }) => s.seatNumber,
+    ),
     schedule: reservation.schedule
       ? {
           ...reservation.schedule,
@@ -112,25 +114,23 @@ export const cancelReservation = async (
       return;
     }
     if (reservation.status === "cancelled") {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Cette réservation est déjà annulée",
-        });
+      res.status(400).json({
+        success: false,
+        message: "Cette réservation est déjà annulée",
+      });
       return;
     }
     if (reservation.status === "completed") {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Impossible d'annuler une réservation complétée",
-        });
+      res.status(400).json({
+        success: false,
+        message: "Impossible d'annuler une réservation complétée",
+      });
       return;
     }
 
-    const seatNumbers = reservation.seats.map((s: { seatNumber: number }) => s.seatNumber);
+    const seatNumbers = reservation.seats.map(
+      (s: { seatNumber: number }) => s.seatNumber,
+    );
 
     await prisma.$transaction([
       prisma.occupiedSeat.deleteMany({
@@ -149,7 +149,10 @@ export const cancelReservation = async (
         where: { id: reservation.id },
         data: {
           status: "cancelled",
-          paymentStatus: reservation.paymentStatus === "paid" ? "refunded" : reservation.paymentStatus,
+          paymentStatus:
+            reservation.paymentStatus === "paid"
+              ? "refunded"
+              : reservation.paymentStatus,
         },
       }),
     ]);
@@ -179,11 +182,14 @@ export const createReservation = async (
     const { scheduleId, seats, paymentMethod } = req.body;
 
     if (!scheduleId || !seats || seats.length === 0) {
-      res.status(400).json({ success: false, message: "scheduleId et seats sont requis" });
+      res
+        .status(400)
+        .json({ success: false, message: "scheduleId et seats sont requis" });
       return;
     }
 
-    const isMobilePayment = paymentMethod === "mvola" || paymentMethod === "orange_money";
+    const isCash = !paymentMethod || paymentMethod === "cash";
+    const isMvola = paymentMethod === "mvola";
 
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -196,6 +202,8 @@ export const createReservation = async (
 
     const bookingReference = `CTR${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
+    // All reservations start as pending/pending — payment confirmation comes later
+    // (Mvola: via payment polling/webhook; Cash: via admin confirm)
     const reservation = await prisma.$transaction(async (tx) => {
       const lockedScheduleResults = await tx.$queryRaw`
         SELECT id, "totalSeats", "availableSeats", price
@@ -216,9 +224,13 @@ export const createReservation = async (
         },
       });
 
-      const unavailableSeats = occupiedSeats.map((s: { seatNumber: number }) => s.seatNumber);
+      const unavailableSeats = occupiedSeats.map(
+        (s: { seatNumber: number }) => s.seatNumber,
+      );
       if (unavailableSeats.length > 0) {
-        throw new Error(`SEATS_UNAVAILABLE:${JSON.stringify(unavailableSeats)}`);
+        throw new Error(
+          `SEATS_UNAVAILABLE:${JSON.stringify(unavailableSeats)}`,
+        );
       }
 
       const totalPrice = seats.length * (lockedSchedule as any).price;
@@ -230,9 +242,9 @@ export const createReservation = async (
           totalPrice,
           bookingReference,
           paymentMethod: paymentMethod || null,
-          status: isMobilePayment ? "confirmed" : "pending",
-          paymentStatus: isMobilePayment ? "paid" : "pending",
-          expiresAt: isMobilePayment ? null : new Date(Date.now() + 10 * 60 * 1000),
+          status: "pending",
+          paymentStatus: "pending",
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
         },
       });
 
@@ -277,7 +289,9 @@ export const createReservation = async (
       totalPrice: populatedReservation?.totalPrice,
     });
 
-    res.status(201).json({ success: true, reservation: flattenSeats(populatedReservation) });
+    res
+      .status(201)
+      .json({ success: true, reservation: flattenSeats(populatedReservation) });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === "SCHEDULE_NOT_FOUND") {
@@ -285,7 +299,9 @@ export const createReservation = async (
         return;
       }
       if (error.message.startsWith("SEATS_UNAVAILABLE:")) {
-        const unavailableSeats = JSON.parse(error.message.substring("SEATS_UNAVAILABLE:".length));
+        const unavailableSeats = JSON.parse(
+          error.message.substring("SEATS_UNAVAILABLE:".length),
+        );
         res.status(400).json({
           success: false,
           message: "Certains sièges sont déjà occupés",
@@ -294,10 +310,14 @@ export const createReservation = async (
         return;
       }
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
       res.status(409).json({
         success: false,
-        message: "Conflit de réservation - ces sièges sont en cours de réservation par un autre utilisateur",
+        message:
+          "Conflit de réservation - ces sièges sont en cours de réservation par un autre utilisateur",
       });
       return;
     }
@@ -363,7 +383,9 @@ export const confirmReservation = async (
           destination: route.destination.name,
           date: new Date(reservation.schedule.date).toLocaleDateString("fr-FR"),
           time: reservation.schedule.time,
-          seats: reservation.seats.map((s: { seatNumber: number }) => s.seatNumber),
+          seats: reservation.seats.map(
+            (s: { seatNumber: number }) => s.seatNumber,
+          ),
           totalPrice: reservation.totalPrice,
         },
       );
