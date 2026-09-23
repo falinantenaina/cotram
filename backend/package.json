@@ -7,7 +7,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "node esbuild.config.mjs",
+    "build": "prisma generate && node esbuild.config.mjs",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
