@@ -68,6 +68,10 @@ function matchPassenger(p: Passenger, q: string): boolean {
   );
 }
 
+function countSeats(passengers: Passenger[]): number {
+  return passengers.reduce((sum, p) => sum + p.seats.length, 0);
+}
+
 function SeatPlan({
   schedule,
   passengers,
@@ -216,7 +220,8 @@ function SeatPlan({
         </p>
         <p>
           {new Date(schedule.date).toLocaleDateString("fr-FR")} ·{" "}
-          {schedule.time}
+          {schedule.time} · {seatToPassenger.size}/
+          {schedule.totalSeats} sièges occupés
         </p>
       </div>
     </div>
@@ -250,8 +255,18 @@ export function PassengerModal({ schedule, onClose }: Props) {
     ? allPassengers.filter((p) => matchPassenger(p, search))
     : allPassengers;
 
+  const occupiedSeats = summary?.totalPassengers ?? countSeats(allPassengers);
   const occupiedCount =
     schedule.passengerCount ?? schedule.totalSeats - schedule.availableSeats;
+  const displayOccupied = Math.max(occupiedCount, occupiedSeats);
+
+  const handlePrint = () => {
+    setView("map");
+    setSearch("");
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  };
 
   return (
     <div
@@ -300,9 +315,9 @@ export function PassengerModal({ schedule, onClose }: Props) {
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-2 print:hidden">
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center"
-                title="Imprimer"
+                title="Imprimer le plan"
               >
                 <Printer size={16} />
               </button>
@@ -315,7 +330,7 @@ export function PassengerModal({ schedule, onClose }: Props) {
             </div>
           </div>
           <div className="print:hidden">
-            <OccupancyBar value={occupiedCount} max={schedule.totalSeats} />
+            <OccupancyBar value={displayOccupied} max={schedule.totalSeats} />
           </div>
         </div>
 
@@ -323,11 +338,11 @@ export function PassengerModal({ schedule, onClose }: Props) {
         {summary && (
           <div className="flex flex-wrap gap-2 px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-100 shrink-0 print:hidden">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
-              <Check size={11} /> {summary.confirmed} confirmés
+              <Check size={11} /> {summary.confirmed} sièges confirmés
             </div>
             {summary.pending > 0 && (
               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
-                <Clock size={11} /> {summary.pending} en attente
+                <Clock size={11} /> {summary.pending} sièges en attente
               </div>
             )}
             <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-gray-600">
@@ -381,7 +396,7 @@ export function PassengerModal({ schedule, onClose }: Props) {
           </div>
         )}
 
-        {/* Content */}
+        {/* Content — seat plan is always present for print */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 print:p-2 print:overflow-visible">
           {isLoading ? (
             <div className="flex flex-col items-center py-12 print:hidden">
@@ -395,93 +410,98 @@ export function PassengerModal({ schedule, onClose }: Props) {
               </div>
               <p className="text-gray-500 font-medium">Aucun passager</p>
             </div>
-          ) : view === "map" ? (
-            <SeatPlan
-              schedule={effectiveSchedule}
-              passengers={passengers}
-              search={search}
-            />
           ) : (
-            <div className="space-y-2.5 print:space-y-1">
-              {passengers.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 font-medium">
-                    Aucun résultat
-                  </p>
+            <>
+              {/* Always render seat plan — visible on screen in map view, always on print */}
+              <div className={view === "map" ? "block print:block" : "hidden print:block"}>
+                <SeatPlan
+                  schedule={effectiveSchedule}
+                  passengers={allPassengers}
+                  search={view === "map" ? search : ""}
+                />
+              </div>
+
+              {view === "list" && (
+                <div className="space-y-2.5 print:hidden">
+                  {passengers.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 font-medium">Aucun résultat</p>
+                    </div>
+                  ) : (
+                    passengers.map((p, index) => (
+                      <div
+                        key={p.reservationId}
+                        className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
+                      >
+                        <div className="size-7 sm:size-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                            <p className="font-semibold text-gray-900 text-sm truncate">
+                              {p.user.name}
+                            </p>
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${p.status === "confirmed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
+                            >
+                              {p.status === "confirmed"
+                                ? "Confirmé"
+                                : "En attente"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            {p.user.phone ? (
+                              <span className="flex items-center gap-1">
+                                <Phone size={10} />
+                                {p.user.phone}
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 truncate max-w-[160px]">
+                                <Mail size={10} />
+                                {p.user.email.includes("@cotram.local")
+                                  ? "Walk-in"
+                                  : p.user.email}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <div className="flex gap-1 flex-wrap justify-end max-w-[72px]">
+                            {p.seats.map((s) => (
+                              <span
+                                key={s}
+                                className="size-5 sm:size-6 rounded bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center"
+                              >
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-xs font-semibold text-gray-500">
+                            {p.totalPrice.toLocaleString()} Ar
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ) : (
-                passengers.map((p, index) => (
-                  <div
-                    key={p.reservationId}
-                    className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all print:border print:rounded-none print:p-1.5 print:hover:bg-white"
-                  >
-                    <div className="size-7 sm:size-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
-                          {p.user.name}
-                        </p>
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${p.status === "confirmed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
-                        >
-                          {p.status === "confirmed"
-                            ? "Confirmé"
-                            : "En attente"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {p.user.phone ? (
-                          <span className="flex items-center gap-1">
-                            <Phone size={10} />
-                            {p.user.phone}
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 truncate max-w-[160px]">
-                            <Mail size={10} />
-                            {p.user.email.includes("@cotram.local")
-                              ? "Walk-in"
-                              : p.user.email}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <div className="flex gap-1 flex-wrap justify-end max-w-[72px]">
-                        {p.seats.map((s) => (
-                          <span
-                            key={s}
-                            className="size-5 sm:size-6 rounded bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                      <span className="text-xs font-semibold text-gray-500">
-                        {p.totalPrice.toLocaleString()} Ar
-                      </span>
-                    </div>
-                  </div>
-                ))
               )}
-            </div>
+            </>
           )}
         </div>
 
         <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0 print:hidden">
           <p className="text-xs text-gray-400">
             {search
-              ? `${passengers.length} résultat${passengers.length > 1 ? "s" : ""}`
-              : `${allPassengers.length} passager${allPassengers.length > 1 ? "s" : ""}`}
+              ? `${passengers.length} réservation${passengers.length > 1 ? "s" : ""} · ${countSeats(passengers)} siège${countSeats(passengers) > 1 ? "s" : ""}`
+              : `${occupiedSeats} siège${occupiedSeats > 1 ? "s" : ""} occupé${occupiedSeats > 1 ? "s" : ""} sur ${schedule.totalSeats}`}
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5"
             >
               <Printer size={14} />
-              Imprimer
+              Imprimer le plan
             </button>
             <button
               onClick={onClose}
@@ -497,6 +517,7 @@ export function PassengerModal({ schedule, onClose }: Props) {
             @page { margin: 8mm; }
             body * { visibility: visible; }
             nav, footer, .print\\:hidden { display: none !important; }
+            .hidden.print\\:block { display: block !important; }
           }
         `}</style>
       </div>

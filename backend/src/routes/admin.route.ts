@@ -83,6 +83,12 @@ router.get(
         (sum, r) => sum + r.seats.length,
         0,
       );
+      const confirmedSeats = reservations
+        .filter((r) => r.status === "confirmed")
+        .reduce((sum, r) => sum + r.seats.length, 0);
+      const pendingSeats = reservations
+        .filter((r) => r.status === "pending")
+        .reduce((sum, r) => sum + r.seats.length, 0);
       const revenue = reservations
         .filter((r) => r.paymentStatus === "paid")
         .reduce((sum, r) => sum + r.totalPrice, 0);
@@ -103,8 +109,8 @@ router.get(
         summary: {
           totalPassengers,
           totalReservations: reservations.length,
-          confirmed: reservations.filter((r) => r.status === "confirmed").length,
-          pending: reservations.filter((r) => r.status === "pending").length,
+          confirmed: confirmedSeats,
+          pending: pendingSeats,
           revenue,
           occupancyRate: schedule.totalSeats > 0
             ? Math.round((totalPassengers / schedule.totalSeats) * 100)
