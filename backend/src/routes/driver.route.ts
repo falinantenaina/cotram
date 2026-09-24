@@ -3,6 +3,7 @@ import { authorize, protect } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
 import * as driverService from "../services/driver.service.js";
 import type { AuthRequest } from "../types/index.js";
+import { PHONE_INVALID_MESSAGE, isValidPhone } from "../utils/phone.utils.js";
 
 const router = express.Router();
 
@@ -170,6 +171,11 @@ router.put("/me/profile", protect, authorize("driver"), async (req, res) => {
       return;
     }
 
+    if (!isValidPhone(phone)) {
+      res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+      return;
+    }
+
     const allowedVehicles = ["Crafter", "Sprinter", "Transit"];
     const vt = allowedVehicles.includes(vehicleType ?? "")
       ? vehicleType
@@ -239,6 +245,11 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
       return;
     }
 
+    if (!isValidPhone(phone)) {
+      res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+      return;
+    }
+
     const driver = await driverService.createDriver({
       firstName, lastName, phone, licenseNumber,
       vehicleNumber, vehicleType, status,
@@ -257,6 +268,11 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
 // ─── UPDATE driver ────────────────────────────────────────────────────────────
 router.put("/:id", protect, authorize("admin"), async (req, res) => {
   try {
+    const body = req.body as { phone?: string };
+    if (body.phone !== undefined && body.phone !== null && body.phone !== "" && !isValidPhone(body.phone)) {
+      res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+      return;
+    }
     const driver = await driverService.updateDriver(String(req.params.id), req.body);
     res.json({ success: true, driver });
   } catch (err: any) {

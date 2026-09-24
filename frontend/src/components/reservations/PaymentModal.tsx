@@ -7,6 +7,7 @@ import { useInitiatePayment, usePaymentStatus } from "../../hooks/useReservation
 import { useReservationTempStore } from "../../stores/reservationStore";
 import mvolaLogo from "../../assets/mvola.svg";
 import orangeLogo from "../../assets/orangemoney.svg";
+import { isValidPhone, normalizePhone } from "../../lib/phone";
 
 type PaymentMethod = "mvola" | "orange_money" | "cash";
 type PaymentStep = "method" | "phone" | "processing" | "success" | "error";
@@ -89,11 +90,6 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
     return `${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5, 7)} ${digits.slice(7)}`;
   };
 
-  const isValidPhone = (p: string) => {
-    const digits = p.replace(/\D/g, "");
-    return digits.length === 10 && /^03\d{8}$/.test(digits);
-  };
-
   const handleSelectMethod = (m: PaymentMethod) => {
     setMethod(m);
     if (m === "cash") {
@@ -145,7 +141,7 @@ export function PaymentModal({ scheduleId, seats, totalPrice, onClose }: Props) 
   const submitMvola = async (m: PaymentMethod) => {
     try {
       // 1. Initiate Mvola payment (holds seats, NO reservation yet)
-      const cleanPhone = phone.replace(/\s/g, "");
+      const cleanPhone = normalizePhone(phone);
       const payment = await initiatePayment({
         scheduleId,
         seats,

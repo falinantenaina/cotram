@@ -9,6 +9,7 @@ import {
 } from "../config/email.js";
 import prisma from "../lib/prisma.js";
 import { logError } from "../lib/logger.js";
+import { normalizePhone } from "../utils/phone.utils.js";
 
 const signToken = (id: string): string => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
@@ -63,12 +64,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     const { name, email, phone, password } = req.body;
+    const cleanPhone = phone ? normalizePhone(phone) : null;
 
     const userExists = await prisma.user.findFirst({
       where: {
         OR: [
           { email },
-          ...(phone ? [{ phone }] : []),
+          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
         ],
       },
     });
@@ -81,7 +83,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
           data: {
             name,
             email,
-            phone: phone || userExists.phone,
+            phone: cleanPhone || userExists.phone,
             password: hashedPassword,
           },
         });
@@ -101,7 +103,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       data: {
         name,
         email,
-        phone: phone || null,
+        phone: cleanPhone,
         password: hashedPassword,
       },
     });
@@ -148,10 +150,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const { identifier, password } = req.body;
+    const cleanIdentifier = identifier.includes("@")
+      ? identifier.trim()
+      : normalizePhone(identifier);
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ email: identifier }, { phone: identifier }],
+        OR: [{ email: identifier }, { phone: cleanIdentifier }],
       },
     });
 

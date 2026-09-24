@@ -12,6 +12,7 @@ import {
   parseLocalDate,
   toLocalDateString,
 } from "../utils/date.utils.js";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../utils/phone.utils.js";
 import {
   getFinanceOverview,
   getRevenueByPeriod,
@@ -180,9 +181,14 @@ router.post(
         return;
       }
 
+      if (phone && !isValidPhone(phone)) {
+        res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+        return;
+      }
+
       const populatedReservation = await createWalkinReservation({
         name,
-        phone,
+        ...(phone ? { phone: normalizePhone(phone) } : {}),
         scheduleId,
         seats,
       });

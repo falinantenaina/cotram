@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import type { AuthRequest } from "../types/index.js";
+import { PHONE_INVALID_MESSAGE, isValidPhone } from "../utils/phone.utils.js";
 
 const USER_SELECT = {
   id: true,
@@ -86,6 +87,14 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       res.status(400).json({
         success: false,
         message: "Mot de passe : minimum 6 caractères",
+      });
+      return;
+    }
+
+    if (phone?.trim() && !isValidPhone(phone)) {
+      res.status(400).json({
+        success: false,
+        message: PHONE_INVALID_MESSAGE,
       });
       return;
     }
@@ -206,7 +215,16 @@ export const updateUser = async (
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;
-    if (phone !== undefined) data.phone = phone || null;
+    if (phone !== undefined) {
+      if (phone && !isValidPhone(phone)) {
+        res.status(400).json({
+          success: false,
+          message: PHONE_INVALID_MESSAGE,
+        });
+        return;
+      }
+      data.phone = phone || null;
+    }
 
     if (role !== undefined) {
       if (!isAdmin) {

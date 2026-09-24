@@ -5,6 +5,7 @@ import { logError } from "../lib/logger.js";
 import { emitToStaff } from "../lib/socket.js";
 import type { AuthRequest } from "../types/index.js";
 import { generateTrackingCode, generateRetrievalCode } from "../utils/tracking.utils.js";
+import { PHONE_INVALID_MESSAGE, isValidPhone } from "../utils/phone.utils.js";
 
 const PARCEL_INCLUDE = {
   departure: true,
@@ -281,6 +282,11 @@ export const createParcel = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    if (!isValidPhone(senderPhone) || !isValidPhone(recipientPhone)) {
+      res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+      return;
+    }
+
     const [departure, arrival] = await Promise.all([
       prisma.city.findUnique({ where: { id: departureCityId } }),
       prisma.city.findUnique({ where: { id: arrivalCityId } }),
@@ -437,9 +443,21 @@ export const updateParcel = async (req: Request, res: Response): Promise<void> =
       data.schedule = scheduleId ? { connect: { id: scheduleId } } : { disconnect: true };
     }
     if (senderName !== undefined) data.senderName = senderName;
-    if (senderPhone !== undefined) data.senderPhone = senderPhone;
+    if (senderPhone !== undefined) {
+      if (senderPhone && !isValidPhone(senderPhone)) {
+        res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+        return;
+      }
+      data.senderPhone = senderPhone;
+    }
     if (recipientName !== undefined) data.recipientName = recipientName;
-    if (recipientPhone !== undefined) data.recipientPhone = recipientPhone;
+    if (recipientPhone !== undefined) {
+      if (recipientPhone && !isValidPhone(recipientPhone)) {
+        res.status(400).json({ success: false, message: PHONE_INVALID_MESSAGE });
+        return;
+      }
+      data.recipientPhone = recipientPhone;
+    }
     if (transportFee !== undefined) data.transportFee = Number(transportFee);
     if (departureDate !== undefined) data.departureDate = new Date(departureDate);
 

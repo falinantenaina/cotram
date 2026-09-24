@@ -11,6 +11,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import cars from "../assets/car.webp";
 import { useAuth } from "../hooks/useAuth";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../lib/phone";
 
 const Auth = () => {
   const [tab, setTab] = useState<"login" | "register">("login");
@@ -59,10 +60,15 @@ const Auth = () => {
           alert("Les mots de passe ne correspondent pas");
           return;
         }
+        const cleanPhone = formData.phone.trim();
+        if (cleanPhone && !isValidPhone(cleanPhone)) {
+          alert(PHONE_INVALID_MESSAGE);
+          return;
+        }
         await register({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: cleanPhone ? normalizePhone(cleanPhone) : "",
           password: formData.password,
         });
         navigate(returnTo);

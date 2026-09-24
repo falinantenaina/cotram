@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import api from "../../lib/axios";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../../lib/phone";
 import { ErrorAlert } from "../../components/common";
 
 interface DriverProfile {
@@ -130,7 +131,7 @@ export default function DriverProfile() {
   const canSubmit =
     form.firstName.trim() &&
     form.lastName.trim() &&
-    form.phone.trim() &&
+    isValidPhone(form.phone) &&
     form.licenseNumber.trim() &&
     !updateMutation.isPending;
 
@@ -244,9 +245,12 @@ export default function DriverProfile() {
                 <input
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+261 34 00 000 00"
+                  placeholder="034 00 000 00"
                   className={inputClass}
                 />
+                {form.phone && !isValidPhone(form.phone) && (
+                  <p className="text-xs text-red-500 mt-1">{PHONE_INVALID_MESSAGE}</p>
+                )}
               </div>
 
               <div>
@@ -306,7 +310,16 @@ export default function DriverProfile() {
                   Annuler
                 </button>
                 <button
-                  onClick={() => updateMutation.mutate(form)}
+                  onClick={() => {
+                    if (!isValidPhone(form.phone)) {
+                      setFormError(PHONE_INVALID_MESSAGE);
+                      return;
+                    }
+                    updateMutation.mutate({
+                      ...form,
+                      phone: normalizePhone(form.phone),
+                    });
+                  }}
                   disabled={!canSubmit}
                   className="flex-1 py-2.5 bg-primary text-black font-bold rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary/90"
                 >

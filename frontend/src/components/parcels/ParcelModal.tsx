@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Loader, MapPin, Truck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../../lib/axios";
+import { isValidPhone, normalizePhone } from "../../lib/phone";
 
 interface City {
   id: string;
@@ -168,9 +169,9 @@ export function ParcelModal({
         arrivalCityId: form.arrivalCityId,
         scheduleId: showSchedule && form.scheduleId ? form.scheduleId : null,
         senderName: form.senderName,
-        senderPhone: form.senderPhone,
+        senderPhone: normalizePhone(form.senderPhone),
         recipientName: form.recipientName,
-        recipientPhone: form.recipientPhone,
+        recipientPhone: normalizePhone(form.recipientPhone),
         transportFee: Number(form.transportFee || 0),
         totalAmount: Number(form.totalAmount || 0),
         departureDate: form.departureDate,
@@ -202,9 +203,9 @@ export function ParcelModal({
     form.arrivalCityId &&
     form.departureCityId !== form.arrivalCityId &&
     form.senderName.trim() &&
-    form.senderPhone.trim() &&
+    isValidPhone(form.senderPhone) &&
     form.recipientName.trim() &&
-    form.recipientPhone.trim() &&
+    isValidPhone(form.recipientPhone) &&
     form.totalAmount &&
     Number(form.totalAmount) >= 0;
 
@@ -426,9 +427,12 @@ export function ParcelModal({
                 onChange={(e) =>
                   setForm({ ...form, senderPhone: e.target.value })
                 }
-                placeholder="Téléphone"
+                placeholder="034 00 000 00"
                 className={inp}
               />
+              {form.senderPhone && !isValidPhone(form.senderPhone) && (
+                <p className="text-xs text-red-500">Numéro de téléphone invalide (format : 03XXXXXXXX)</p>
+              )}
             </div>
             <div className="space-y-3">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -447,9 +451,12 @@ export function ParcelModal({
                 onChange={(e) =>
                   setForm({ ...form, recipientPhone: e.target.value })
                 }
-                placeholder="Téléphone"
+                placeholder="034 00 000 00"
                 className={inp}
               />
+              {form.recipientPhone && !isValidPhone(form.recipientPhone) && (
+                <p className="text-xs text-red-500">Numéro de téléphone invalide (format : 03XXXXXXXX)</p>
+              )}
             </div>
           </div>
 

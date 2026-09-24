@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { sendReservationConfirmation } from "../config/email.js";
 import { emitToStaffAndDrivers } from "../lib/socket.js";
+import { normalizePhone } from "../utils/phone.utils.js";
 
 export class WalkinError extends Error {
   constructor(message: string, public statusCode: number, public unavailableSeats?: number[]) {
@@ -17,19 +18,20 @@ export async function createWalkinReservation(data: {
   performedBy?: string;
 }) {
   const { name, phone, scheduleId, seats, performedBy = "admin" } = data;
+  const cleanPhone = phone ? normalizePhone(phone) : undefined;
 
-  let user = phone
-    ? await prisma.user.findFirst({ where: { phone } })
+  let user = cleanPhone
+    ? await prisma.user.findFirst({ where: { phone: cleanPhone } })
     : null;
   if (!user) {
-    const tempEmail = phone
-      ? `walkin_${phone.replace(/\s/g, "")}@cotram.local`
+    const tempEmail = cleanPhone
+      ? `walkin_${cleanPhone}@cotram.local`
       : `walkin_${Date.now()}@cotram.local`;
     user = await prisma.user.create({
       data: {
         name,
         email: tempEmail,
-        phone: phone || null,
+        phone: cleanPhone || null,
         role: "user",
         isEmailVerified: false,
       },

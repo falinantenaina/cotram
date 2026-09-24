@@ -6,8 +6,12 @@ import { emitToStaffAndDrivers, emitToUser } from "../lib/socket.js";
 import * as mvolaService from "../services/mvola.service.js";
 import type { AuthRequest } from "../types/index.js";
 import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
+import {
+  PHONE_INVALID_MESSAGE,
+  PHONE_REGEX,
+  normalizePhone,
+} from "../utils/phone.utils.js";
 
-const PHONE_REGEX = /^03\d{8}$/;
 const PAYMENT_HOLD_MS = 15 * 60 * 1000; // 15 min hold on seats
 
 function mapMvolaStatus(raw: string): "pending" | "completed" | "failed" {
@@ -288,15 +292,15 @@ export const initiatePayment = async (
         .json({ success: false, message: "scheduleId et seats sont requis" });
       return;
     }
-    if (!phone || !PHONE_REGEX.test(phone.replace(/\s/g, ""))) {
+    if (!phone || !PHONE_REGEX.test(normalizePhone(phone))) {
       res.status(400).json({
         success: false,
-        message: "Numéro de téléphone invalide (format : 03XXXXXXXX)",
+        message: PHONE_INVALID_MESSAGE,
       });
       return;
     }
 
-    const cleanPhone = phone.replace(/\s/g, "");
+    const cleanPhone = normalizePhone(phone);
     const seatNumbers = seats.filter((n) => Number.isInteger(n) && n > 0);
 
     // Check for existing pending payment for this user+schedule (idempotent retry)

@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Check, Hash, Loader, Phone, Shield, User, X } from "lucide-react";
 import { useState } from "react";
 import api from "../../lib/axios";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../../lib/phone";
 import { ErrorAlert } from "../common";
 import type { Driver } from "./DriverCard";
 import { STATUS_CONFIG } from "./DriverCard";
@@ -43,14 +44,18 @@ export function DriverModal({ driver, onClose, onSuccess }: Props) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (driver) return api.put(`/drivers/${driver.id}`, form);
-      return api.post("/drivers", form);
+      if (!isValidPhone(form.phone)) {
+        throw new Error(PHONE_INVALID_MESSAGE);
+      }
+      const payload = { ...form, phone: normalizePhone(form.phone) };
+      if (driver) return api.put(`/drivers/${driver.id}`, payload);
+      return api.post("/drivers", payload);
     },
     onSuccess: () => {
       onSuccess();
       onClose();
     },
-    onError: (err: any) => setError(err?.response?.data?.message ?? "Erreur"),
+    onError: (err: any) => setError(err?.response?.data?.message ?? err?.message ?? "Erreur"),
   });
 
   const set =
@@ -68,7 +73,7 @@ export function DriverModal({ driver, onClose, onSuccess }: Props) {
   const canSubmit =
     form.firstName &&
     form.lastName &&
-    form.phone &&
+    isValidPhone(form.phone) &&
     form.licenseNumber &&
     form.vehicleNumber;
 
@@ -142,10 +147,13 @@ export function DriverModal({ driver, onClose, onSuccess }: Props) {
               <input
                 value={form.phone}
                 onChange={set("phone")}
-                placeholder="+261 34 00 000 00"
+                placeholder="034 00 000 00"
                 className={`${inp} pl-9`}
               />
             </div>
+            {form.phone && !isValidPhone(form.phone) && (
+              <p className="text-xs text-red-500 mt-1">{PHONE_INVALID_MESSAGE}</p>
+            )}
           </div>
 
           <div>

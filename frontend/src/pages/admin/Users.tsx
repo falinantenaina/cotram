@@ -19,6 +19,7 @@ import {
   inputClass,
 } from "../../components/common";
 import api from "../../lib/axios";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../../lib/phone";
 
 interface User {
   id: string;
@@ -330,7 +331,17 @@ export default function AdminUsers() {
                 Annuler
               </button>
               <button
-                onClick={() => createMutation.mutate(form)}
+                onClick={() => {
+                  const cleanPhone = form.phone.trim();
+                  if (cleanPhone && !isValidPhone(cleanPhone)) {
+                    setFormError(PHONE_INVALID_MESSAGE);
+                    return;
+                  }
+                  createMutation.mutate({
+                    ...form,
+                    phone: cleanPhone ? normalizePhone(cleanPhone) : "",
+                  });
+                }}
                 disabled={
                   createMutation.isPending ||
                   !form.name.trim() ||

@@ -12,6 +12,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { Container } from "../components/ui/Container";
 import { useAuth } from "../hooks/useAuth";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../lib/phone";
 
 const Profile = () => {
   const { user, logout, updateProfile, isUpdateLoading, updateError } =
@@ -23,18 +24,26 @@ const Profile = () => {
     phone: user?.phone ?? "",
   });
   const [successMessage, setSuccessMessage] = useState("");
+  const [formError, setFormError] = useState("");
 
   if (!user) return <Navigate to="/auth" replace />;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSuccessMessage("");
+    setFormError("");
+
+    const cleanPhone = formData.phone.trim();
+    if (cleanPhone && !isValidPhone(cleanPhone)) {
+      setFormError(PHONE_INVALID_MESSAGE);
+      return;
+    }
 
     try {
       await updateProfile(user.id, {
         name: formData.name,
         email: formData.email,
-        phone: formData.phone || undefined,
+        phone: cleanPhone ? normalizePhone(cleanPhone) : undefined,
       });
       setSuccessMessage("Profil mis à jour avec succès");
       setIsEditing(false);
@@ -51,6 +60,7 @@ const Profile = () => {
     });
     setIsEditing(false);
     setSuccessMessage("");
+    setFormError("");
   };
 
   const inputClass =
@@ -146,6 +156,12 @@ const Profile = () => {
 
             {isEditing ? (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {formError && (
+                  <div className="flex gap-2 bg-red-50 border border-red-200 rounded-xl p-4">
+                    <X size={16} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-700">{formError}</p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                     Nom complet

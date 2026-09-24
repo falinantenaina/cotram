@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { buildFallbackConfig } from "../../config/seatLayouts";
 import api from "../../lib/axios";
+import { PHONE_INVALID_MESSAGE, isValidPhone, normalizePhone } from "../../lib/phone";
 
 type PaperSize = "80" | "53";
 
@@ -206,9 +207,13 @@ export function WalkInModal({ onClose }: Props) {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const cleanPhone = phone.trim();
+      if (cleanPhone && !isValidPhone(cleanPhone)) {
+        throw new Error(PHONE_INVALID_MESSAGE);
+      }
       const { data } = await api.post("/admin/reservations/walk-in", {
         name: name.trim(),
-        phone: phone.trim() || undefined,
+        phone: cleanPhone ? normalizePhone(cleanPhone) : undefined,
         scheduleId: selectedScheduleId,
         seats: selectedSeats,
       });
@@ -702,6 +707,7 @@ ${thinSep}
                   <XCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-700">
                     {(mutation.error as any)?.response?.data?.message ||
+                      (mutation.error as Error)?.message ||
                       "Erreur"}
                   </p>
                 </div>
