@@ -1,11 +1,11 @@
-import type { Request, Response } from "express";
 import type { Prisma } from "@prisma/client";
-import { logError, logInfo } from "../lib/logger.js";
+import type { Request, Response } from "express";
+import { logError } from "../lib/logger.js";
 import prisma from "../lib/prisma.js";
 import { emitToStaffAndDrivers, emitToUser } from "../lib/socket.js";
-import * as mvolaService from "../services/mvolaService.js";
-import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
+import * as mvolaService from "../services/mvola.service.js";
 import type { AuthRequest } from "../types/index.js";
+import { endOfLocalDay, parseLocalDate } from "../utils/date.utils.js";
 
 const PHONE_REGEX = /^03\d{8}$/;
 const PAYMENT_HOLD_MS = 15 * 60 * 1000; // 15 min hold on seats
@@ -59,8 +59,6 @@ async function releaseHeldSeats(paymentId: string) {
       data: { availableSeats: { increment: seatNumbers.length } },
     }),
   ]);
-
-  logInfo(`Payment ${paymentId}: ${seatNumbers.length} seat hold(s) released`);
 }
 
 /**
@@ -126,10 +124,6 @@ async function fulfillPayment(paymentId: string) {
     seats: seatNumbers,
     totalPrice: payment.amount,
   });
-
-  logInfo(
-    `Payment ${paymentId} fulfilled → reservation ${reservation.id} (${bookingReference})`,
-  );
 
   // Email (non-blocking)
   try {
@@ -210,7 +204,6 @@ async function failPayment(paymentId: string) {
 
   // No reservation — just release the seat holds
   await releaseHeldSeats(paymentId);
-  logInfo(`Payment ${paymentId} failed → no reservation created`);
 }
 
 type PaymentRow = {
@@ -407,10 +400,6 @@ export const initiatePayment = async (
         },
       });
 
-      logInfo(
-        `Payment initiated: ${payment.id} amount=${amount} seats=${seatNumbers.join(",")} correlation=${mvolaResult.server_correlation_id}`,
-      );
-
       res.status(201).json({
         success: true,
         paymentId: updated.id,
@@ -448,7 +437,7 @@ export const initiatePayment = async (
         // best effort
       }
     }
-    logError("PAYMENT_INITIATE", err);
+
     const message =
       err instanceof Error
         ? err.message
@@ -520,14 +509,7 @@ export const getMyPaymentHistory = async (
 ): Promise<void> => {
   try {
     const { user } = req as AuthRequest;
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      method,
-      from,
-      to,
-    } = req.query;
+    const { page = 1, limit = 20, status, method, from, to } = req.query;
 
     const where: Prisma.PaymentWhereInput = {
       userId: user.id,
@@ -616,14 +598,7 @@ export const getAdminPaymentHistory = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const {
-      page = 1,
-      limit = 25,
-      method,
-      search,
-      from,
-      to,
-    } = req.query;
+    const { page = 1, limit = 25, method, search, from, to } = req.query;
 
     const where: Prisma.PaymentWhereInput = {
       status: "completed",
@@ -644,7 +619,11 @@ export const getAdminPaymentHistory = async (
         { phone: { contains: q, mode: "insensitive" } },
         { user: { name: { contains: q, mode: "insensitive" } } },
         { user: { email: { contains: q, mode: "insensitive" } } },
-        { reservation: { bookingReference: { contains: q, mode: "insensitive" } } },
+        {
+          reservation: {
+            bookingReference: { contains: q, mode: "insensitive" },
+          },
+        },
       ];
     }
 
@@ -732,10 +711,6 @@ export const mvolaCallback = async (
       status?: string;
       objectReference?: string;
     };
-
-    logInfo(
-      `MVola callback: correlation=${body.serverCorrelationId} status=${body.status}`,
-    );
 
     if (!body.serverCorrelationId) {
       res

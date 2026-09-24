@@ -1,4 +1,4 @@
-import { logError, logInfo } from "../lib/logger.js";
+import { logError } from "../lib/logger.js";
 
 //  Config
 
@@ -52,7 +52,6 @@ export async function getAccessToken(): Promise<string> {
     expires_at: Date.now() + data.expires_in * 1000,
   };
 
-  logInfo(`Token MVola obtenu (length=${cachedToken.access_token.length})`);
   return cachedToken.access_token;
 }
 
