@@ -68,6 +68,11 @@ app.use((req, res, next) => {
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      imgSrc: ["'self'", "data:", "https://lh3.googleusercontent.com", "https://*.googleusercontent.com"],
+    },
+  },
 }));
 if (process.env.NODE_ENV === "production") {
   app.use(limiter);
