@@ -1,0 +1,53 @@
+{
+  "name": "cotram-plus-desktop",
+  "productName": "Cotram Plus",
+  "version": "1.0.0",
+  "description": "Cotram Plus - application bureau (admin, caissier, chauffeur, agent colis)",
+  "private": true,
+  "main": "main.js",
+  "license": "ISC",
+  "scripts": {
+    "icon": "node scripts/build-icon.mjs",
+    "dev": "electron .",
+    "dist": "electron-builder --win",
+    "dist:dir": "electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "sharp": "^0.33.5"
+  },
+  "build": {
+    "appId": "mg.nragency.cotramplus",
+    "productName": "Cotram Plus",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "config.json",
+      "assets/icon.png",
+      "offline.html"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Cotram Plus",
+      "artifactName": "CotramPlus-Setup-${version}.exe"
+    }
+  }
+}
