@@ -10,6 +10,7 @@ export function getSocket(): Socket {
 
     socket = io(origin || window.location.origin, {
       path: "/socket.io",
+      transports: ["polling"],
       autoConnect: false,
       auth: (cb) => {
         cb({ token: useAuthStore.getState().token });
